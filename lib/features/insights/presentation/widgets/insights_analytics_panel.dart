@@ -11,9 +11,12 @@ import 'package:rupee_track/core/providers/salary_cycle_provider.dart';
 import 'package:rupee_track/core/router/routes.dart';
 import 'package:rupee_track/core/utils/date_utils.dart';
 import 'package:rupee_track/core/utils/money_utils.dart';
+import 'package:rupee_track/core/widgets/empty_state.dart';
 import 'package:rupee_track/core/widgets/month_selector.dart';
 import 'package:rupee_track/core/widgets/summary_card.dart';
 import 'package:rupee_track/core/design_system/responsive.dart';
+import 'package:rupee_track/core/design_system/skeleton_loader.dart';
+import 'package:rupee_track/features/health_score/data/financial_health_repository.dart';
 import 'package:rupee_track/features/health_score/presentation/widgets/financial_health_card.dart';
 import 'package:rupee_track/features/insights/presentation/widgets/insights_section_header.dart';
 import 'package:rupee_track/features/smart_tagging/presentation/widgets/smart_tagging_widgets.dart';
@@ -22,8 +25,8 @@ import 'package:rupee_track/features/trends/domain/trends_comparison_mode.dart';
 import 'package:rupee_track/features/trends/data/spending_trends_repository.dart';
 import 'package:rupee_track/features/trends/presentation/widgets/trends_charts.dart';
 
-/// Deep analytics — collapsed by default so the feed stays focused.
-class InsightsAnalyticsPanel extends ConsumerStatefulWidget {
+/// Charts, trends, and spending patterns — shown below the daily feed.
+class InsightsAnalyticsPanel extends ConsumerWidget {
   const InsightsAnalyticsPanel({
     required this.report,
     super.key,
@@ -32,63 +35,151 @@ class InsightsAnalyticsPanel extends ConsumerStatefulWidget {
   final SpendingTrendsReport report;
 
   @override
-  ConsumerState<InsightsAnalyticsPanel> createState() =>
-      _InsightsAnalyticsPanelState();
-}
-
-class _InsightsAnalyticsPanelState extends ConsumerState<InsightsAnalyticsPanel> {
-  bool _expanded = false;
-
-  @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
     final cycleKey = ref.watch(selectedCycleKeyProvider);
     final salaryDay = ref.watch(salaryDayProvider);
     final mode = ref.watch(trendsComparisonModeProvider);
-    final report = widget.report;
     final cycleLabel = formatCycleLabel(cycleKey, salaryDay: salaryDay);
+    final hasSpending = report.current.totalSpentPaise > 0;
+    final hasCategories = report.categoryComparisons.isNotEmpty;
+    final hasTimeSeries = report.timeSeries.isNotEmpty;
+    final hasDayPattern =
+        report.heatMap.isNotEmpty || report.weekendWeekday.total > 0;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         const InsightsSectionHeader(
           emoji: '📊',
-          title: 'Deep analytics',
-          subtitle: 'Charts, trends, and spending patterns',
+          title: 'Analytics',
+          subtitle: 'Charts and spending patterns for this cycle',
+        ),
+        InsightsSectionHeader(
+          emoji: '📅',
+          title: 'Pay period',
+          subtitle: cycleLabel,
+        ),
+        const CycleSelector(),
+        const SizedBox(height: AppSpacing.sm),
+        AppHorizontalScrollRow(
+          padding: EdgeInsets.zero,
+          height: 40,
+          children: TrendsComparisonMode.values.map((m) {
+            return Padding(
+              padding: const EdgeInsets.only(right: AppSpacing.xs),
+              child: PremiumFilterChip(
+                label: m.label,
+                selected: m == mode,
+                onSelected: (_) => ref
+                    .read(trendsComparisonModeProvider.notifier)
+                    .setMode(m),
+              ),
+            );
+          }).toList(),
+        ),
+        if (!hasSpending) ...[
+          Padding(
+            padding: const EdgeInsets.symmetric(vertical: AppSpacing.lg),
+            child: EmptyState(
+              icon: Icons.bar_chart_rounded,
+              title: 'No spending data yet',
+              message:
+                  'Add a few expenses this cycle to unlock charts, averages, and category breakdowns.',
+              accentColor: theme.colorScheme.primary,
+              action: FilledButton.icon(
+                onPressed: () => context.push(AppRoutes.expenseAdd),
+                icon: const Icon(Icons.add_rounded, size: 20),
+                label: const Text('Add expense'),
+              ),
+            ),
+          ),
+        ] else ...[
+          const _FinancialHealthSection(),
+          SpendingByTagsSection(cycleKey: cycleKey),
+          const InsightsSectionHeader(
+            emoji: '🔢',
+            title: 'Key numbers',
+            subtitle: 'Averages and top categories',
+          ),
+          _MetricsGrid(report: report),
+          if (hasTimeSeries) ...[
+            const InsightsSectionHeader(
+              emoji: '📈',
+              title: 'Spending over time',
+              subtitle: 'Grey = last period · colour = this period',
+            ),
+            PremiumCard(
+              child: TrendsLineChart(points: report.timeSeries),
+            ),
+            const SizedBox(height: AppSpacing.md),
+          ],
+          if (hasCategories) ...[
+            const InsightsSectionHeader(
+              emoji: '📊',
+              title: 'Category comparison',
+              subtitle: 'Side-by-side bar chart',
+            ),
+            PremiumCard(
+              child: TrendsBarChart(categories: report.categoryComparisons),
+            ),
+            const SizedBox(height: AppSpacing.md),
+            const InsightsSectionHeader(
+              emoji: '🥧',
+              title: 'Where money goes',
+              subtitle: 'Share by category',
+            ),
+            PremiumCard(
+              child: TrendsPieChart(categories: report.categoryComparisons),
+            ),
+            const SizedBox(height: AppSpacing.sm),
+            PremiumCard(
+              padding: EdgeInsets.zero,
+              child: Column(
+                children: report.categoryComparisons.take(5).map(
+                  (c) {
+                    return PremiumRowTile(
+                      title: c.categoryName,
+                      leading: CircleAvatar(
+                        radius: 6,
+                        backgroundColor: Color(c.colorValue),
+                      ),
+                      trailing: Text(
+                        formatPaise(c.currentPaise),
+                        style: theme.textTheme.titleSmall?.copyWith(
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                    );
+                  },
+                ).toList(),
+              ),
+            ),
+          ],
+        ],
+        const InsightsSectionHeader(
+          emoji: '🗓️',
+          title: 'Explore further',
+          subtitle: 'Calendar and heatmap views',
         ),
         PremiumCard(
-          variant: PremiumCardVariant.tinted,
-          onTap: () => setState(() => _expanded = !_expanded),
+          onTap: () => context.push(AppRoutes.calendar),
           child: Row(
             children: [
-              Container(
-                width: 40,
-                height: 40,
-                decoration: BoxDecoration(
-                  color: theme.colorScheme.primary.withValues(alpha: 0.12),
-                  borderRadius: BorderRadius.circular(AppRadius.sm),
-                ),
-                child: Icon(
-                  Icons.analytics_outlined,
-                  color: theme.colorScheme.primary,
-                  size: 22,
-                ),
-              ),
+              const Text('📅', style: TextStyle(fontSize: 22)),
               const SizedBox(width: AppSpacing.md),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      _expanded ? 'Hide charts & breakdowns' : 'Show charts & breakdowns',
+                      'Financial calendar',
                       style: theme.textTheme.titleSmall?.copyWith(
-                        fontWeight: FontWeight.w700,
+                        fontWeight: FontWeight.w600,
                       ),
                     ),
                     Text(
-                      _expanded
-                          ? 'Tap to collapse'
-                          : 'Period comparison · categories · heatmaps',
+                      'Salary days, bills, and daily spend',
                       style: theme.textTheme.bodySmall?.copyWith(
                         color: theme.colorScheme.onSurfaceVariant,
                       ),
@@ -96,251 +187,147 @@ class _InsightsAnalyticsPanelState extends ConsumerState<InsightsAnalyticsPanel>
                   ],
                 ),
               ),
-              AnimatedRotation(
-                turns: _expanded ? 0.5 : 0,
-                duration: AppDurations.fast,
-                child: Icon(
-                  Icons.expand_more_rounded,
-                  color: theme.colorScheme.onSurfaceVariant,
-                ),
+              Icon(
+                Icons.chevron_right_rounded,
+                color: theme.colorScheme.onSurfaceVariant,
               ),
             ],
           ),
         ),
-        AnimatedSize(
-          duration: AppDurations.normal,
-          curve: AppCurves.standard,
-          alignment: Alignment.topCenter,
-          child: _expanded
-              ? Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
+        const SizedBox(height: AppSpacing.sm),
+        PremiumCard(
+          onTap: () => context.push(AppRoutes.expenseHeatmap),
+          child: Row(
+            children: [
+              const Text('🔥', style: TextStyle(fontSize: 22)),
+              const SizedBox(width: AppSpacing.md),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    InsightsSectionHeader(
-                      emoji: '📅',
-                      title: 'Pay period',
-                      subtitle: cycleLabel,
-                    ),
-                    const CycleSelector(),
-                    const SizedBox(height: AppSpacing.sm),
-                    AppHorizontalScrollRow(
-                      padding: EdgeInsets.zero,
-                      height: 40,
-                      children: TrendsComparisonMode.values.map((m) {
-                        return Padding(
-                          padding: const EdgeInsets.only(right: AppSpacing.xs),
-                          child: PremiumFilterChip(
-                            label: m.label,
-                            selected: m == mode,
-                            onSelected: (_) => ref
-                                .read(trendsComparisonModeProvider.notifier)
-                                .setMode(m),
-                          ),
-                        );
-                      }).toList(),
-                    ),
-                    const InsightsSectionHeader(
-                      emoji: '❤️',
-                      title: 'Financial health',
-                      subtitle: 'Overall score from your habits',
-                    ),
-                    const FinancialHealthCard(),
-                    const InsightsSectionHeader(
-                      emoji: '🏷️',
-                      title: 'Smart tags',
-                      subtitle: 'How you label your spending',
-                    ),
-                    SpendingByTagsSection(cycleKey: cycleKey),
-                    const InsightsSectionHeader(
-                      emoji: '🔢',
-                      title: 'Key numbers',
-                      subtitle: 'Averages and top categories',
-                    ),
-                    _MetricsGrid(report: report),
-                    const InsightsSectionHeader(
-                      emoji: '📈',
-                      title: 'Spending over time',
-                      subtitle: 'Grey = last period · colour = this period',
-                    ),
-                    PremiumCard(
-                      child: TrendsLineChart(points: report.timeSeries),
-                    ),
-                    const SizedBox(height: AppSpacing.md),
-                    const InsightsSectionHeader(
-                      emoji: '📊',
-                      title: 'Category comparison',
-                      subtitle: 'Side-by-side bar chart',
-                    ),
-                    PremiumCard(
-                      child: TrendsBarChart(categories: report.categoryComparisons),
-                    ),
-                    const SizedBox(height: AppSpacing.md),
-                    const InsightsSectionHeader(
-                      emoji: '🥧',
-                      title: 'Where money goes',
-                      subtitle: 'Share by category',
-                    ),
-                    PremiumCard(
-                      child: TrendsPieChart(categories: report.categoryComparisons),
-                    ),
-                    const SizedBox(height: AppSpacing.sm),
-                    PremiumCard(
-                      padding: EdgeInsets.zero,
-                      child: Column(
-                        children: report.categoryComparisons.take(5).map(
-                          (c) {
-                            return PremiumRowTile(
-                              title: c.categoryName,
-                              leading: CircleAvatar(
-                                radius: 6,
-                                backgroundColor: Color(c.colorValue),
-                              ),
-                              trailing: Text(
-                                formatPaise(c.currentPaise),
-                                style: theme.textTheme.titleSmall?.copyWith(
-                                  fontWeight: FontWeight.w700,
-                                ),
-                              ),
-                            );
-                          },
-                        ).toList(),
+                    Text(
+                      'Expense heatmap',
+                      style: theme.textTheme.titleSmall?.copyWith(
+                        fontWeight: FontWeight.w600,
                       ),
                     ),
-                    const InsightsSectionHeader(
-                      emoji: '🗓️',
-                      title: 'Calendar tools',
-                      subtitle: 'See spending day by day',
-                    ),
-                    PremiumCard(
-                      onTap: () => context.push(AppRoutes.calendar),
-                      child: Row(
-                        children: [
-                          const Text('📅', style: TextStyle(fontSize: 22)),
-                          const SizedBox(width: AppSpacing.md),
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  'Financial calendar',
-                                  style: theme.textTheme.titleSmall?.copyWith(
-                                    fontWeight: FontWeight.w600,
-                                  ),
-                                ),
-                                Text(
-                                  'Salary days, bills, and daily spend',
-                                  style: theme.textTheme.bodySmall?.copyWith(
-                                    color: theme.colorScheme.onSurfaceVariant,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                          Icon(
-                            Icons.chevron_right_rounded,
-                            color: theme.colorScheme.onSurfaceVariant,
-                          ),
-                        ],
+                    Text(
+                      'Which days you spend the most',
+                      style: theme.textTheme.bodySmall?.copyWith(
+                        color: theme.colorScheme.onSurfaceVariant,
                       ),
                     ),
-                    const SizedBox(height: AppSpacing.sm),
-                    PremiumCard(
-                      onTap: () => context.push(AppRoutes.expenseHeatmap),
-                      child: Row(
-                        children: [
-                          const Text('🔥', style: TextStyle(fontSize: 22)),
-                          const SizedBox(width: AppSpacing.md),
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  'Expense heatmap',
-                                  style: theme.textTheme.titleSmall?.copyWith(
-                                    fontWeight: FontWeight.w600,
-                                  ),
-                                ),
-                                Text(
-                                  'Which days you spend the most',
-                                  style: theme.textTheme.bodySmall?.copyWith(
-                                    color: theme.colorScheme.onSurfaceVariant,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                          Icon(
-                            Icons.chevron_right_rounded,
-                            color: theme.colorScheme.onSurfaceVariant,
-                          ),
-                        ],
-                      ),
-                    ),
-                    const InsightsSectionHeader(
-                      emoji: '📆',
-                      title: 'Day-of-week pattern',
-                      subtitle: 'Weekday vs weekend split',
-                    ),
-                    PremiumCard(child: TrendsHeatMap(cells: report.heatMap)),
-                    const SizedBox(height: AppSpacing.sm),
-                    _WeekendWeekdayCard(split: report.weekendWeekday),
-                    if (report.repeatedExpenses.isNotEmpty) ...[
-                      InsightsSectionHeader(
-                        emoji: '🔁',
-                        title: 'Repeated expenses',
-                        subtitle: 'Things you buy often',
-                        count: report.repeatedExpenses.length,
-                      ),
-                      PremiumCard(
-                        padding: EdgeInsets.zero,
-                        child: Column(
-                          children: report.repeatedExpenses.take(5).map(
-                            (r) {
-                              return PremiumRowTile(
-                                title: r.title,
-                                subtitle: '${r.categoryName} · ${r.count}×',
-                                leading: Icon(
-                                  Icons.repeat_rounded,
-                                  size: 20,
-                                  color: theme.colorScheme.onSurfaceVariant,
-                                ),
-                                trailing: Text(
-                                  formatPaise(r.totalPaise),
-                                  style: theme.textTheme.titleSmall?.copyWith(
-                                    fontWeight: FontWeight.w700,
-                                  ),
-                                ),
-                              );
-                            },
-                          ).toList(),
-                        ),
-                      ),
-                    ],
-                    if (report.impulsePurchases.count > 0) ...[
-                      const InsightsSectionHeader(
-                        emoji: '⚡',
-                        title: 'Quick buys',
-                        subtitle: 'Larger discretionary purchases',
-                        accentColor: BrandColors.warning,
-                      ),
-                      PremiumCard(
-                        accentColor: BrandColors.warning,
-                        child: PremiumRowTile(
-                          title: '${report.impulsePurchases.count} impulse purchases',
-                          subtitle:
-                              'Total ${formatPaise(report.impulsePurchases.totalPaise)}',
-                          leading: Icon(
-                            Icons.flash_on_rounded,
-                            color: BrandColors.warning,
-                          ),
-                        ),
-                      ),
-                    ],
-                    const SizedBox(height: AppSpacing.lg),
                   ],
-                )
-              : const SizedBox.shrink(),
+                ),
+              ),
+              Icon(
+                Icons.chevron_right_rounded,
+                color: theme.colorScheme.onSurfaceVariant,
+              ),
+            ],
+          ),
         ),
+        if (hasSpending && hasDayPattern) ...[
+          const InsightsSectionHeader(
+            emoji: '📆',
+            title: 'Day-of-week pattern',
+            subtitle: 'Weekday vs weekend split',
+          ),
+          if (report.heatMap.isNotEmpty)
+            PremiumCard(child: TrendsHeatMap(cells: report.heatMap)),
+          if (report.heatMap.isNotEmpty) const SizedBox(height: AppSpacing.sm),
+          _WeekendWeekdayCard(split: report.weekendWeekday),
+        ],
+        if (report.repeatedExpenses.isNotEmpty) ...[
+          InsightsSectionHeader(
+            emoji: '🔁',
+            title: 'Repeated expenses',
+            subtitle: 'Things you buy often',
+            count: report.repeatedExpenses.length,
+          ),
+          PremiumCard(
+            padding: EdgeInsets.zero,
+            child: Column(
+              children: report.repeatedExpenses.take(5).map(
+                (r) {
+                  return PremiumRowTile(
+                    title: r.title,
+                    subtitle: '${r.categoryName} · ${r.count}×',
+                    leading: Icon(
+                      Icons.repeat_rounded,
+                      size: 20,
+                      color: theme.colorScheme.onSurfaceVariant,
+                    ),
+                    trailing: Text(
+                      formatPaise(r.totalPaise),
+                      style: theme.textTheme.titleSmall?.copyWith(
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                  );
+                },
+              ).toList(),
+            ),
+          ),
+        ],
+        if (report.impulsePurchases.count > 0) ...[
+          const InsightsSectionHeader(
+            emoji: '⚡',
+            title: 'Quick buys',
+            subtitle: 'Larger discretionary purchases',
+            accentColor: BrandColors.warning,
+          ),
+          PremiumCard(
+            accentColor: BrandColors.warning,
+            child: PremiumRowTile(
+              title: '${report.impulsePurchases.count} impulse purchases',
+              subtitle:
+                  'Total ${formatPaise(report.impulsePurchases.totalPaise)}',
+              leading: Icon(
+                Icons.flash_on_rounded,
+                color: BrandColors.warning,
+              ),
+            ),
+          ),
+        ],
+        const SizedBox(height: AppSpacing.lg),
       ],
+    );
+  }
+}
+
+class _FinancialHealthSection extends ConsumerWidget {
+  const _FinancialHealthSection();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final cycleKey = ref.watch(selectedCycleKeyProvider);
+    final healthAsync = ref.watch(financialHealthProvider(cycleKey));
+
+    return healthAsync.when(
+      loading: () => const Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          InsightsSectionHeader(
+            emoji: '❤️',
+            title: 'Financial health',
+            subtitle: 'Overall score from your habits',
+          ),
+          SkeletonCard(height: 100),
+        ],
+      ),
+      error: (_, __) => const SizedBox.shrink(),
+      data: (_) => const Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          InsightsSectionHeader(
+            emoji: '❤️',
+            title: 'Financial health',
+            subtitle: 'Overall score from your habits',
+          ),
+          FinancialHealthCard(),
+        ],
+      ),
     );
   }
 }

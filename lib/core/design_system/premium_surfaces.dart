@@ -75,7 +75,7 @@ abstract final class PremiumSurfaces {
     required BuildContext context,
     required BorderRadius borderRadius,
     required Widget child,
-    double blurSigma = 20,
+    double blurSigma = 36,
   }) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
@@ -86,22 +86,20 @@ abstract final class PremiumSurfaces {
         child: DecoratedBox(
           decoration: BoxDecoration(
             borderRadius: borderRadius,
-            border: Border.all(
-              color: isDark
-                  ? Colors.white.withValues(alpha: 0.14)
-                  : Colors.white.withValues(alpha: 0.9),
-            ),
+            color: isDark
+                ? const Color(0xFF14141A).withValues(alpha: 0.32)
+                : Colors.white.withValues(alpha: 0.58),
             gradient: LinearGradient(
               begin: Alignment.topCenter,
               end: Alignment.bottomCenter,
               colors: isDark
                   ? [
-                      const Color(0xFF1C1F2E).withValues(alpha: 0.62),
-                      const Color(0xFF12141C).withValues(alpha: 0.48),
+                      Colors.white.withValues(alpha: 0.1),
+                      Colors.white.withValues(alpha: 0.03),
                     ]
                   : [
-                      Colors.white.withValues(alpha: 0.78),
-                      Colors.white.withValues(alpha: 0.52),
+                      Colors.white.withValues(alpha: 0.72),
+                      Colors.white.withValues(alpha: 0.42),
                     ],
             ),
           ),

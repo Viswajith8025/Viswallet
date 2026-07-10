@@ -2,14 +2,11 @@ import 'package:rupee_track/features/custom_dashboard/domain/dashboard_layout_mo
 
 abstract final class DashboardTemplates {
   static DashboardLayoutConfig defaults() => DashboardLayoutConfig(
+        quickActionsPinned: true,
         widgets: [
           DashboardWidgetInstance.create(DashboardWidgetType.cycleHeader),
           DashboardWidgetInstance.create(DashboardWidgetType.currentBalance),
           DashboardWidgetInstance.create(DashboardWidgetType.safeDailySpend),
-          DashboardWidgetInstance.create(DashboardWidgetType.financialHealth),
-          DashboardWidgetInstance.create(DashboardWidgetType.monthlyReport),
-          DashboardWidgetInstance.create(DashboardWidgetType.calendar),
-          DashboardWidgetInstance.create(DashboardWidgetType.budgetAlerts),
           DashboardWidgetInstance.create(DashboardWidgetType.summaryGrid),
           DashboardWidgetInstance.create(DashboardWidgetType.budgetProgress),
           DashboardWidgetInstance.create(DashboardWidgetType.expenseCategories),
@@ -17,6 +14,23 @@ abstract final class DashboardTemplates {
           DashboardWidgetInstance.create(DashboardWidgetType.subscriptions),
         ],
       );
+
+  /// Upgrade the stripped 2-widget home back to the full default set.
+  static bool shouldUpgradeFromSlimHome(DashboardLayoutConfig config) {
+    final visible = config.visibleWidgets.map((w) => w.type).toList();
+    return visible.length <= 2 &&
+        visible.contains(DashboardWidgetType.calendar) &&
+        visible.contains(DashboardWidgetType.summaryGrid);
+  }
+
+  /// Upgrade the old 14-widget default to the leaner current default.
+  static bool shouldUpgradeFromBloatedDefault(DashboardLayoutConfig config) {
+    final visible = config.visibleWidgets.map((w) => w.type).toSet();
+    return visible.contains(DashboardWidgetType.insightsFeed) &&
+        visible.contains(DashboardWidgetType.monthlyReport) &&
+        visible.contains(DashboardWidgetType.financialHealth) &&
+        visible.length >= 12;
+  }
 
   static DashboardLayoutConfig minimal() => DashboardLayoutConfig(
         theme: DashboardThemePreset.minimal,

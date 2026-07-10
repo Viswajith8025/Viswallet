@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:rupee_track/core/design_system/design_tokens.dart';
+import 'package:rupee_track/core/router/routes.dart';
 import 'package:rupee_track/core/design_system/premium_card.dart';
 import 'package:rupee_track/core/design_system/premium_confirm_dialog.dart';
 import 'package:rupee_track/core/design_system/premium_list_tile.dart';
@@ -76,7 +78,7 @@ class _AppManagementSettingsCardState
           ),
           const SizedBox(height: AppSpacing.xs),
           Text(
-            'Export, backup, or reset local data on this device. Your sign-in is not removed.',
+            'Export, backup to your account, or factory reset. Updates and reinstalls keep your data unless you reset here.',
             style: theme.textTheme.bodySmall?.copyWith(
               color: theme.colorScheme.onSurfaceVariant,
               height: 1.45,
@@ -86,7 +88,7 @@ class _AppManagementSettingsCardState
           _ActionTile(
             icon: Icons.upload_file_rounded,
             title: 'Export data',
-            subtitle: 'Save a JSON backup to share or store',
+            subtitle: 'Full JSON backup — same data as cloud sync',
             enabled: !_busy,
             onTap: () async {
               setState(() => _busy = true);
@@ -147,14 +149,17 @@ class _AppManagementSettingsCardState
           ),
           _ActionTile(
             icon: Icons.delete_forever_rounded,
-            title: 'Reset all local data',
-            subtitle: 'Erase expenses, budgets, salary & more — keeps your account',
+            title: 'Factory reset',
+            subtitle: 'Erase all data on this device and in your cloud backup',
             enabled: !_busy,
             destructive: true,
             onTap: () => _run(
-              'Reset local data',
-              'This deletes all finance data on this device — expenses, salary, budgets, goals, subscriptions, and loans.\n\nYour Viswallet sign-in and cloud profile stay intact. Export a backup first if you need your data.',
-              service.factoryReset,
+              'Factory reset',
+              'This permanently deletes all finance data — on this phone and in your account backup.\n\nExpenses, salary, budgets, goals, subscriptions, and loans will be gone. Your sign-in stays, but data will not come back unless you exported a file first.\n\nUninstalling or updating the app does not do this.',
+              () async {
+                await service.factoryReset();
+                if (context.mounted) context.go(AppRoutes.onboarding);
+              },
             ),
           ),
         ],

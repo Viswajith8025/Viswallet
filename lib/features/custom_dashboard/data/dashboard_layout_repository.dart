@@ -1,4 +1,5 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:rupee_track/features/cloud_backup/data/cloud_backup_coordinator.dart';
 import 'package:rupee_track/features/custom_dashboard/data/dashboard_layout_store.dart';
 import 'package:rupee_track/features/custom_dashboard/domain/dashboard_layout_models.dart';
 import 'package:rupee_track/features/custom_dashboard/domain/dashboard_templates.dart';
@@ -22,12 +23,21 @@ class DashboardLayoutNotifier extends StateNotifier<DashboardLayoutConfig> {
   final Ref _ref;
 
   Future<void> _load() async {
-    final stored = await _ref.read(dashboardLayoutStoreProvider).load();
+    var stored = await _ref.read(dashboardLayoutStoreProvider).load();
+    if (stored != null && DashboardTemplates.shouldUpgradeFromSlimHome(stored)) {
+      stored = DashboardTemplates.defaults();
+      await _ref.read(dashboardLayoutStoreProvider).save(stored);
+    }
+    if (stored != null && DashboardTemplates.shouldUpgradeFromBloatedDefault(stored)) {
+      stored = DashboardTemplates.defaults();
+      await _ref.read(dashboardLayoutStoreProvider).save(stored);
+    }
     if (stored != null && mounted) state = stored;
   }
 
   Future<void> _persist() async {
     await _ref.read(dashboardLayoutStoreProvider).save(state);
+    _ref.read(cloudBackupCoordinatorProvider).schedulePush();
   }
 
   void setLayoutMode(DashboardLayoutMode mode) {

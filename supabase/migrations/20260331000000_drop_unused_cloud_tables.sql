@@ -2,16 +2,31 @@
 -- The Flutter app stores expenses, budgets, loans, etc. in local SQLite (Drift).
 -- Supabase is used today only for Auth + profiles (password hint, connection check).
 
--- Drop updated_at triggers on tables we are removing.
-drop trigger if exists user_settings_updated_at on public.user_settings;
-drop trigger if exists income_sources_updated_at on public.income_sources;
-drop trigger if exists monthly_salaries_updated_at on public.monthly_salaries;
-drop trigger if exists categories_updated_at on public.categories;
-drop trigger if exists expenses_updated_at on public.expenses;
-drop trigger if exists subscriptions_updated_at on public.subscriptions;
-drop trigger if exists loans_updated_at on public.loans;
-drop trigger if exists budget_plans_updated_at on public.budget_plans;
-drop trigger if exists savings_goals_updated_at on public.savings_goals;
+-- Drop updated_at triggers only when the legacy tables still exist.
+do $$
+declare
+  t record;
+begin
+  for t in
+    select *
+    from (values
+      ('public.user_settings', 'user_settings_updated_at'),
+      ('public.income_sources', 'income_sources_updated_at'),
+      ('public.monthly_salaries', 'monthly_salaries_updated_at'),
+      ('public.categories', 'categories_updated_at'),
+      ('public.expenses', 'expenses_updated_at'),
+      ('public.subscriptions', 'subscriptions_updated_at'),
+      ('public.loans', 'loans_updated_at'),
+      ('public.budget_plans', 'budget_plans_updated_at'),
+      ('public.savings_goals', 'savings_goals_updated_at')
+    ) as v(tbl, trg)
+  loop
+    if to_regclass(t.tbl) is not null then
+      execute format('drop trigger if exists %I on %s', t.trg, t.tbl);
+    end if;
+  end loop;
+end;
+$$;
 
 -- Child tables first, then parents.
 drop table if exists public.activity_log cascade;

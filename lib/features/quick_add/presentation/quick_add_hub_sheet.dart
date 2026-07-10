@@ -8,6 +8,7 @@ import 'package:rupee_track/core/utils/category_icon_utils.dart';
 import 'package:rupee_track/core/utils/money_utils.dart';
 import 'package:rupee_track/features/expenses/data/expense_repository.dart';
 import 'package:rupee_track/features/expenses/domain/expense_save_result.dart';
+import 'package:rupee_track/features/expenses/presentation/widgets/expense_date_picker_row.dart';
 import 'package:rupee_track/features/quick_add/data/quick_add_repository.dart';
 import 'package:rupee_track/features/quick_add/domain/quick_add_models.dart';
 import 'package:rupee_track/features/quick_add/presentation/widgets/quick_add_calculator_pad.dart';
@@ -39,6 +40,7 @@ class _QuickAddHubSheetState extends ConsumerState<QuickAddHubSheet> {
   final _labelController = TextEditingController();
   final _labelSectionKey = GlobalKey();
   String? _note;
+  DateTime _expenseDate = DateTime.now();
   bool _showCalculator = false;
   bool _saving = false;
 
@@ -101,6 +103,7 @@ class _QuickAddHubSheetState extends ConsumerState<QuickAddHubSheet> {
         title: title,
         notes: _note,
         rememberLabel: label.isEmpty,
+        occurredAt: _expenseDate,
       );
       ref.invalidate(quickAddContextProvider);
       if (!mounted) return;
@@ -275,6 +278,11 @@ class _QuickAddHubSheetState extends ConsumerState<QuickAddHubSheet> {
                   onToggleCalculator: () =>
                       setState(() => _showCalculator = !_showCalculator),
                   showCalculator: _showCalculator,
+                ),
+                const SizedBox(height: 12),
+                ExpenseDatePickerRow(
+                  date: _expenseDate,
+                  onDateChanged: (d) => setState(() => _expenseDate = d),
                 ),
                 const SizedBox(height: 12),
                 contextAsync.when(

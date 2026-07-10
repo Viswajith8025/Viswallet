@@ -41,11 +41,11 @@ abstract final class HelpFaqData {
     HelpFaqEntry(
       category: 'Getting started',
       icon: Icons.person_add_outlined,
-      question: 'I skipped salary during setup — where do I add it now?',
+      question: 'Where do I add my salary?',
       answer:
-          'Open Home and tap the **Salary** tile in the summary grid (it shows "Tap to add" if empty). '
-          'You can also use Home → Quick actions → **Income**, or More → Settings → Money cycle → **Monthly salary**. '
-          'A banner at the top of Home also appears until salary is set.',
+          'After you sign in, open Home and tap **Add** on the salary banner at the top, '
+          'or tap the **Salary** tile in the summary grid. '
+          'You can also use Home → Quick actions → **Income**, or More → Settings → Money cycle → **Monthly salary**.',
     ),
     HelpFaqEntry(
       category: 'Getting started',
@@ -54,14 +54,14 @@ abstract final class HelpFaqData {
       answer:
           'Your salary helps Viswallet calculate how much you can spend each day, '
           'how much you are saving, and whether you are on track. '
-          'You can skip salary during onboarding, but many features work better after you add it.',
+          'Add it from Home whenever you\'re ready — many features unlock after that.',
     ),
     HelpFaqEntry(
       category: 'Getting started',
       icon: Icons.person_add_outlined,
-      question: 'What happens after onboarding?',
+      question: 'What happens after I sign in?',
       answer:
-          'You land on Home. From there you can add expenses with the + button, '
+          'You land on Home. Add your salary when you\'re ready, then use the + button for expenses, '
           'check today\'s spending guide, open ${JithuBranding.displayName} for quick advice, '
           'and use More for budget planning, reports, and settings.',
     ),
@@ -265,8 +265,8 @@ abstract final class HelpFaqData {
       icon: Icons.settings_outlined,
       question: 'I forgot my password. What can I do?',
       answer:
-          'On the sign-in screen, enter your email and tap "Forgot password? Show hint". '
-          'If you added a hint during signup, it will appear. '
+          'After signing in, open Settings → Account → View password hint. '
+          'If you added a hint during signup, it will appear there. '
           'Viswallet does not email a reset link — the hint is what you saved yourself.',
     ),
     HelpFaqEntry(
@@ -282,8 +282,8 @@ abstract final class HelpFaqData {
       icon: Icons.settings_outlined,
       question: 'Where is my data stored?',
       answer:
-          'Your expenses and budget are saved on this phone. '
-          'Your account keeps you signed in and is ready for cloud sync when enabled.',
+          'Your expenses and budget are saved on this phone and backed up to your account when signed in. '
+          'Reinstalls and app updates restore automatically. Only Factory reset erases cloud data.',
     ),
     HelpFaqEntry(
       category: 'Account & settings',

@@ -58,16 +58,16 @@ class MoreScreen extends StatelessWidget {
               subtitle: 'Money you gave others and money you owe',
               children: [
                 PremiumMenuTile(
-                  icon: Icons.handshake_outlined,
-                  title: 'Loans',
-                  subtitle: 'Money you lent — mark returned to credit salary',
-                  onTap: () => context.push(AppRoutes.loans),
-                ),
-                PremiumMenuTile(
                   icon: Icons.replay_circle_filled_outlined,
                   title: 'Borrowed money',
                   subtitle: 'What you borrowed — schedule pay-back and reminders',
                   onTap: () => context.push(AppRoutes.borrowed),
+                ),
+                PremiumMenuTile(
+                  icon: Icons.handshake_outlined,
+                  title: 'Lent money',
+                  subtitle: 'Money you lent — mark returned to credit salary',
+                  onTap: () => context.push(AppRoutes.loans),
                 ),
               ],
             ),

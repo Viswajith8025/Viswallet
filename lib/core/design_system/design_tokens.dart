@@ -79,10 +79,10 @@ abstract final class AppShadows {
   static List<BoxShadow> navBar(bool isDark) => [
         BoxShadow(
           color: isDark
-              ? Colors.black.withValues(alpha: 0.55)
-              : const Color(0xFF2563EB).withValues(alpha: 0.1),
-          blurRadius: 32,
-          offset: const Offset(0, -6),
+              ? Colors.black.withValues(alpha: 0.18)
+              : const Color(0xFF2563EB).withValues(alpha: 0.05),
+          blurRadius: 16,
+          offset: const Offset(0, -2),
         ),
       ];
 

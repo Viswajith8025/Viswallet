@@ -6,7 +6,9 @@ import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
 import 'package:rupee_track/core/database/app_database.dart';
 import 'package:rupee_track/core/providers/database_provider.dart';
+import 'package:rupee_track/core/database/database_backup.dart';
 import 'package:rupee_track/core/utils/backup_sanitizer.dart';
+import 'package:rupee_track/features/cloud_backup/data/cloud_backup_coordinator.dart';
 import 'package:share_plus/share_plus.dart';
 
 final appManagementServiceProvider = Provider<AppManagementService>((ref) {
@@ -20,27 +22,21 @@ class AppManagementService {
 
   Future<AppDatabase> _db() => _ref.read(databaseProvider.future);
 
-  void _refresh() {
+  void _refresh({bool syncCloud = true}) {
     _ref.invalidate(databaseProvider);
+    if (syncCloud) {
+      _ref.read(cloudBackupCoordinatorProvider).schedulePush();
+    }
   }
 
   Future<Map<String, dynamic>> exportBackup() async {
     final db = await _db();
-    final expenses = await db.select(db.expensesTable).get();
-    final goals = await db.select(db.savingsGoalsTable).get();
-    final subs = await db.select(db.subscriptionsTable).get();
-    final loans = await db.select(db.loansTable).get();
-    final settings = await db.settingsDao.getSettings();
-
+    final payload = await DatabaseBackup.exportPayload(db);
     return BackupSanitizer.sanitizeBackup({
-      'version': 1,
+      'version': DatabaseBackup.schemaVersion,
       'exportedAt': DateTime.now().toUtc().toIso8601String(),
       'app': 'Viswallet',
-      'expenses': expenses.map((e) => e.toJson()).toList(),
-      'goals': goals.map((g) => g.toJson()).toList(),
-      'subscriptions': subs.map((s) => s.toJson()).toList(),
-      'loans': loans.map((l) => l.toJson()).toList(),
-      'settings': settings.toJson(),
+      ...payload,
     });
   }
 
@@ -111,14 +107,8 @@ class AppManagementService {
     _refresh();
   }
 
+  /// Full factory reset — only way to intentionally erase all data (device + cloud).
   Future<void> factoryReset() async {
-    final db = await _db();
-    await db.close();
-    final dir = await getApplicationDocumentsDirectory();
-    final file = File(p.join(dir.path, 'vis_wallet.sqlite'));
-    if (await file.exists()) {
-      await file.delete();
-    }
-    _refresh();
+    await _ref.read(cloudBackupCoordinatorProvider).factoryResetAllData();
   }
 }

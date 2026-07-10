@@ -5,7 +5,6 @@ import 'package:rupee_track/core/design_system/app_scroll_behavior.dart';
 import 'package:rupee_track/core/design_system/context_banner.dart';
 import 'package:rupee_track/core/design_system/design_tokens.dart';
 import 'package:rupee_track/core/router/routes.dart';
-import 'package:rupee_track/features/salary/presentation/add_extra_income_sheet.dart';
 import 'package:rupee_track/features/quick_add/presentation/quick_add_hub_sheet.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -44,28 +43,10 @@ class DashboardQuickActionsBar extends ConsumerWidget {
               onTap: () => context.push(AppRoutes.salary),
             ),
             _QuickAction(
-              icon: Icons.volunteer_activism_outlined,
-              label: 'Extra cash',
-              color: const Color(0xFF10B981),
-              onTap: () => showAddExtraIncomeSheet(context, ref),
-            ),
-            _QuickAction(
-              icon: Icons.calendar_month_outlined,
-              label: 'Calendar',
-              color: theme.colorScheme.secondary,
-              onTap: () => context.push(AppRoutes.calendar),
-            ),
-            _QuickAction(
               icon: Icons.search_rounded,
               label: 'Search',
               color: theme.colorScheme.primary,
               onTap: () => context.push(AppRoutes.search),
-            ),
-            _QuickAction(
-              icon: Icons.subscriptions_outlined,
-              label: 'Subs',
-              color: theme.colorScheme.tertiary,
-              onTap: () => context.push(AppRoutes.subscriptions),
             ),
             _QuickAction(
               icon: Icons.replay_circle_filled_outlined,
@@ -75,15 +56,9 @@ class DashboardQuickActionsBar extends ConsumerWidget {
             ),
             _QuickAction(
               icon: Icons.handshake_outlined,
-              label: 'Loans',
+              label: 'Lent',
               color: const Color(0xFFE65100),
               onTap: () => context.push(AppRoutes.loans),
-            ),
-            _QuickAction(
-              icon: Icons.flag_outlined,
-              label: 'Goals',
-              color: const Color(0xFF10B981),
-              onTap: () => context.push(AppRoutes.savingsForecast),
             ),
           ],
         ),

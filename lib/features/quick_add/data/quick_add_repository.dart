@@ -86,6 +86,7 @@ class QuickAddRepository {
     String? notes,
     List<String> tags = const [],
     bool rememberLabel = true,
+    DateTime? occurredAt,
   }) async {
     final result = await _ref.read(expenseRepositoryProvider).addExpense(
           amountPaise: amountPaise,
@@ -94,6 +95,7 @@ class QuickAddRepository {
           paymentMethod: paymentMethod,
           notes: notes,
           tags: tags,
+          occurredAt: occurredAt,
         );
     if (rememberLabel) {
       await _ref.read(quickAddStoreProvider).recordMerchant(title);

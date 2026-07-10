@@ -27,8 +27,8 @@ class PaybackHomePanel extends ConsumerWidget {
       data: (items) {
         return Padding(
           padding: const EdgeInsets.only(
-            top: AppSpacing.lg,
-            bottom: AppSpacing.md,
+            top: AppSpacing.sm,
+            bottom: AppSpacing.sm,
           ),
           child: PremiumCard(
             variant: PremiumCardVariant.elevated,

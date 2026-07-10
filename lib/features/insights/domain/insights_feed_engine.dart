@@ -77,7 +77,7 @@ abstract final class InsightsFeedEngine {
                 ? 'You spent ${formatPaise(-delta)} less than last cycle.'
                 : 'You spent ${formatPaise(delta)} more than last cycle.',
             metricValue: formatPaise(t.current.totalSpentPaise),
-            actionRoute: AppRoutes.insights,
+            actionRoute: null,
             rankScore: less ? 72 : 78,
             source: 'trends',
           ),
@@ -661,22 +661,6 @@ abstract final class InsightsFeedEngine {
   static List<InsightFeedItem> _fromBehavioral(InsightsFeedInput input) {
     final items = <InsightFeedItem>[];
 
-    if (input.expenseTrackingStreakDays >= 7) {
-      items.add(
-        InsightFeedItem(
-          id: 'tracking-streak',
-          category: InsightCategory.behavioral,
-          kind: InsightKind.achievement,
-          severity: InsightSeverity.achievement,
-          title: 'Tracking streak',
-          body:
-              'You logged expenses ${input.expenseTrackingStreakDays} days in a row — great discipline.',
-          rankScore: 67,
-          source: 'behavioral',
-        ),
-      );
-    }
-
     if (input.trends.repeatedExpenses.isNotEmpty) {
       final top = input.trends.repeatedExpenses.first;
       items.add(
@@ -753,6 +737,23 @@ abstract final class InsightsFeedEngine {
           title: 'Savings Master',
           body: "You're saving ${rate.round()}% of income — excellent habit.",
           rankScore: 74,
+          source: 'achievements',
+        ),
+      );
+    }
+
+    if (input.expenseTrackingStreakDays >= 7 &&
+        input.expenseTrackingStreakDays < 30) {
+      achievements.add(
+        InsightFeedItem(
+          id: 'achievement-streak-7',
+          category: InsightCategory.achievement,
+          kind: InsightKind.achievement,
+          severity: InsightSeverity.achievement,
+          title: '7-Day Tracking Streak',
+          body:
+              'You logged expenses ${input.expenseTrackingStreakDays} days in a row — keep it up.',
+          rankScore: 68,
           source: 'achievements',
         ),
       );

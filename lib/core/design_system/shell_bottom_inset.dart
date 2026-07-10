@@ -7,14 +7,12 @@ abstract final class ShellBottomInset {
   static const fabSize = 56.0;
   static const fabMargin = AppSpacing.md;
 
-  /// Floating [PremiumBottomNav] height (margin + chrome, excluding gesture inset).
+  /// Floating [PremiumBottomNav] height (chrome only, safe area added separately).
   static double navBarHeight(BuildContext context) {
     final compact = AppResponsive.useCompactNav(context);
-    const outerMargin = AppSpacing.md;
     const innerPadding = AppSpacing.xs * 2;
-    // Icon + label nav is taller than icon-only compact mode.
-    final itemHeight = compact ? 48.0 : 64.0;
-    return outerMargin + innerPadding + itemHeight;
+    final itemHeight = compact ? 44.0 : 60.0;
+    return innerPadding + itemHeight;
   }
 
   /// Height to keep scrollable content clear of [PremiumBottomNav].

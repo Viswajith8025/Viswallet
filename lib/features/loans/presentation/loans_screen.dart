@@ -25,13 +25,13 @@ class LoansScreen extends ConsumerWidget {
 
     return Scaffold(
       appBar: const PremiumAppBar(
-        title: 'Loans',
+        title: 'Lent money',
         subtitle: 'Money you gave to others',
       ),
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () => showAddLoanSheet(context, ref),
         icon: const Icon(Icons.add),
-        label: const Text('Add loan'),
+        label: const Text('Record lending'),
       ),
       body: ResponsiveBody(
         child: loansAsync.when(
@@ -45,7 +45,7 @@ class LoansScreen extends ConsumerWidget {
             itemBuilder: (_, __) => const SkeletonCard(height: 88),
           ),
           error: (e, _) => ErrorState(
-            message: 'We couldn\'t load your loans.',
+            message: 'We couldn\'t load your lent money.',
             onRetry: () => ref.invalidate(activeLentLoansProvider),
           ),
           data: (loans) {

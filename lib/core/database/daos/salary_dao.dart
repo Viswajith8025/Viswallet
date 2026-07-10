@@ -107,9 +107,7 @@ class SalaryDao extends DatabaseAccessor<AppDatabase> with _$SalaryDaoMixin {
   }
 
   Stream<SalaryBreakdown> watchBreakdownForMonth(String monthKey) {
-    late StreamSubscription<MonthlySalaryTableData?> subSalary;
-    late StreamSubscription<List<SalaryDeductionsTableData>> subDeductions;
-    late StreamSubscription<List<CycleExtraIncomeTableData>> subExtra;
+    final subscriptions = <StreamSubscription<dynamic>>[];
     final controller = StreamController<SalaryBreakdown>();
 
     Future<void> emit() async {
@@ -119,16 +117,16 @@ class SalaryDao extends DatabaseAccessor<AppDatabase> with _$SalaryDaoMixin {
 
     controller.onListen = () {
       emit();
-      subSalary = watchSalaryForMonth(monthKey).listen((_) => emit());
-      subDeductions =
-          watchDeductionsForMonth(monthKey).listen((_) => emit());
-      subExtra = watchExtraIncomeForMonth(monthKey).listen((_) => emit());
+      subscriptions.add(watchSalaryForMonth(monthKey).listen((_) => emit()));
+      subscriptions.add(watchDeductionsForMonth(monthKey).listen((_) => emit()));
+      subscriptions.add(watchExtraIncomeForMonth(monthKey).listen((_) => emit()));
     };
 
     controller.onCancel = () async {
-      await subSalary.cancel();
-      await subDeductions.cancel();
-      await subExtra.cancel();
+      for (final subscription in subscriptions) {
+        await subscription.cancel();
+      }
+      subscriptions.clear();
     };
 
     return controller.stream;

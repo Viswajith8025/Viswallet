@@ -218,7 +218,7 @@ abstract final class DashboardWidgetCatalog {
         DashboardWidgetType.monthlyReport => 'AI monthly review',
         DashboardWidgetType.calendar => 'Financial calendar',
         DashboardWidgetType.subscriptions => 'Subscriptions',
-        DashboardWidgetType.loanSummary => 'Loan summary',
+        DashboardWidgetType.loanSummary => 'Borrow & lend',
         DashboardWidgetType.savingsForecast => 'Savings forecast',
         DashboardWidgetType.insightsFeed => 'Insights feed',
         DashboardWidgetType.quickActions => 'Quick actions',

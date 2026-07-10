@@ -3,17 +3,13 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:rupee_track/core/design_system/design_tokens.dart';
 import 'package:rupee_track/core/design_system/responsive.dart';
 import 'package:rupee_track/core/design_system/shell_bottom_inset.dart';
-import 'package:rupee_track/core/design_system/skeleton_loader.dart';
 import 'package:rupee_track/core/providers/salary_cycle_provider.dart';
-import 'package:rupee_track/core/widgets/error_state.dart';
 import 'package:rupee_track/features/custom_dashboard/data/dashboard_layout_repository.dart';
 import 'package:rupee_track/features/custom_dashboard/domain/dashboard_layout_models.dart';
 import 'package:rupee_track/features/custom_dashboard/presentation/widgets/dashboard_quick_actions_bar.dart';
 import 'package:rupee_track/features/custom_dashboard/presentation/widgets/dashboard_widget_shell.dart';
 import 'package:rupee_track/features/dashboard/data/dashboard_repository.dart';
 import 'package:rupee_track/features/safe_spend/data/safe_spend_repository.dart';
-import 'package:rupee_track/features/loans/presentation/widgets/payback_home_panel.dart';
-
 class DashboardCanvas extends ConsumerWidget {
   const DashboardCanvas({super.key});
 
@@ -22,52 +18,41 @@ class DashboardCanvas extends ConsumerWidget {
     final layout = ref.watch(dashboardLayoutProvider);
     final editMode = ref.watch(dashboardEditModeProvider);
     final cycleKey = ref.watch(selectedCycleKeyProvider);
-    final summaryAsync = ref.watch(monthlySummaryProvider(cycleKey));
+    final visible = layout.visibleWidgets;
+    final useTwoColumn = _useTwoColumn(context, layout.layoutMode);
 
-    return summaryAsync.when(
-      loading: () => const DashboardSkeleton(),
-      error: (e, _) => ErrorState(
-        message: "We couldn't load your dashboard.",
-        onRetry: () => ref.invalidate(monthlySummaryProvider(cycleKey)),
-      ),
-      data: (_) {
-        final visible = layout.visibleWidgets;
-        final useTwoColumn = _useTwoColumn(context, layout.layoutMode);
-
-        if (editMode) {
-          return Column(
-            children: [
-              const _EditModeBanner(),
-              Expanded(
-                child: RefreshIndicator(
-                  onRefresh: () => _refresh(ref, cycleKey),
-                  child: _ReorderableList(
-                    visible: visible,
-                    layout: layout,
-                    editMode: true,
-                    showQuickActions: layout.quickActionsPinned,
-                  ),
-                ),
+    if (editMode) {
+      return Column(
+        children: [
+          const _EditModeBanner(),
+          Expanded(
+            child: RefreshIndicator(
+              onRefresh: () => _refresh(ref, cycleKey),
+              child: _ReorderableList(
+                visible: visible,
+                layout: layout,
+                editMode: true,
+                showQuickActions: layout.quickActionsPinned,
               ),
-            ],
-          );
-        }
+            ),
+          ),
+        ],
+      );
+    }
 
-        return RefreshIndicator(
-          onRefresh: () => _refresh(ref, cycleKey),
-          child: useTwoColumn
-              ? _TwoColumnBody(
-                  visible: visible,
-                  layout: layout,
-                  showQuickActions: layout.quickActionsPinned,
-                )
-              : _SingleColumnBody(
-                  visible: visible,
-                  layout: layout,
-                  showQuickActions: layout.quickActionsPinned,
-                ),
-        );
-      },
+    return RefreshIndicator(
+      onRefresh: () => _refresh(ref, cycleKey),
+      child: useTwoColumn
+          ? _TwoColumnBody(
+              visible: visible,
+              layout: layout,
+              showQuickActions: layout.quickActionsPinned,
+            )
+          : _SingleColumnBody(
+              visible: visible,
+              layout: layout,
+              showQuickActions: layout.quickActionsPinned,
+            ),
     );
   }
 
@@ -162,7 +147,6 @@ class _SingleColumnBody extends ConsumerWidget {
               density: layout.density,
             ),
           ),
-          if (!editMode) const PaybackHomePanel(),
         ],
       ),
     );
@@ -221,7 +205,6 @@ class _TwoColumnBody extends ConsumerWidget {
               ),
             );
           }),
-          if (!editMode) const PaybackHomePanel(),
         ],
       ),
     );

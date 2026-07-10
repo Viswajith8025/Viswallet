@@ -1,5 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:rupee_track/core/database/app_database.dart';
+import 'package:rupee_track/core/database/reactive_db_stream.dart';
 import 'package:rupee_track/core/providers/database_provider.dart';
 import 'package:rupee_track/core/salary_cycle/salary_cycle_engine.dart';
 import 'package:rupee_track/core/utils/date_utils.dart';
@@ -31,21 +32,26 @@ class SafeSpendRepository {
 
   Stream<SafeSpendSnapshot> watchSafeSpend(String cycleKey) async* {
     final db = await _ref.read(databaseProvider.future);
+    yield* mergeReactiveStreams(
+      () => _loadSafeSpend(db, cycleKey),
+      [
+        db.salaryDao.watchBreakdownForMonth(cycleKey),
+        db.expensesDao.watchExpensesForMonth(cycleKey),
+      ],
+    );
+  }
+
+  Future<SafeSpendSnapshot> _loadSafeSpend(AppDatabase db, String cycleKey) async {
     final settings = await db.settingsDao.getSettings();
     final salaryDay = settings.salaryDay;
-
-    await for (final breakdown
-        in db.salaryDao.watchBreakdownForMonth(cycleKey)) {
-      await for (final _ in db.expensesDao.watchExpensesForMonth(cycleKey)) {
-        yield await _compute(
-          db: db,
-          cycleKey: cycleKey,
-          salaryDay: salaryDay,
-          salaryPaise: breakdown.netPaise,
-          extraIncomePaise: breakdown.extraIncomePaise,
-        );
-      }
-    }
+    final breakdown = await db.salaryDao.getBreakdownForMonth(cycleKey);
+    return _compute(
+      db: db,
+      cycleKey: cycleKey,
+      salaryDay: salaryDay,
+      salaryPaise: breakdown.netPaise,
+      extraIncomePaise: breakdown.extraIncomePaise,
+    );
   }
 
   Future<SafeSpendSnapshot> _compute({

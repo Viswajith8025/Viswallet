@@ -73,10 +73,10 @@ class _AddLoanSheetState extends ConsumerState<_AddLoanSheet> {
       if (!mounted) return;
       Navigator.pop(context);
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Loan added · ${formatPaise(amount)}')),
+        SnackBar(content: Text('Lent money recorded · ${formatPaise(amount)}')),
       );
     } catch (e) {
-      _showError('Could not save this loan. Please try again.');
+      _showError('Could not save this lending. Please try again.');
     } finally {
       if (mounted) setState(() => _saving = false);
     }
@@ -94,7 +94,7 @@ class _AddLoanSheetState extends ConsumerState<_AddLoanSheet> {
       padding: AppResponsive.screenPadding(context, bottom: AppSpacing.xl),
       children: [
         Text(
-          'Add a loan',
+          'Record lent money',
           style: theme.textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w700),
         ),
         const SizedBox(height: AppSpacing.xs),

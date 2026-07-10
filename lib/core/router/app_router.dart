@@ -33,6 +33,7 @@ import 'package:rupee_track/features/activity_history/presentation/recycle_bin_s
 import 'package:rupee_track/features/expense_heatmap/presentation/expense_heatmap_screen.dart';
 import 'package:rupee_track/features/savings_forecast/presentation/savings_forecast_screen.dart';
 import 'package:rupee_track/features/financial_calendar/presentation/financial_calendar_screen.dart';
+import 'package:rupee_track/features/cloud_backup/presentation/cloud_backup_listener.dart';
 import 'package:rupee_track/features/home_widget/presentation/widget_launch_handler.dart';
 
 final _rootNavigatorKey = GlobalKey<NavigatorState>();
@@ -49,14 +50,18 @@ final appRouterProvider = Provider<GoRouter>((ref) {
     routes: [
       GoRoute(
         path: AppRoutes.onboarding,
-        builder: (context, state) => const OnboardingScreen(),
+        builder: (context, state) => const CloudBackupListener(
+          child: OnboardingScreen(),
+        ),
       ),
       ShellRoute(
         navigatorKey: _shellNavigatorKey,
-        builder: (context, state, child) => WidgetLaunchHandler(
-          child: MonthlyReportListener(
-            child: BudgetAlertsListener(
-              child: MainShell(child: child),
+        builder: (context, state, child) => CloudBackupListener(
+          child: WidgetLaunchHandler(
+            child: MonthlyReportListener(
+              child: BudgetAlertsListener(
+                child: MainShell(child: child),
+              ),
             ),
           ),
         ),

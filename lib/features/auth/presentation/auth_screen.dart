@@ -189,8 +189,8 @@ class AuthScreen extends HookConsumerWidget {
           if (!isSignUp.value) ...[
             const SizedBox(height: AppSpacing.sm),
             Text(
-              'Forgot your password? Use the hint you saved when you signed up — '
-              'you can view it in Settings after signing in.',
+              'Forgot your password? After signing in, open Settings → Account → '
+              'View password hint.',
               style: theme.textTheme.bodySmall?.copyWith(
                 color: theme.colorScheme.onSurfaceVariant,
                 height: 1.45,

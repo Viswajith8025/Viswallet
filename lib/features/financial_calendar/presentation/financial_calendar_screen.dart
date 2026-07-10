@@ -307,8 +307,13 @@ class _QuickLinks extends StatelessWidget {
           onPressed: () => context.push(AppRoutes.subscriptions),
         ),
         ActionChip(
+          avatar: const Icon(Icons.replay_circle_filled_outlined, size: 18),
+          label: const Text('Borrowed'),
+          onPressed: () => context.push(AppRoutes.borrowed),
+        ),
+        ActionChip(
           avatar: const Icon(Icons.handshake_outlined, size: 18),
-          label: const Text('Loans'),
+          label: const Text('Lent'),
           onPressed: () => context.push(AppRoutes.loans),
         ),
         ActionChip(

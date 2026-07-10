@@ -5,7 +5,7 @@ import 'package:rupee_track/core/design_system/premium_card.dart';
 import 'package:rupee_track/features/insights/domain/insights_feed_models.dart';
 import 'package:rupee_track/features/insights/presentation/insight_navigation.dart';
 
-class InsightFeedCard extends StatefulWidget {
+class InsightFeedCard extends StatelessWidget {
   const InsightFeedCard({
     required this.item,
     super.key,
@@ -24,31 +24,21 @@ class InsightFeedCard extends StatefulWidget {
   final bool isPinned;
 
   @override
-  State<InsightFeedCard> createState() => _InsightFeedCardState();
-}
-
-class _InsightFeedCardState extends State<InsightFeedCard> {
-  bool _expanded = false;
-
-  @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final item = widget.item;
     final accent = _severityColor(item.severity, theme.colorScheme);
     final icon = item.icon ?? iconForInsightCategory(item.category);
     final categoryLabel = labelForInsightCategory(item.category);
 
     final card = PremiumCard(
-      variant: widget.featured
+      variant: featured
           ? PremiumCardVariant.elevated
           : PremiumCardVariant.standard,
       accentColor: accent,
-      tintColor: widget.featured ? accent : null,
-      onTap: widget.compact
-          ? (item.actionRoute != null
-              ? () => navigateToInsightAction(context, item)
-              : null)
-          : () => setState(() => _expanded = !_expanded),
+      tintColor: featured ? accent : null,
+      onTap: compact && item.actionRoute != null
+          ? () => navigateToInsightAction(context, item)
+          : null,
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -100,27 +90,27 @@ class _InsightFeedCardState extends State<InsightFeedCard> {
                         ),
                       ),
                     ),
-                    if (!widget.compact && widget.onPin != null)
+                    if (!compact && onPin != null)
                       IconButton(
-                        tooltip: widget.isPinned ? 'Unpin' : 'Pin',
+                        tooltip: isPinned ? 'Unpin' : 'Pin',
                         visualDensity: VisualDensity.compact,
                         padding: EdgeInsets.zero,
                         constraints: const BoxConstraints(
                           minWidth: 32,
                           minHeight: 32,
                         ),
-                        onPressed: widget.onPin,
+                        onPressed: onPin,
                         icon: Icon(
-                          widget.isPinned
+                          isPinned
                               ? Icons.push_pin_rounded
                               : Icons.push_pin_outlined,
                           size: 18,
-                          color: widget.isPinned
+                          color: isPinned
                               ? theme.colorScheme.primary
                               : theme.colorScheme.onSurfaceVariant,
                         ),
                       ),
-                    if (!widget.compact && widget.onDismiss != null)
+                    if (!compact && onDismiss != null)
                       IconButton(
                         tooltip: 'Dismiss',
                         visualDensity: VisualDensity.compact,
@@ -129,7 +119,7 @@ class _InsightFeedCardState extends State<InsightFeedCard> {
                           minWidth: 32,
                           minHeight: 32,
                         ),
-                        onPressed: widget.onDismiss,
+                        onPressed: onDismiss,
                         icon: Icon(
                           Icons.close_rounded,
                           size: 18,
@@ -145,14 +135,10 @@ class _InsightFeedCardState extends State<InsightFeedCard> {
                     height: 1.45,
                     color: theme.colorScheme.onSurfaceVariant,
                   ),
-                  maxLines: widget.compact || !_expanded ? 2 : null,
-                  overflow: widget.compact || !_expanded
-                      ? TextOverflow.ellipsis
-                      : null,
+                  maxLines: compact ? 2 : null,
+                  overflow: compact ? TextOverflow.ellipsis : null,
                 ),
-                if (!widget.compact &&
-                    _expanded &&
-                    item.metricValue != null) ...[
+                if (!compact && item.metricValue != null) ...[
                   const SizedBox(height: AppSpacing.sm),
                   Text(
                     '${item.metricLabel ?? 'Metric'}: ${item.metricValue}',
@@ -162,9 +148,7 @@ class _InsightFeedCardState extends State<InsightFeedCard> {
                     ),
                   ),
                 ],
-                if (!widget.compact &&
-                    _expanded &&
-                    item.actionRoute != null) ...[
+                if (!compact && item.actionRoute != null) ...[
                   const SizedBox(height: AppSpacing.sm),
                   FilledButton.tonal(
                     onPressed: () => navigateToInsightAction(context, item),
@@ -174,11 +158,6 @@ class _InsightFeedCardState extends State<InsightFeedCard> {
               ],
             ),
           ),
-          if (!widget.compact)
-            Icon(
-              _expanded ? Icons.expand_less_rounded : Icons.expand_more_rounded,
-              color: theme.colorScheme.onSurfaceVariant,
-            ),
         ],
       ),
     );

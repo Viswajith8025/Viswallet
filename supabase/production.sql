@@ -11,13 +11,14 @@
 --   • public.profiles SELECT (health check)   (checkConnection → select id limit 1)
 --   • RPC get_password_hint(p_email)          (Settings → View password hint)
 --   • Sign-up metadata → profiles row       (display_name, password_hint via trigger)
+--   • public.user_data_backups UPSERT/SELECT  (cloud restore after reinstall)
 --
--- NOT stored in Supabase (local Drift/SQLite on device — app_database.dart):
+-- NOT stored in Supabase (local Drift/SQLite on device — mirrored to user_data_backups):
 --   app_settings, monthly_salary, categories, expenses, subscriptions,
 --   subscription_payments, loans, loan_payments, budget_plans, budget_buckets,
 --   income_sources, savings_goals, tagging_rules, activity_log
 --
--- RESULT: 1 public table (profiles) + 3 functions + 2 triggers + RLS policies
+-- RESULT: 2 public tables (profiles, user_data_backups) + 3 functions + 2 triggers + RLS
 --
 -- AFTER RUNNING (Dashboard checklist):
 --   1. Authentication → Providers → Email → ON, Allow signups → ON
@@ -78,10 +79,26 @@ alter table public.profiles
   add column if not exists updated_at timestamptz not null default now();
 
 comment on table public.profiles is
-  'Viswallet cloud profile per auth.users row. Finance data stays on-device (SQLite).';
+  'Viswallet cloud profile per auth.users row.';
 
 comment on column public.profiles.password_hint is
   'Optional sign-up hint; readable only via get_password_hint() RPC when authenticated.';
+
+-- -----------------------------------------------------------------------------
+-- 1b. ACCOUNT DATA BACKUP (restore after reinstall)
+-- -----------------------------------------------------------------------------
+create table if not exists public.user_data_backups (
+  user_id uuid primary key references auth.users (id) on delete cascade,
+  payload jsonb not null,
+  schema_version int not null default 1,
+  updated_at timestamptz not null default now()
+);
+
+comment on table public.user_data_backups is
+  'JSON snapshot of on-device SQLite data, keyed by auth user.';
+
+create index if not exists user_data_backups_updated_at_idx
+  on public.user_data_backups (updated_at desc);
 
 -- -----------------------------------------------------------------------------
 -- 2. HELPER FUNCTIONS
@@ -205,6 +222,37 @@ create policy "Users update own profile"
 -- Inserts are performed only by handle_new_user() (security definer trigger).
 -- No direct INSERT policy for clients — prevents spoofed profile rows.
 
+alter table public.user_data_backups enable row level security;
+
+drop policy if exists "Users read own backup" on public.user_data_backups;
+create policy "Users read own backup"
+  on public.user_data_backups
+  for select
+  to authenticated
+  using (auth.uid() = user_id);
+
+drop policy if exists "Users insert own backup" on public.user_data_backups;
+create policy "Users insert own backup"
+  on public.user_data_backups
+  for insert
+  to authenticated
+  with check (auth.uid() = user_id);
+
+drop policy if exists "Users update own backup" on public.user_data_backups;
+create policy "Users update own backup"
+  on public.user_data_backups
+  for update
+  to authenticated
+  using (auth.uid() = user_id)
+  with check (auth.uid() = user_id);
+
+drop policy if exists "Users delete own backup" on public.user_data_backups;
+create policy "Users delete own backup"
+  on public.user_data_backups
+  for delete
+  to authenticated
+  using (auth.uid() = user_id);
+
 -- -----------------------------------------------------------------------------
 -- 5. DONE — verify (optional; uncomment to run)
 -- -----------------------------------------------------------------------------
@@ -212,7 +260,7 @@ create policy "Users update own profile"
 -- from information_schema.tables
 -- where table_schema = 'public'
 -- order by table_name;
--- Expected: profiles
+-- Expected: profiles, user_data_backups
 
 -- select column_name, data_type, is_nullable
 -- from information_schema.columns

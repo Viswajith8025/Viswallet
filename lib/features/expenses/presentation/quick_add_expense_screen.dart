@@ -10,6 +10,7 @@ import 'package:rupee_track/core/utils/money_utils.dart';
 import 'package:rupee_track/core/widgets/error_state.dart';
 import 'package:rupee_track/core/widgets/theme_toggle_button.dart';
 import 'package:rupee_track/features/expenses/data/expense_repository.dart';
+import 'package:rupee_track/features/expenses/presentation/widgets/expense_date_picker_row.dart';
 import 'package:rupee_track/features/smart_tagging/data/tagging_repository.dart';
 import 'package:rupee_track/features/smart_tagging/presentation/widgets/smart_tagging_widgets.dart';
 
@@ -24,6 +25,7 @@ class QuickAddExpenseScreen extends HookConsumerWidget {
     final paymentMethod = useState(paymentMethods.first);
     final isSaving = useState(false);
     final showDetails = useState(false);
+    final expenseDate = useState(DateTime.now());
     final labelSectionKey = useMemoized(() => GlobalKey());
     final labelFocusNode = useFocusNode();
 
@@ -97,6 +99,11 @@ class QuickAddExpenseScreen extends HookConsumerWidget {
                     hintText: '0',
                     border: InputBorder.none,
                   ),
+                ),
+                const SizedBox(height: 16),
+                ExpenseDatePickerRow(
+                  date: expenseDate.value,
+                  onDateChanged: (d) => expenseDate.value = d,
                 ),
                 const SizedBox(height: 16),
                 Text(
@@ -200,6 +207,7 @@ class QuickAddExpenseScreen extends HookConsumerWidget {
                                   title: expenseTitle,
                                   paymentMethod: paymentMethod.value,
                                   tags: const [],
+                                  occurredAt: expenseDate.value,
                                 );
                             if (context.mounted) {
                               context.pop();

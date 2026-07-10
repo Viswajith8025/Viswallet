@@ -11,6 +11,7 @@ import 'package:rupee_track/core/utils/auto_label_utils.dart';
 import 'package:rupee_track/core/utils/date_utils.dart';
 import 'package:rupee_track/features/activity_history/data/activity_log_service.dart';
 import 'package:rupee_track/features/activity_history/domain/activity_models.dart';
+import 'package:rupee_track/features/cloud_backup/data/cloud_backup_coordinator.dart';
 import 'package:rupee_track/features/expenses/domain/expense_classification_helper.dart';
 import 'package:rupee_track/features/expenses/domain/expense_date_filter.dart';
 import 'package:rupee_track/features/expenses/domain/expense_save_result.dart';
@@ -121,6 +122,7 @@ class ExpenseRepository {
         );
     _ref.invalidate(spendingByTagsProvider(cycleKeyFromDate(when, salaryDay: salaryDay)));
     unawaited(_ref.read(homeWidgetSyncServiceProvider).sync());
+    _ref.read(cloudBackupCoordinatorProvider).schedulePush();
 
     return ExpenseSaveResult(
       title: title,
@@ -182,6 +184,7 @@ class ExpenseRepository {
           tags: tags,
         );
     _ref.invalidate(spendingByTagsProvider(monthKey));
+    _ref.read(cloudBackupCoordinatorProvider).schedulePush();
   }
 
   Future<int?> deleteExpense(int id) async {
@@ -192,6 +195,7 @@ class ExpenseRepository {
     unawaited(_ref.read(homeWidgetSyncServiceProvider).sync());
 
     if (existing == null) return null;
+    _ref.read(cloudBackupCoordinatorProvider).schedulePush();
     return _ref.read(activityLogServiceProvider).log(
           action: ActivityAction.deleted,
           module: ActivityModule.expense,
@@ -218,6 +222,7 @@ class ExpenseRepository {
         );
     _ref.invalidate(spendingByTagsProvider(item.expense.monthKey));
     unawaited(_ref.read(homeWidgetSyncServiceProvider).sync());
+    _ref.read(cloudBackupCoordinatorProvider).schedulePush();
   }
 
   Future<bool> undoExpenseActivity(int activityId) async {

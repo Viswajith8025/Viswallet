@@ -4,7 +4,8 @@ import 'package:rupee_track/bootstrap.dart';
 import 'package:rupee_track/features/custom_dashboard/domain/dashboard_layout_models.dart';
 
 class DashboardLayoutStore {
-  static const _key = 'custom_dashboard_layout_v1';
+  static const prefsKey = 'custom_dashboard_layout_v1';
+  static const _key = prefsKey;
 
   Future<DashboardLayoutConfig?> load() async {
     final raw = sharedPreferences.getString(_key);

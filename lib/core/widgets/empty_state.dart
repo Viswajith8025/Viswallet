@@ -150,16 +150,16 @@ abstract final class EmptyStates {
   static Widget loans({VoidCallback? onAdd}) {
     return EmptyState(
       icon: Icons.handshake_outlined,
-      title: 'No borrowed money',
+      title: 'No lent money yet',
       message:
-          'Track money you borrowed from someone or lent to someone.\nYou will always know what is pending.',
+          'Track money you lent to someone.\nYou will always know what is still pending.',
       accentColor: BrandColors.primaryLightDeep,
       action: onAdd == null
           ? null
           : FilledButton.icon(
               onPressed: onAdd,
               icon: const Icon(Icons.add_rounded, size: 20),
-              label: const Text('Add loan'),
+              label: const Text('Record lending'),
             ),
     );
   }

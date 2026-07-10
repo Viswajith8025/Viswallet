@@ -153,13 +153,25 @@ class _MainShellState extends ConsumerState<MainShell> {
     return _wrapWithExitGuard(
       context,
       index,
-      Scaffold(
-        extendBody: true,
-        body: _phoneBody(context, showFab: showFab),
-        bottomNavigationBar: PremiumBottomNav(
-          selectedIndex: index,
-          destinations: _destinations,
-          onSelected: (i) => _onNavSelected(context, i),
+      AnnotatedRegion<SystemUiOverlayStyle>(
+        value: SystemUiOverlayStyle(
+          systemNavigationBarColor: Colors.transparent,
+          systemNavigationBarDividerColor: Colors.transparent,
+          systemNavigationBarContrastEnforced: false,
+          systemNavigationBarIconBrightness:
+              Theme.of(context).brightness == Brightness.dark
+                  ? Brightness.light
+                  : Brightness.dark,
+        ),
+        child: Scaffold(
+          extendBody: true,
+          backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+          body: _phoneBody(context, showFab: showFab),
+          bottomNavigationBar: PremiumBottomNav(
+            selectedIndex: index,
+            destinations: _destinations,
+            onSelected: (i) => _onNavSelected(context, i),
+          ),
         ),
       ),
     );

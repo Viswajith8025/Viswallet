@@ -133,6 +133,7 @@ class ResponsiveSummaryGrid extends StatelessWidget {
     this.mediumColumns = 3,
     this.expandedColumns = 4,
     this.childAspectRatio,
+    this.hugContent = false,
   });
 
   final List<Widget> children;
@@ -140,6 +141,8 @@ class ResponsiveSummaryGrid extends StatelessWidget {
   final int mediumColumns;
   final int expandedColumns;
   final double? childAspectRatio;
+  /// When true, tiles size to their content instead of a fixed aspect ratio.
+  final bool hugContent;
 
   @override
   Widget build(BuildContext context) {
@@ -152,6 +155,21 @@ class ResponsiveSummaryGrid extends StatelessWidget {
           medium: mediumColumns,
           expanded: expandedColumns,
         );
+
+        if (hugContent) {
+          final spacing = AppSpacing.sm;
+          final itemWidth =
+              (width - spacing * (columns - 1)) / columns;
+          return Wrap(
+            spacing: spacing,
+            runSpacing: spacing,
+            children: [
+              for (final child in children)
+                SizedBox(width: itemWidth, child: child),
+            ],
+          );
+        }
+
         final aspectRatio =
             childAspectRatio ?? AppResponsive.gridChildAspectRatio(width);
 

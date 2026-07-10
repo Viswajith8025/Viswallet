@@ -23,20 +23,32 @@ class InsightsScreen extends ConsumerWidget {
     final trendsAsync = ref.watch(spendingTrendsProvider);
     final feedAsync = ref.watch(insightsFeedProvider);
 
-    if (feedAsync.isLoading && trendsAsync.isLoading && !feedAsync.hasValue) {
+    final initialLoad =
+        (feedAsync.isLoading && !feedAsync.hasValue) &&
+        (trendsAsync.isLoading && !trendsAsync.hasValue);
+
+    if (initialLoad) {
       return Scaffold(
         appBar: const PremiumAppBar(
           title: 'Insights',
-          subtitle: 'Daily feed · trends · charts',
+          subtitle: 'Tips and spending patterns',
         ),
         body: const DashboardSkeleton(),
+      );
+    }
+
+    Future<void> refresh() async {
+      ref.invalidate(spendingTrendsProvider);
+      ref.invalidate(insightsFeedProvider);
+      ref.invalidate(
+        spendingByTagsProvider(ref.read(selectedCycleKeyProvider)),
       );
     }
 
     return Scaffold(
       appBar: PremiumAppBar(
         title: 'Insights',
-        subtitle: 'Daily feed · trends · charts',
+        subtitle: 'Tips and spending patterns',
         actions: [
           IconButton(
             tooltip: 'Search',
@@ -45,49 +57,37 @@ class InsightsScreen extends ConsumerWidget {
           ),
         ],
       ),
-      body: trendsAsync.when(
-        loading: () => ResponsiveBody(
+      body: RefreshIndicator(
+        onRefresh: refresh,
+        child: ResponsiveBody(
+          padding: EdgeInsets.zero,
           child: ListView(
             physics: const AlwaysScrollableScrollPhysics(),
             padding: ShellBottomInset.bottomOnly(context),
-            children: const [
-              InsightsFeedSection(),
-              SizedBox(height: AppSpacing.lg),
-              DashboardSkeleton(),
+            children: [
+              const InsightsFeedSection(),
+              const SizedBox(height: AppSpacing.lg),
+              trendsAsync.when(
+                loading: () => const Padding(
+                  padding: EdgeInsets.symmetric(vertical: AppSpacing.lg),
+                  child: DashboardSkeleton(),
+                ),
+                error: (e, _) => Padding(
+                  padding: const EdgeInsets.symmetric(
+                    vertical: AppSpacing.md,
+                    horizontal: AppSpacing.md,
+                  ),
+                  child: ErrorState(
+                    message:
+                        'Charts could not load. Your tips above are still available.',
+                    onRetry: () => ref.invalidate(spendingTrendsProvider),
+                  ),
+                ),
+                data: (report) => InsightsAnalyticsPanel(report: report),
+              ),
             ],
           ),
         ),
-        error: (e, _) => ResponsiveBody(
-          child: ErrorState(
-            message: 'We couldn\'t load your insights.',
-            onRetry: () {
-              ref.invalidate(spendingTrendsProvider);
-              ref.invalidate(insightsFeedProvider);
-            },
-          ),
-        ),
-        data: (report) {
-          return RefreshIndicator(
-            onRefresh: () async {
-              ref.invalidate(spendingTrendsProvider);
-              ref.invalidate(insightsFeedProvider);
-              ref.invalidate(
-                spendingByTagsProvider(ref.read(selectedCycleKeyProvider)),
-              );
-            },
-            child: ResponsiveBody(
-              padding: EdgeInsets.zero,
-              child: ListView(
-                physics: const AlwaysScrollableScrollPhysics(),
-                padding: ShellBottomInset.bottomOnly(context),
-                children: [
-                  const InsightsFeedSection(),
-                  InsightsAnalyticsPanel(report: report),
-                ],
-              ),
-            ),
-          );
-        },
       ),
     );
   }

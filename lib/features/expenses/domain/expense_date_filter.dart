@@ -2,32 +2,27 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:rupee_track/core/utils/date_utils.dart';
 import 'package:rupee_track/features/trends/domain/spending_trends_engine.dart';
 
-enum ExpenseDateFilterMode { today, pickDate, dateRange, payCycle }
+enum ExpenseDateFilterMode { today, dateRange, payCycle }
 
 class ExpenseDateFilter {
   const ExpenseDateFilter({
     this.mode = ExpenseDateFilterMode.today,
-    this.pickedDate,
     this.rangeStart,
     this.rangeEnd,
   });
 
   final ExpenseDateFilterMode mode;
-  final DateTime? pickedDate;
   final DateTime? rangeStart;
   final DateTime? rangeEnd;
 
   ExpenseDateFilter copyWith({
     ExpenseDateFilterMode? mode,
-    DateTime? pickedDate,
     DateTime? rangeStart,
     DateTime? rangeEnd,
-    bool clearPickedDate = false,
     bool clearRange = false,
   }) {
     return ExpenseDateFilter(
       mode: mode ?? this.mode,
-      pickedDate: clearPickedDate ? null : (pickedDate ?? this.pickedDate),
       rangeStart: clearRange ? null : (rangeStart ?? this.rangeStart),
       rangeEnd: clearRange ? null : (rangeEnd ?? this.rangeEnd),
     );
@@ -37,9 +32,6 @@ class ExpenseDateFilter {
     switch (mode) {
       case ExpenseDateFilterMode.today:
         return istDayBoundsUtc(DateTime.now());
-      case ExpenseDateFilterMode.pickDate:
-        final day = pickedDate ?? DateTime.now();
-        return istDayBoundsUtc(day);
       case ExpenseDateFilterMode.dateRange:
         final start = rangeStart ?? DateTime.now();
         final end = rangeEnd ?? start;
@@ -63,9 +55,6 @@ class ExpenseDateFilter {
       case ExpenseDateFilterMode.today:
         final today = nowIst();
         return 'Today · ${today.day} ${_monthShort(today.month)}';
-      case ExpenseDateFilterMode.pickDate:
-        final day = toIst(pickedDate ?? DateTime.now());
-        return '${day.day} ${_monthShort(day.month)} ${day.year}';
       case ExpenseDateFilterMode.dateRange:
         return _rangeLabel();
       case ExpenseDateFilterMode.payCycle:
@@ -126,11 +115,6 @@ class ExpenseDateFilterNotifier extends Notifier<ExpenseDateFilter> {
 
   void setPayCycle() =>
       state = const ExpenseDateFilter(mode: ExpenseDateFilterMode.payCycle);
-
-  void setPickedDate(DateTime date) => state = ExpenseDateFilter(
-        mode: ExpenseDateFilterMode.pickDate,
-        pickedDate: date,
-      );
 
   void setDateRange({required DateTime start, required DateTime end}) {
     final normalizedStart = start.isBefore(end) ? start : end;

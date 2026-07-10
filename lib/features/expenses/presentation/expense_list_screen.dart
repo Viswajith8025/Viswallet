@@ -85,11 +85,6 @@ class ExpenseListScreen extends ConsumerWidget {
                       ref.read(expenseDateFilterProvider.notifier).setToday(),
                 ),
                 PremiumFilterChip(
-                  label: 'Pick date',
-                  selected: filter.mode == ExpenseDateFilterMode.pickDate,
-                  onSelected: (_) => _pickDate(context, ref, filter),
-                ),
-                PremiumFilterChip(
                   label: 'Date range',
                   selected: filter.mode == ExpenseDateFilterMode.dateRange,
                   onSelected: (_) => _pickDateRange(context, ref, filter),
@@ -231,8 +226,6 @@ class ExpenseListScreen extends ConsumerWidget {
       return switch (filter.mode) {
         ExpenseDateFilterMode.today =>
           'Swipe delete is locked. Tap an expense to edit or delete.',
-        ExpenseDateFilterMode.pickDate =>
-          'Showing spending on ${filter.label(salaryDay: salaryDay)}. Tap a row to edit or delete.',
         ExpenseDateFilterMode.dateRange =>
           '${filter.label(salaryDay: salaryDay)}. Tap a row to edit or delete.',
         ExpenseDateFilterMode.payCycle =>
@@ -243,30 +236,11 @@ class ExpenseListScreen extends ConsumerWidget {
     return switch (filter.mode) {
       ExpenseDateFilterMode.today =>
         'Swipe left on a row to delete, or tap to edit.',
-      ExpenseDateFilterMode.pickDate =>
-        'Showing spending on ${filter.label(salaryDay: salaryDay)}.',
       ExpenseDateFilterMode.dateRange =>
         'Showing spending from ${filter.label(salaryDay: salaryDay)}.',
       ExpenseDateFilterMode.payCycle =>
         'Showing this pay cycle (${filter.label(salaryDay: salaryDay)}). Swipe left to delete.',
     };
-  }
-
-  Future<void> _pickDate(
-    BuildContext context,
-    WidgetRef ref,
-    ExpenseDateFilter filter,
-  ) async {
-    final initial = filter.pickedDate ?? DateTime.now();
-    final picked = await showDatePicker(
-      context: context,
-      initialDate: initial,
-      firstDate: DateTime(2020),
-      lastDate: DateTime.now().add(const Duration(days: 1)),
-    );
-    if (picked != null) {
-      ref.read(expenseDateFilterProvider.notifier).setPickedDate(picked);
-    }
   }
 
   Future<void> _pickDateRange(

@@ -18,6 +18,7 @@ import 'package:rupee_track/features/budget/presentation/widgets/budget_overview
 import 'package:rupee_track/features/budget_alerts/presentation/widgets/budget_alerts_panel.dart';
 import 'package:rupee_track/features/custom_dashboard/domain/dashboard_layout_models.dart';
 import 'package:rupee_track/features/custom_dashboard/presentation/widgets/dashboard_cycle_header.dart';
+import 'package:rupee_track/features/custom_dashboard/presentation/widgets/dashboard_empty.dart';
 import 'package:rupee_track/features/dashboard/data/dashboard_repository.dart';
 import 'package:rupee_track/features/dashboard/presentation/widgets/dashboard_hero.dart';
 import 'package:rupee_track/features/dashboard/presentation/widgets/expense_breakdown_chart.dart';
@@ -160,13 +161,13 @@ class _BudgetSetupWidget extends ConsumerWidget {
     final cycleKey = _cycleKey(ref);
     final async = ref.watch(monthlySummaryProvider(cycleKey));
     return async.when(
-      loading: () => const SizedBox.shrink(),
+      loading: () => const DashboardEmpty(),
       error: (_, __) => CompactWidgetError(
         message: "Couldn't load budget setup",
         onRetry: () => ref.invalidate(monthlySummaryProvider(cycleKey)),
       ),
       data: (summary) {
-        if (!summary.salaryEntered) return const SizedBox.shrink();
+        if (!summary.salaryEntered) return const DashboardEmpty();
         final theme = Theme.of(context);
         return PremiumCard(
           accentColor: theme.colorScheme.tertiary,
@@ -244,7 +245,7 @@ class _SummaryGridWidget extends ConsumerWidget {
         }
 
         return ResponsiveSummaryGrid(
-        childAspectRatio: 1.05,
+        hugContent: true,
         children: [
           SummaryCard(
             label: 'Salary',
@@ -298,7 +299,7 @@ class _CategoryChartWidget extends ConsumerWidget {
         onRetry: () => ref.invalidate(monthlySummaryProvider(_cycleKey(ref))),
       ),
       data: (summary) {
-        if (summary.categoryBreakdown.isEmpty) return const SizedBox.shrink();
+        if (summary.categoryBreakdown.isEmpty) return const DashboardEmpty();
         return Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -367,26 +368,29 @@ class _LoanWidget extends ConsumerWidget {
     final async = ref.watch(monthlySummaryProvider(_cycleKey(ref)));
     final theme = Theme.of(context);
     return async.when(
-      loading: () => const SizedBox.shrink(),
+      loading: () => const DashboardEmpty(),
       error: (_, __) => CompactWidgetError(
-        message: "Couldn't load loans",
+        message: "Couldn't load borrow & lend",
         onRetry: () => ref.invalidate(monthlySummaryProvider(_cycleKey(ref))),
       ),
       data: (summary) {
         if (summary.pendingBorrowedPaise <= 0 &&
             summary.overdueLoansCount <= 0) {
-          return const SizedBox.shrink();
+          return const DashboardEmpty();
         }
+        final isOverdueLent = summary.overdueLoansCount > 0;
         return PremiumCard(
-          accentColor: summary.overdueLoansCount > 0
-              ? theme.colorScheme.error
-              : null,
-          onTap: () => context.push(AppRoutes.loans),
+          accentColor: isOverdueLent ? theme.colorScheme.error : null,
+          onTap: () => context.push(
+            isOverdueLent ? AppRoutes.loans : AppRoutes.borrowed,
+          ),
           child: PremiumRowTile(
-            title: summary.overdueLoansCount > 0
-                ? '${summary.overdueLoansCount} overdue loan(s)'
+            title: isOverdueLent
+                ? '${summary.overdueLoansCount} overdue lent'
                 : 'Pending borrowed money',
-            subtitle: formatPaise(summary.pendingBorrowedPaise),
+            subtitle: isOverdueLent
+                ? 'Check who still owes you'
+                : formatPaise(summary.pendingBorrowedPaise),
             leading: Icon(
               Icons.handshake_outlined,
               color: summary.overdueLoansCount > 0
@@ -409,14 +413,14 @@ class _SubscriptionsWidget extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final async = ref.watch(monthlySummaryProvider(_cycleKey(ref)));
     return async.when(
-      loading: () => const SizedBox.shrink(),
+      loading: () => const DashboardEmpty(),
       error: (_, __) => CompactWidgetError(
         message: "Couldn't load subscriptions",
         onRetry: () => ref.invalidate(monthlySummaryProvider(_cycleKey(ref))),
       ),
       data: (summary) {
         if (summary.upcomingSubscriptionsCount <= 0) {
-          return const SizedBox.shrink();
+          return const DashboardEmpty();
         }
         final theme = Theme.of(context);
         return PremiumCard(
@@ -529,6 +533,16 @@ class _QuickActionsInlineWidget extends StatelessWidget {
           label: const Text('Subs'),
           onPressed: () => context.push(AppRoutes.subscriptions),
         ),
+        ActionChip(
+          avatar: const Icon(Icons.replay_circle_filled_outlined, size: 18),
+          label: const Text('Borrowed'),
+          onPressed: () => context.push(AppRoutes.borrowed),
+        ),
+        ActionChip(
+          avatar: const Icon(Icons.handshake_outlined, size: 18),
+          label: const Text('Lent'),
+          onPressed: () => context.push(AppRoutes.loans),
+        ),
       ],
     );
   }
@@ -540,14 +554,14 @@ class _AchievementsWidget extends ConsumerWidget {
     final async = ref.watch(previousCycleClosingReportProvider);
     final theme = Theme.of(context);
     return async.when(
-      loading: () => const SizedBox.shrink(),
+      loading: () => const DashboardEmpty(),
       error: (_, __) => CompactWidgetError(
         message: "Couldn't load achievements",
         onRetry: () => ref.invalidate(previousCycleClosingReportProvider),
       ),
       data: (report) {
         if (report == null || report.goalsAchieved.isEmpty) {
-          return const SizedBox.shrink();
+          return const DashboardEmpty();
         }
         return PremiumCard(
           child: Column(
@@ -584,9 +598,9 @@ class _WishlistWidget extends ConsumerWidget {
 
     return goalsAsync.when(
       loading: () => const SkeletonCard(height: 72),
-      error: (_, __) => const SizedBox.shrink(),
+      error: (_, __) => const DashboardEmpty(),
       data: (items) {
-        if (items.isEmpty) return const SizedBox.shrink();
+        if (items.isEmpty) return const DashboardEmpty();
         final top = items.first;
         return PremiumCard(
           onTap: () => context.push(AppRoutes.savingsForecast),
@@ -647,7 +661,7 @@ class _RecentTransactionsWidget extends ConsumerWidget {
         onRetry: () => ref.invalidate(expensesForMonthProvider(cycleKey)),
       ),
       data: (items) {
-        if (items.isEmpty) return const SizedBox.shrink();
+        if (items.isEmpty) return const DashboardEmpty();
         return PremiumCard(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,

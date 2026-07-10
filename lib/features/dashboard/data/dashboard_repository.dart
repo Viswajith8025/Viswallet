@@ -1,5 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:rupee_track/core/database/app_database.dart';
 import 'package:rupee_track/core/database/daos/expenses_dao.dart';
+import 'package:rupee_track/core/database/reactive_db_stream.dart';
 import 'package:rupee_track/core/providers/database_provider.dart';
 import 'package:rupee_track/core/salary_cycle/salary_cycle_engine.dart';
 import 'package:rupee_track/core/utils/date_utils.dart';
@@ -16,44 +18,49 @@ class DashboardRepository {
 
   Stream<CycleSummary> watchCycleSummary(String cycleKey) async* {
     final db = await _ref.read(databaseProvider.future);
+    yield* mergeReactiveStreams(
+      () => _loadCycleSummary(db, cycleKey),
+      [
+        db.salaryDao.watchBreakdownForMonth(cycleKey),
+        db.expensesDao.watchExpensesForMonth(cycleKey),
+      ],
+    );
+  }
+
+  Future<CycleSummary> _loadCycleSummary(AppDatabase db, String cycleKey) async {
     final settings = await db.settingsDao.getSettings();
     final salaryDay = settings.salaryDay;
+    final breakdown = await db.salaryDao.getBreakdownForMonth(cycleKey);
+    final spent = await db.expensesDao.sumSpentForMonth(cycleKey);
+    final breakdownRows = await db.expensesDao.categoryBreakdown(cycleKey);
+    final pendingBorrowed = await db.loansDao.pendingBorrowedTotal();
+    final subscriptionMonthly = await db.subscriptionsDao.monthlyTotalPaise();
+    final upcoming = await db.subscriptionsDao.upcomingRenewals();
+    final overdue = await db.loansDao.overdueLoans();
 
-    await for (final breakdown in db.salaryDao.watchBreakdownForMonth(cycleKey)) {
-      await for (final _ in db.expensesDao.watchExpensesForMonth(cycleKey)) {
-        final spent = await db.expensesDao.sumSpentForMonth(cycleKey);
-        final breakdownRows = await db.expensesDao.categoryBreakdown(cycleKey);
-        final pendingBorrowed = await db.loansDao.pendingBorrowedTotal();
-        final subscriptionMonthly = await db.subscriptionsDao.monthlyTotalPaise();
-        final upcoming = await db.subscriptionsDao.upcomingRenewals();
-        final overdue = await db.loansDao.overdueLoans();
+    final previousKey = previousCycleKey(cycleKey, salaryDay: salaryDay);
+    final prevBreakdown = await db.salaryDao.getBreakdownForMonth(previousKey);
+    final prevSpent = await db.expensesDao.sumSpentForMonth(previousKey);
+    final carryOver = SalaryCycleEngine.carryOverBalance(
+      previousSalaryPaise: prevBreakdown.totalInflowPaise,
+      previousSpentPaise: prevSpent,
+    );
 
-        final previousKey = previousCycleKey(cycleKey, salaryDay: salaryDay);
-        final prevBreakdown =
-            await db.salaryDao.getBreakdownForMonth(previousKey);
-        final prevSpent = await db.expensesDao.sumSpentForMonth(previousKey);
-        final carryOver = SalaryCycleEngine.carryOverBalance(
-          previousSalaryPaise: prevBreakdown.totalInflowPaise,
-          previousSpentPaise: prevSpent,
-        );
-
-        yield _buildSummary(
-          cycleKey: cycleKey,
-          salaryPaise: breakdown.netPaise,
-          grossSalaryPaise: breakdown.grossPaise,
-          salaryDeductionsPaise: breakdown.deductionsPaise,
-          extraIncomePaise: breakdown.extraIncomePaise,
-          spentPaise: spent,
-          breakdown: breakdownRows,
-          salaryDay: salaryDay,
-          carryOverPaise: carryOver,
-          pendingBorrowedPaise: pendingBorrowed,
-          subscriptionMonthlyPaise: subscriptionMonthly,
-          upcomingSubscriptionsCount: upcoming.length,
-          overdueLoansCount: overdue.length,
-        );
-      }
-    }
+    return _buildSummary(
+      cycleKey: cycleKey,
+      salaryPaise: breakdown.netPaise,
+      grossSalaryPaise: breakdown.grossPaise,
+      salaryDeductionsPaise: breakdown.deductionsPaise,
+      extraIncomePaise: breakdown.extraIncomePaise,
+      spentPaise: spent,
+      breakdown: breakdownRows,
+      salaryDay: salaryDay,
+      carryOverPaise: carryOver,
+      pendingBorrowedPaise: pendingBorrowed,
+      subscriptionMonthlyPaise: subscriptionMonthly,
+      upcomingSubscriptionsCount: upcoming.length,
+      overdueLoansCount: overdue.length,
+    );
   }
 
   CycleSummary _buildSummary({
