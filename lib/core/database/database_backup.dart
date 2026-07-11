@@ -84,28 +84,36 @@ abstract final class DatabaseBackup {
     return counts.every((c) => c == 0);
   }
 
-  /// True when the user has not entered real finance data yet (e.g. onboarding salary only).
+  /// True when the user has entered finance data on this device.
+  static Future<bool> hasLocalUserData(AppDatabase db) async {
+    return !(await isPristineLocalData(db));
+  }
+
+  /// Auto-restore is only safe when local has no user-entered finance data.
   static Future<bool> canRestoreFromRemote(AppDatabase db) async {
-    if (await isPristineLocalData(db)) return true;
-    return _isOnboardingOnlyCounts(await _userDataCounts(db));
+    return isPristineLocalData(db);
+  }
+
+  /// Importing a cloud backup over existing local data requires explicit confirmation.
+  static bool allowsImport({
+    required bool localHasUserData,
+    required bool replaceLocalConfirmed,
+  }) {
+    if (!localHasUserData) return true;
+    return replaceLocalConfirmed;
   }
 
   static Future<List<int>> _userDataCounts(AppDatabase db) => Future.wait([
         _count(db, 'expenses_table', where: 'is_deleted = 0'),
         _count(db, 'monthly_salary_table'),
+        _count(db, 'salary_deductions_table'),
+        _count(db, 'cycle_extra_income_table'),
+        _count(db, 'budget_plans_table'),
+        _count(db, 'budget_buckets_table'),
         _count(db, 'loans_table', where: 'is_deleted = 0'),
         _count(db, 'subscriptions_table'),
-        _count(db, 'budget_plans_table'),
         _count(db, 'savings_goals_table'),
-        _count(db, 'activity_log_table'),
-        _count(db, 'cycle_extra_income_table'),
       ]);
-
-  static bool _isOnboardingOnlyCounts(List<int> counts) {
-    final expenses = counts[0];
-    if (expenses > 0) return false;
-    return counts.sublist(2).every((c) => c == 0);
-  }
 
   static Future<List<Map<String, dynamic>>> _exportTable(
     AppDatabase db,

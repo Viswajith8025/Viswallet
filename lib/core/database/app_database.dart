@@ -1,10 +1,7 @@
 import 'dart:convert';
-import 'dart:io';
 
 import 'package:drift/drift.dart';
 import 'package:drift/native.dart';
-import 'package:path/path.dart' as p;
-import 'package:path_provider/path_provider.dart';
 import 'package:rupee_track/core/constants/app_constants.dart';
 import 'package:rupee_track/core/constants/category_defaults.dart';
 import 'package:rupee_track/core/database/daos/activity_log_dao.dart';
@@ -19,6 +16,7 @@ import 'package:rupee_track/core/database/tables.dart';
 import 'package:rupee_track/core/database/daos/income_sources_dao.dart';
 import 'package:rupee_track/core/database/daos/savings_goals_dao.dart';
 import 'package:rupee_track/core/database/daos/tagging_rules_dao.dart';
+import 'package:rupee_track/core/database/database_paths.dart';
 import 'package:rupee_track/core/salary_cycle/salary_cycle_engine.dart';
 import 'package:rupee_track/core/utils/money_utils.dart';
 import 'package:rupee_track/features/smart_tagging/domain/default_tagging_rules.dart';
@@ -198,6 +196,10 @@ class AppDatabase extends _$AppDatabase {
     );
   }
 
+  /// Remaps cycle-keyed finance rows after the user changes their salary date.
+  Future<void> remapDataToSalaryDay(int salaryDay) =>
+      _migrateToSalaryCycleKeys(salaryDay);
+
   Future<void> _migrateToSalaryCycleKeys(int salaryDay) async {
     final expenses = await select(expensesTable).get();
     for (final expense in expenses) {
@@ -211,23 +213,17 @@ class AppDatabase extends _$AppDatabase {
       }
     }
 
+    final keyMapping = <String, String>{};
+
     final salaries = await select(monthlySalaryTable).get();
     for (final salary in salaries) {
-      final anchor = salary.receivedAt ??
-          SalaryCycleEngine.parseCycleKey(
-            SalaryCycleEngine.isLegacyMonthKey(salary.monthKey)
-                ? SalaryCycleEngine.migrateLegacyMonthKey(
-                    salary.monthKey,
-                    salaryDay: salaryDay,
-                  )
-                : salary.monthKey,
-            salaryDay: salaryDay,
-          );
-      final newKey = SalaryCycleEngine.cycleKeyFromDate(
-        anchor,
+      final newKey = _remapMonthKey(
+        salary.monthKey,
         salaryDay: salaryDay,
+        anchorDate: salary.receivedAt,
       );
       if (newKey != salary.monthKey) {
+        keyMapping[salary.monthKey] = newKey;
         await (update(monthlySalaryTable)
               ..where((t) => t.id.equals(salary.id)))
             .write(MonthlySalaryTableCompanion(monthKey: Value(newKey)));
@@ -236,15 +232,36 @@ class AppDatabase extends _$AppDatabase {
 
     final plans = await select(budgetPlansTable).get();
     for (final plan in plans) {
-      final newKey = SalaryCycleEngine.isLegacyMonthKey(plan.monthKey)
-          ? SalaryCycleEngine.migrateLegacyMonthKey(
-              plan.monthKey,
-              salaryDay: salaryDay,
-            )
-          : plan.monthKey;
+      final newKey = keyMapping[plan.monthKey] ??
+          _remapMonthKey(plan.monthKey, salaryDay: salaryDay);
       if (newKey != plan.monthKey) {
         await (update(budgetPlansTable)..where((t) => t.id.equals(plan.id)))
             .write(BudgetPlansTableCompanion(monthKey: Value(newKey)));
+      }
+    }
+
+    final deductions = await select(salaryDeductionsTable).get();
+    for (final deduction in deductions) {
+      final newKey = keyMapping[deduction.monthKey] ??
+          _remapMonthKey(deduction.monthKey, salaryDay: salaryDay);
+      if (newKey != deduction.monthKey) {
+        await (update(salaryDeductionsTable)
+              ..where((t) => t.id.equals(deduction.id)))
+            .write(SalaryDeductionsTableCompanion(monthKey: Value(newKey)));
+      }
+    }
+
+    final extraIncome = await select(cycleExtraIncomeTable).get();
+    for (final row in extraIncome) {
+      final newKey = keyMapping[row.monthKey] ??
+          _remapMonthKey(
+            row.monthKey,
+            salaryDay: salaryDay,
+            anchorDate: row.receivedAt,
+          );
+      if (newKey != row.monthKey) {
+        await (update(cycleExtraIncomeTable)..where((t) => t.id.equals(row.id)))
+            .write(CycleExtraIncomeTableCompanion(monthKey: Value(newKey)));
       }
     }
 
@@ -262,6 +279,24 @@ class AppDatabase extends _$AppDatabase {
         );
       }
     }
+  }
+
+  String _remapMonthKey(
+    String monthKey, {
+    required int salaryDay,
+    DateTime? anchorDate,
+  }) {
+    final anchor = anchorDate ??
+        SalaryCycleEngine.parseCycleKey(
+          SalaryCycleEngine.isLegacyMonthKey(monthKey)
+              ? SalaryCycleEngine.migrateLegacyMonthKey(
+                  monthKey,
+                  salaryDay: salaryDay,
+                )
+              : monthKey,
+          salaryDay: salaryDay,
+        );
+    return SalaryCycleEngine.cycleKeyFromDate(anchor, salaryDay: salaryDay);
   }
 
   Future<void> _ensureJupiterSavingsCategory() async {
@@ -374,10 +409,10 @@ class AppDatabase extends _$AppDatabase {
   }
 }
 
-LazyDatabase openConnection() {
+LazyDatabase openConnectionForUser(String userId) {
   return LazyDatabase(() async {
-    final dir = await getApplicationDocumentsDirectory();
-    final file = File(p.join(dir.path, 'vis_wallet.sqlite'));
+    await DatabasePaths.migrateLegacyDatabaseIfNeeded(userId);
+    final file = await DatabasePaths.databaseFileForUser(userId);
     return NativeDatabase.createInBackground(file);
   });
 }

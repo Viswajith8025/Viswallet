@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
-import 'package:rupee_track/core/branding/brand_typography.dart';
+import 'package:rupee_track/core/database/daos/expenses_dao.dart';
+import 'package:rupee_track/core/database/app_database.dart';
 import 'package:rupee_track/core/design_system/context_banner.dart';
 import 'package:rupee_track/core/design_system/design_tokens.dart';
 import 'package:rupee_track/core/design_system/premium_app_bar.dart';
@@ -14,11 +15,12 @@ import 'package:rupee_track/core/design_system/shell_bottom_inset.dart';
 import 'package:rupee_track/core/providers/salary_cycle_provider.dart';
 import 'package:rupee_track/core/providers/settings_provider.dart';
 import 'package:rupee_track/core/utils/date_utils.dart';
-import 'package:rupee_track/core/utils/money_utils.dart';
 import 'package:rupee_track/core/widgets/empty_state.dart';
 import 'package:rupee_track/core/widgets/error_state.dart';
+import 'package:rupee_track/core/widgets/money_text.dart';
 import 'package:rupee_track/features/expenses/data/expense_repository.dart';
 import 'package:rupee_track/features/expenses/domain/expense_date_filter.dart';
+import 'package:rupee_track/features/expenses/domain/expense_day_grouping.dart';
 import 'package:rupee_track/features/expenses/domain/expense_display_utils.dart';
 import 'package:rupee_track/features/quick_add/presentation/quick_add_hub_sheet.dart';
 import 'package:rupee_track/features/smart_tagging/domain/classification_models.dart';
@@ -35,9 +37,9 @@ class ExpenseListScreen extends ConsumerWidget {
     final settings = ref.watch(appSettingsProvider).valueOrNull;
     final swipeLocked = ref.watch(expenseSwipeDeleteLockedProvider);
     final expensesAsync = ref.watch(expensesForDateFilterProvider);
-    final dateFormat = DateFormat('d MMM · h:mm a');
-    final today = toIst(DateTime.now());
-    final headerDate = DateFormat('EEEE, d MMM').format(today);
+    final timeFormat = DateFormat('h:mm a');
+    final todayIst = nowIst();
+    final headerDate = DateFormat('EEEE, d MMM').format(todayIst);
 
     return Scaffold(
       appBar: PremiumAppBar(
@@ -74,146 +76,187 @@ class ExpenseListScreen extends ConsumerWidget {
                 0,
                 AppSpacing.xs,
               ),
-            child: Wrap(
-              spacing: AppSpacing.sm,
-              runSpacing: AppSpacing.sm,
-              children: [
-                PremiumFilterChip(
-                  label: 'Today',
-                  selected: filter.mode == ExpenseDateFilterMode.today,
-                  onSelected: (_) =>
-                      ref.read(expenseDateFilterProvider.notifier).setToday(),
-                ),
-                PremiumFilterChip(
-                  label: 'Date range',
-                  selected: filter.mode == ExpenseDateFilterMode.dateRange,
-                  onSelected: (_) => _pickDateRange(context, ref, filter),
-                ),
-                PremiumFilterChip(
-                  label: 'Pay cycle',
-                  selected: filter.mode == ExpenseDateFilterMode.payCycle,
-                  onSelected: (_) => ref
-                      .read(expenseDateFilterProvider.notifier)
-                      .setPayCycle(),
-                ),
-              ],
-            ),
-          ),
-          ContextBanner(
-            icon: swipeLocked ? Icons.lock_rounded : Icons.swipe_left_rounded,
-            message: _filterHint(filter, salaryDay, swipeLocked: swipeLocked),
-          ),
-          Expanded(
-            child: expensesAsync.when(
-              loading: () => ListView.separated(
-                padding: ShellBottomInset.bottomOnly(context),
-                itemCount: 8,
-                separatorBuilder: (_, __) =>
-                    const SizedBox(height: AppSpacing.xs),
-                itemBuilder: (_, __) => const SkeletonCard(height: 80),
-              ),
-              error: (e, _) => ErrorState(
-                message: 'We couldn\'t load your expenses.',
-                onRetry: () => ref.invalidate(expensesForDateFilterProvider),
-              ),
-              data: (expenses) {
-                if (expenses.isEmpty) {
-                  return EmptyStates.expenses(
-                    onAdd: () => showQuickAddSheet(context, ref),
-                  );
-                }
-
-                final totalPaise = expenses.fold<int>(
-                  0,
-                  (sum, e) => sum + e.expense.amountPaise,
-                );
-
-                return ListView.separated(
-                  physics: const AlwaysScrollableScrollPhysics(),
-                  padding: EdgeInsets.only(
-                    top: AppSpacing.xs,
-                    bottom: ShellBottomInset.scrollBottom(context),
+              child: Wrap(
+                spacing: AppSpacing.sm,
+                runSpacing: AppSpacing.sm,
+                children: [
+                  PremiumFilterChip(
+                    label: 'Today',
+                    selected: filter.mode == ExpenseDateFilterMode.today,
+                    onSelected: (_) =>
+                        ref.read(expenseDateFilterProvider.notifier).setToday(),
                   ),
-                  itemCount: expenses.length + 1,
+                  PremiumFilterChip(
+                    label: 'Date range',
+                    selected: filter.mode == ExpenseDateFilterMode.dateRange,
+                    onSelected: (_) => _pickDateRange(context, ref, filter),
+                  ),
+                  PremiumFilterChip(
+                    label: 'Pay cycle',
+                    selected: filter.mode == ExpenseDateFilterMode.payCycle,
+                    onSelected: (_) => ref
+                        .read(expenseDateFilterProvider.notifier)
+                        .setPayCycle(),
+                  ),
+                ],
+              ),
+            ),
+            ContextBanner(
+              icon: swipeLocked ? Icons.lock_rounded : Icons.swipe_left_rounded,
+              message: _filterHint(filter, salaryDay, swipeLocked: swipeLocked),
+            ),
+            Expanded(
+              child: expensesAsync.when(
+                loading: () => ListView.separated(
+                  padding: ShellBottomInset.bottomOnly(context),
+                  itemCount: 8,
                   separatorBuilder: (_, __) =>
                       const SizedBox(height: AppSpacing.xs),
-                  itemBuilder: (context, index) {
-                    if (index == 0) {
-                      return _ExpenseSummaryCard(
-                        totalPaise: totalPaise,
-                        count: expenses.length,
-                        periodLabel: filter.label(salaryDay: salaryDay),
+                  itemBuilder: (_, __) => const SkeletonCard(height: 80),
+                ),
+                error: (e, _) => ErrorState(
+                  message: 'We couldn\'t load your expenses.',
+                  onRetry: () => ref.invalidate(expensesForDateFilterProvider),
+                ),
+                data: (expenses) {
+                  if (expenses.isEmpty) {
+                    return EmptyStates.expenses(
+                      onAdd: () => showQuickAddSheet(context, ref),
+                    );
+                  }
+
+                  final totalPaise = expenses.fold<int>(
+                    0,
+                    (sum, e) => sum + e.expense.amountPaise,
+                  );
+                  final dayGroups = groupExpensesByIstDay(expenses);
+                  final listChildren = <Widget>[
+                    _ExpenseSummaryCard(
+                      totalPaise: totalPaise,
+                      count: expenses.length,
+                      periodLabel: filter.label(salaryDay: salaryDay),
+                    ),
+                  ];
+
+                  for (final group in dayGroups) {
+                    listChildren.add(
+                      PremiumSectionHeader(
+                        title: expenseDayHeaderLabel(
+                          group.istDay,
+                          todayIst: todayIst,
+                        ),
+                        subtitle: filter.mode == ExpenseDateFilterMode.payCycle
+                            ? '${group.items.length} ${group.items.length == 1 ? 'expense' : 'expenses'}'
+                            : null,
+                        trailing: MoneyText(
+                          group.totalPaise,
+                          compact: true,
+                          color: context.semanticColors.expense,
+                          style: AppTypography.moneyCompact(
+                            context,
+                            color: context.semanticColors.expense,
+                          ),
+                        ),
+                      ),
+                    );
+
+                    for (final item in group.items) {
+                      listChildren.add(
+                        _buildExpenseRow(
+                          context: context,
+                          ref: ref,
+                          item: item,
+                          settings: settings,
+                          timeFormat: timeFormat,
+                          swipeLocked: swipeLocked,
+                        ),
                       );
+                      listChildren.add(const SizedBox(height: AppSpacing.xs));
                     }
+                    listChildren.add(const SizedBox(height: AppSpacing.sm));
+                  }
 
-                    final item = expenses[index - 1];
-                    final expense = item.expense;
-                    final tags = parseTagsJson(expense.tags);
-                    final amountLabels = settings == null
-                        ? <String>[]
-                        : expenseAmountLabels(
-                            settings: settings,
-                            amountPaise: expense.amountPaise,
-                          );
-                    final displayTags = expenseDisplayTags(
-                      title: expense.title,
-                      categoryName: item.category.name,
-                      amountLabels: amountLabels,
-                      classificationTags: tags,
-                    );
-                    final subtitle = expenseDisplaySubtitle(
-                      categoryName: item.category.name,
-                      title: expense.title,
-                      meta: dateFormat.format(expense.occurredAt.toLocal()),
-                    );
-
-                    final tile = PremiumExpenseTile(
-                      title: expense.title,
-                      amountPaise: expense.amountPaise,
-                      categoryName: item.category.name,
-                      categoryColor: item.category.colorValue,
-                      subtitle: subtitle,
-                      tags: displayTags,
-                      onTap: () =>
-                          showExpenseCorrectionSheet(context, ref, item),
-                    );
-
-                    if (swipeLocked) {
-                      return tile;
-                    }
-
-                    return Dismissible(
-                      key: ValueKey(expense.id),
-                      direction: DismissDirection.endToStart,
-                      background: Container(
-                        alignment: Alignment.centerRight,
-                        padding: const EdgeInsets.only(right: AppSpacing.lg),
-                        decoration: BoxDecoration(
-                          color: Theme.of(context).colorScheme.errorContainer,
-                          borderRadius: BorderRadius.circular(AppRadius.card),
-                        ),
-                        child: Icon(
-                          Icons.delete_outline_rounded,
-                          color: Theme.of(context).colorScheme.error,
-                        ),
-                      ),
-                      confirmDismiss: (_) => confirmDeleteExpense(context),
-                      onDismissed: (_) => deleteExpenseWithFeedback(
-                        context,
-                        ref,
-                        expense.id,
-                        skipConfirm: true,
-                      ),
-                      child: tile,
-                    );
-                  },
-                );
-              },
+                  return ListView(
+                    physics: const AlwaysScrollableScrollPhysics(),
+                    padding: EdgeInsets.only(
+                      top: AppSpacing.xs,
+                      bottom: ShellBottomInset.scrollBottom(context),
+                    ),
+                    children: listChildren,
+                  );
+                },
+              ),
             ),
-          ),
-        ],
+          ],
         ),
       ),
+    );
+  }
+
+  Widget _buildExpenseRow({
+    required BuildContext context,
+    required WidgetRef ref,
+    required ExpenseWithCategory item,
+    required AppSettingsTableData? settings,
+    required DateFormat timeFormat,
+    required bool swipeLocked,
+  }) {
+    final expense = item.expense;
+    final tags = parseTagsJson(expense.tags);
+    final amountLabels = settings == null
+        ? <String>[]
+        : expenseAmountLabels(
+            settings: settings,
+            amountPaise: expense.amountPaise,
+          );
+    final displayTags = expenseDisplayTags(
+      title: expense.title,
+      categoryName: item.category.name,
+      amountLabels: amountLabels,
+      classificationTags: tags,
+    );
+    final subtitle = expenseDisplaySubtitle(
+      categoryName: item.category.name,
+      title: expense.title,
+      meta: timeFormat.format(expense.occurredAt.toLocal()),
+    );
+
+    final tile = PremiumExpenseTile(
+      title: expense.title,
+      amountPaise: expense.amountPaise,
+      categoryName: item.category.name,
+      categoryColor: item.category.colorValue,
+      categoryIconName: item.category.iconName,
+      subtitle: subtitle,
+      tags: displayTags,
+      onTap: () => showExpenseCorrectionSheet(context, ref, item),
+    );
+
+    if (swipeLocked) return tile;
+
+    return Dismissible(
+      key: ValueKey(expense.id),
+      direction: DismissDirection.endToStart,
+      background: Container(
+        alignment: Alignment.centerRight,
+        padding: const EdgeInsets.only(right: AppSpacing.lg),
+        decoration: BoxDecoration(
+          color: Theme.of(context).colorScheme.errorContainer,
+          borderRadius: BorderRadius.circular(AppRadius.card),
+        ),
+        child: Icon(
+          Icons.delete_outline_rounded,
+          color: Theme.of(context).colorScheme.error,
+        ),
+      ),
+      confirmDismiss: (_) => confirmDeleteExpense(context),
+      onDismissed: (_) => deleteExpenseWithFeedback(
+        context,
+        ref,
+        expense.id,
+        skipConfirm: true,
+      ),
+      child: tile,
     );
   }
 
@@ -235,11 +278,11 @@ class ExpenseListScreen extends ConsumerWidget {
 
     return switch (filter.mode) {
       ExpenseDateFilterMode.today =>
-        'Swipe left on a row to delete, or tap to edit.',
+        'Grouped by day · swipe left to delete, or tap to edit.',
       ExpenseDateFilterMode.dateRange =>
-        'Showing spending from ${filter.label(salaryDay: salaryDay)}.',
+        'Showing ${filter.label(salaryDay: salaryDay)} · grouped by day.',
       ExpenseDateFilterMode.payCycle =>
-        'Showing this pay cycle (${filter.label(salaryDay: salaryDay)}). Swipe left to delete.',
+        'This pay cycle (${filter.label(salaryDay: salaryDay)}) · grouped by day.',
     };
   }
 
@@ -284,10 +327,12 @@ class _ExpenseSummaryCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final expenseColor = context.semanticColors.expense;
 
     return PremiumCard(
       variant: PremiumCardVariant.tinted,
-      margin: const EdgeInsets.only(bottom: AppSpacing.sm),
+      tintColor: expenseColor,
+      margin: const EdgeInsets.only(bottom: AppSpacing.md),
       child: Row(
         children: [
           Expanded(
@@ -302,12 +347,10 @@ class _ExpenseSummaryCard extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(height: AppSpacing.xxs),
-                Text(
-                  formatPaise(totalPaise),
-                  style: BrandTypography.moneyHero(
-                    context,
-                    color: theme.colorScheme.primary,
-                  ),
+                MoneyText(
+                  totalPaise,
+                  color: expenseColor,
+                  style: AppTypography.moneyHero(context, color: expenseColor),
                 ),
               ],
             ),
@@ -318,14 +361,14 @@ class _ExpenseSummaryCard extends StatelessWidget {
               vertical: AppSpacing.sm,
             ),
             decoration: BoxDecoration(
-              color: theme.colorScheme.primary.withValues(alpha: 0.1),
+              color: expenseColor.withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(AppRadius.pill),
             ),
             child: Text(
               '$count ${count == 1 ? 'item' : 'items'}',
               style: theme.textTheme.labelLarge?.copyWith(
                 fontWeight: FontWeight.w700,
-                color: theme.colorScheme.primary,
+                color: expenseColor,
               ),
             ),
           ),

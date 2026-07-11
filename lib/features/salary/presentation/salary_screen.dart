@@ -3,20 +3,23 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:rupee_track/core/database/daos/salary_dao.dart';
 import 'package:rupee_track/core/design_system/design_tokens.dart';
+import 'package:rupee_track/core/design_system/money_preview_strip.dart';
+import 'package:rupee_track/core/design_system/premium_app_bar.dart';
 import 'package:rupee_track/core/design_system/premium_card.dart';
 import 'package:rupee_track/core/design_system/premium_snackbar.dart';
 import 'package:rupee_track/core/design_system/responsive.dart';
+import 'package:rupee_track/core/widgets/money_text.dart';
 import 'package:rupee_track/core/providers/database_provider.dart';
 import 'package:rupee_track/core/providers/salary_cycle_provider.dart';
 import 'package:rupee_track/core/router/routes.dart';
 import 'package:rupee_track/core/utils/date_utils.dart';
 import 'package:rupee_track/core/utils/money_utils.dart';
-import 'package:rupee_track/core/widgets/theme_toggle_button.dart';
 import 'package:rupee_track/features/dashboard/data/dashboard_repository.dart';
 import 'package:rupee_track/features/salary/data/salary_repository.dart';
 import 'package:rupee_track/features/salary/domain/salary_breakdown.dart';
 import 'package:rupee_track/features/salary/presentation/add_extra_income_sheet.dart';
 import 'package:rupee_track/features/salary/domain/salary_deduction_type.dart';
+import 'package:rupee_track/features/cloud_backup/data/cloud_backup_coordinator.dart';
 
 class SalaryScreen extends ConsumerStatefulWidget {
   const SalaryScreen({super.key});
@@ -134,13 +137,9 @@ class _SalaryScreenState extends ConsumerState<SalaryScreen> {
       );
       ref.invalidate(salaryBreakdownProvider(cycleKey));
       ref.invalidate(monthlySummaryProvider(cycleKey));
+      ref.read(cloudBackupCoordinatorProvider).schedulePush();
       if (!mounted) return;
-      showPremiumSnackBar(
-        context,
-        message:
-            'Saved · ${formatPaise(_netPaise())} in-hand this cycle',
-        kind: PremiumSnackBarKind.success,
-      );
+      context.go(AppRoutes.home);
     } catch (_) {
       if (!mounted) return;
       showPremiumSnackBar(
@@ -158,6 +157,7 @@ class _SalaryScreenState extends ConsumerState<SalaryScreen> {
     await dao.removeExtraIncome(id);
     ref.invalidate(salaryBreakdownProvider(cycleKey));
     ref.invalidate(monthlySummaryProvider(cycleKey));
+    ref.read(cloudBackupCoordinatorProvider).schedulePush();
   }
 
   @override
@@ -173,9 +173,9 @@ class _SalaryScreenState extends ConsumerState<SalaryScreen> {
     breakdownAsync.whenData(_loadFromBreakdown);
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Salary this cycle'),
-        actions: const [ThemeToggleButton()],
+      appBar: PremiumAppBar(
+        title: 'Salary this cycle',
+        subtitle: formatCycleLabel(cycleKey, salaryDay: salaryDay),
       ),
       body: ResponsiveBody(
         child: ListView(
@@ -185,213 +185,205 @@ class _SalaryScreenState extends ConsumerState<SalaryScreen> {
           ),
           children: [
             Text(
-              formatCycleLabel(cycleKey, salaryDay: salaryDay),
-              style: theme.textTheme.headlineSmall,
-            ),
-            const SizedBox(height: AppSpacing.xs),
-            Text(
-              'Salary changes every cycle. Enter what you earned this time — '
-              '₹11,500 one month and ₹25,000 the next is normal.',
+              'Enter what you were paid this cycle. Amounts can change month to month.',
               style: theme.textTheme.bodyMedium?.copyWith(
                 color: theme.colorScheme.onSurfaceVariant,
               ),
             ),
             const SizedBox(height: AppSpacing.lg),
-            TextField(
-              controller: _grossController,
-              keyboardType:
-                  const TextInputType.numberWithOptions(decimal: true),
-              decoration: const InputDecoration(
-                labelText: 'Salary amount',
-                hintText: 'What you were paid this cycle',
-                prefixText: '₹ ',
-                helperText:
-                    'Credited salary for this cycle (e.g. ₹25,000). Add deductions below if PF was cut.',
-              ),
-              onChanged: (_) => setState(() {}),
-            ),
-            const SizedBox(height: AppSpacing.lg),
-            Row(
-              children: [
-                Expanded(
-                  child: Text(
-                    'Deductions (optional)',
-                    style: theme.textTheme.titleSmall?.copyWith(
-                      fontWeight: FontWeight.w700,
-                    ),
-                  ),
+            PremiumCard(
+              child: TextField(
+                controller: _grossController,
+                keyboardType:
+                    const TextInputType.numberWithOptions(decimal: true),
+                decoration: const InputDecoration(
+                  labelText: 'Salary amount',
+                  hintText: 'e.g. 25,000',
+                  prefixText: '₹ ',
+                  border: InputBorder.none,
+                  enabledBorder: InputBorder.none,
+                  focusedBorder: InputBorder.none,
                 ),
-                TextButton.icon(
-                  onPressed: () => _addDeduction(),
-                  icon: const Icon(Icons.add_rounded, size: 18),
-                  label: const Text('Add'),
-                ),
-              ],
-            ),
-            const SizedBox(height: AppSpacing.xs),
-            Text(
-              'Add PF, ESI, tax, or anything else taken from your pay. '
-              'Skip this if nothing was deducted.',
-              style: theme.textTheme.bodySmall?.copyWith(
-                color: theme.colorScheme.onSurfaceVariant,
+                onChanged: (_) => setState(() {}),
               ),
             ),
-            if (_deductions.isEmpty) ...[
-              const SizedBox(height: AppSpacing.sm),
-              OutlinedButton.icon(
-                onPressed: () => _addDeduction(SalaryDeductionType.pf),
-                icon: const Icon(Icons.remove_circle_outline),
-                label: const Text('Add PF deduction'),
-              ),
-            ] else ...[
-              const SizedBox(height: AppSpacing.sm),
-              ...List.generate(_deductions.length, (index) {
-                final row = _deductions[index];
-                return Padding(
-                  padding: const EdgeInsets.only(bottom: AppSpacing.sm),
-                  child: PremiumCard(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.stretch,
-                      children: [
-                        DropdownButtonFormField<SalaryDeductionType>(
-                          value: row.type,
-                          decoration: const InputDecoration(
-                            labelText: 'Type',
-                            isDense: true,
-                          ),
-                          items: SalaryDeductionType.values
-                              .map(
-                                (type) => DropdownMenuItem(
-                                  value: type,
-                                  child: Text(type.label),
-                                ),
-                              )
-                              .toList(),
-                          onChanged: (value) {
-                            if (value == null) return;
-                            setState(() => row.type = value);
-                          },
-                        ),
-                        const SizedBox(height: AppSpacing.sm),
-                        TextField(
-                          controller: row.amountController,
-                          keyboardType: const TextInputType.numberWithOptions(
-                            decimal: true,
-                          ),
-                          decoration: const InputDecoration(
-                            labelText: 'Amount deducted',
-                            prefixText: '₹ ',
-                          ),
-                          onChanged: (_) => setState(() {}),
-                        ),
-                        if (row.type == SalaryDeductionType.other) ...[
-                          const SizedBox(height: AppSpacing.sm),
-                          TextField(
-                            controller: row.labelController,
-                            decoration: const InputDecoration(
-                              labelText: 'Label',
-                              hintText: 'Insurance, advance recovery…',
-                            ),
-                          ),
-                        ],
-                        Align(
-                          alignment: Alignment.centerRight,
-                          child: TextButton(
-                            onPressed: () => _removeDeduction(index),
-                            child: const Text('Remove'),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                );
-              }),
-            ],
-            const SizedBox(height: AppSpacing.lg),
-            Row(
-              children: [
-                Expanded(
-                  child: Text(
-                    'Extra money (not salary)',
-                    style: theme.textTheme.titleSmall?.copyWith(
-                      fontWeight: FontWeight.w700,
-                    ),
-                  ),
-                ),
-                TextButton.icon(
-                  onPressed: () => showAddExtraIncomeSheet(context, ref),
-                  icon: const Icon(Icons.add_rounded, size: 18),
-                  label: const Text('Add'),
-                ),
-              ],
-            ),
-            const SizedBox(height: AppSpacing.xs),
-            Text(
-              'Family, gifts, or any cash outside your salary — adds to money left.',
-              style: theme.textTheme.bodySmall?.copyWith(
-                color: theme.colorScheme.onSurfaceVariant,
-              ),
-            ),
-            if (extraRows.isEmpty) ...[
-              const SizedBox(height: AppSpacing.sm),
-              OutlinedButton.icon(
-                onPressed: () => showAddExtraIncomeSheet(context, ref),
-                icon: const Icon(Icons.volunteer_activism_outlined),
-                label: const Text('Add extra income'),
-              ),
-            ] else ...[
-              const SizedBox(height: AppSpacing.sm),
-              ...extraRows.map(
-                (row) => ListTile(
-                  contentPadding: EdgeInsets.zero,
-                  title: Text(row.label),
-                  subtitle: Text(formatPaise(row.amountPaise)),
-                  trailing: IconButton(
-                    icon: const Icon(Icons.close_rounded),
-                    onPressed: () => _removeExtraIncome(row.id, cycleKey),
-                  ),
-                ),
-              ),
-            ],
             const SizedBox(height: AppSpacing.md),
             PremiumCard(
-              variant: PremiumCardVariant.elevated,
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
                   Text(
-                    'Available this cycle',
-                    style: theme.textTheme.labelMedium?.copyWith(
-                      color: theme.colorScheme.onSurfaceVariant,
+                    'Deductions',
+                    style: theme.textTheme.titleSmall?.copyWith(
+                      fontWeight: FontWeight.w700,
                     ),
                   ),
-                  const SizedBox(height: AppSpacing.xs),
+                  const SizedBox(height: AppSpacing.xxs),
                   Text(
-                    formatPaise(_netPaise() + savedExtraPaise),
-                    style: theme.textTheme.headlineSmall?.copyWith(
-                      fontWeight: FontWeight.w800,
-                    ),
-                  ),
-                  const SizedBox(height: AppSpacing.xs),
-                  Text(
-                    'Salary in-hand ${formatPaise(_netPaise())}'
-                    '${savedExtraPaise > 0 ? ' + extra ${formatPaise(savedExtraPaise)}' : ''}',
+                    'Optional — PF, ESI, tax, or anything else taken from pay.',
                     style: theme.textTheme.bodySmall?.copyWith(
                       color: theme.colorScheme.onSurfaceVariant,
                     ),
                   ),
-                  if (_deductionsPaise() > 0) ...[
-                    const SizedBox(height: AppSpacing.xxs),
-                    Text(
-                      '${formatPaise(_grossPaise())} gross − '
-                      '${formatPaise(_deductionsPaise())} deductions',
-                      style: theme.textTheme.bodySmall?.copyWith(
-                        color: theme.colorScheme.onSurfaceVariant,
+                  if (_deductions.isNotEmpty) ...[
+                    const SizedBox(height: AppSpacing.md),
+                    ...List.generate(_deductions.length, (index) {
+                      final row = _deductions[index];
+                      return Column(
+                        children: [
+                          if (index > 0) ...[
+                            const Divider(height: AppSpacing.lg),
+                          ],
+                          DropdownButtonFormField<SalaryDeductionType>(
+                            value: row.type,
+                            decoration: const InputDecoration(
+                              labelText: 'Type',
+                              isDense: true,
+                            ),
+                            items: SalaryDeductionType.values
+                                .map(
+                                  (type) => DropdownMenuItem(
+                                    value: type,
+                                    child: Text(type.label),
+                                  ),
+                                )
+                                .toList(),
+                            onChanged: (value) {
+                              if (value == null) return;
+                              setState(() => row.type = value);
+                            },
+                          ),
+                          const SizedBox(height: AppSpacing.sm),
+                          TextField(
+                            controller: row.amountController,
+                            keyboardType:
+                                const TextInputType.numberWithOptions(
+                              decimal: true,
+                            ),
+                            decoration: const InputDecoration(
+                              labelText: 'Amount deducted',
+                              prefixText: '₹ ',
+                            ),
+                            onChanged: (_) => setState(() {}),
+                          ),
+                          if (row.type == SalaryDeductionType.other) ...[
+                            const SizedBox(height: AppSpacing.sm),
+                            TextField(
+                              controller: row.labelController,
+                              decoration: const InputDecoration(
+                                labelText: 'Label',
+                                hintText: 'Insurance, advance recovery…',
+                              ),
+                            ),
+                          ],
+                          Align(
+                            alignment: Alignment.centerRight,
+                            child: TextButton(
+                              onPressed: () => _removeDeduction(index),
+                              child: const Text('Remove'),
+                            ),
+                          ),
+                        ],
+                      );
+                    }),
+                  ],
+                  Align(
+                    alignment: Alignment.centerLeft,
+                    child: TextButton.icon(
+                      onPressed: () => _addDeduction(),
+                      icon: const Icon(Icons.add_rounded, size: 18),
+                      label: Text(
+                        _deductions.isEmpty
+                            ? 'Add deduction'
+                            : 'Add another',
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: AppSpacing.md),
+            PremiumCard(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Text(
+                    'Extra income',
+                    style: theme.textTheme.titleSmall?.copyWith(
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                  const SizedBox(height: AppSpacing.xxs),
+                  Text(
+                    'Optional — family, gifts, or cash outside your salary.',
+                    style: theme.textTheme.bodySmall?.copyWith(
+                      color: theme.colorScheme.onSurfaceVariant,
+                    ),
+                  ),
+                  if (extraRows.isNotEmpty) ...[
+                    const SizedBox(height: AppSpacing.sm),
+                    ...extraRows.map(
+                      (row) => ListTile(
+                        contentPadding: EdgeInsets.zero,
+                        dense: true,
+                        title: Text(row.label),
+                        trailing: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            MoneyText(
+                              row.amountPaise,
+                              compact: true,
+                              color: context.semanticColors.income,
+                              style: AppTypography.moneyCompact(
+                                context,
+                                color: context.semanticColors.income,
+                              ),
+                            ),
+                            IconButton(
+                              visualDensity: VisualDensity.compact,
+                              icon: const Icon(Icons.close_rounded, size: 20),
+                              onPressed: () =>
+                                  _removeExtraIncome(row.id, cycleKey),
+                            ),
+                          ],
+                        ),
+                        leading: Icon(
+                          Icons.savings_outlined,
+                          color: context.semanticColors.income,
+                          size: AppIconSize.md,
+                        ),
                       ),
                     ),
                   ],
+                  Align(
+                    alignment: Alignment.centerLeft,
+                    child: TextButton.icon(
+                      onPressed: () => showAddExtraIncomeSheet(context, ref),
+                      icon: const Icon(Icons.add_rounded, size: 18),
+                      label: Text(
+                        extraRows.isEmpty
+                            ? 'Add extra income'
+                            : 'Add another',
+                      ),
+                    ),
+                  ),
                 ],
               ),
+            ),
+            const SizedBox(height: AppSpacing.lg),
+            MoneyPreviewStrip(
+              label: 'Available this cycle',
+              chipLabel: 'Live preview',
+              amountPaise: _netPaise() + savedExtraPaise,
+              moneyColor: context.semanticColors.income,
+              subtitle: 'Updates as you type',
+              detailLines: [
+                'Salary in-hand ${formatPaise(_netPaise())}'
+                    '${savedExtraPaise > 0 ? ' + extra ${formatPaise(savedExtraPaise)}' : ''}',
+                if (_deductionsPaise() > 0)
+                  '${formatPaise(_grossPaise())} gross − '
+                      '${formatPaise(_deductionsPaise())} deductions',
+              ],
             ),
             const SizedBox(height: AppSpacing.xl),
             FilledButton(
@@ -399,9 +391,11 @@ class _SalaryScreenState extends ConsumerState<SalaryScreen> {
               child: Text(_saving ? 'Saving…' : 'Save salary'),
             ),
             const SizedBox(height: AppSpacing.sm),
-            OutlinedButton(
-              onPressed: () => context.push(AppRoutes.budgetSetup),
-              child: const Text('Set up budget from this salary'),
+            Center(
+              child: TextButton(
+                onPressed: () => context.push(AppRoutes.budgetSetup),
+                child: const Text('Set up budget from this salary'),
+              ),
             ),
           ],
         ),

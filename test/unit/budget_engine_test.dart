@@ -2,6 +2,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:rupee_track/features/budget/domain/allocation_mode.dart';
 import 'package:rupee_track/features/budget/domain/budget_engine.dart';
 import 'package:rupee_track/features/budget/domain/budget_templates.dart';
+import 'package:rupee_track/features/budget/domain/bucket_status.dart';
 
 void main() {
   group('BudgetEngine', () {
@@ -114,6 +115,86 @@ void main() {
         previousRemainingByBucketKey: {'food': 5000},
       );
       expect(rolled.single.rolloverPaise, 5000);
+    });
+
+    test('percentage split sums exactly for awkward salary totals', () {
+      const awkwardSalary = 1000003;
+      final allocations = BudgetEngine.fromPercentageTemplate(
+        salaryPaise: awkwardSalary,
+        categorySlugToId: {'food': 1, 'transport': 2},
+      );
+      final total =
+          allocations.fold<int>(0, (sum, bucket) => sum + bucket.allocatedPaise);
+      expect(total, awkwardSalary);
+    });
+
+    test('ai suggested allocation sums exactly to salary', () {
+      final allocations = BudgetEngine.suggestAiAllocation(
+        salaryPaise: salary,
+        avgSpendBySlug: const {'food': 400000, 'transport': 200000},
+        categorySlugToId: const {'food': 1, 'transport': 2, 'investment': 3},
+      );
+      final total =
+          allocations.fold<int>(0, (sum, bucket) => sum + bucket.allocatedPaise);
+      expect(total, salary);
+    });
+
+    test('generateInsights ignores intentional reserve transfers within budget', () {
+      final plan = BudgetPlanStatus(
+        monthKey: '2026-06-17',
+        salaryPaise: salary,
+        allocationMode: AllocationMode.percentage,
+        rolloverEnabled: false,
+        buckets: [
+          const BucketStatus(
+            bucketKey: 'investments',
+            displayName: 'Investments',
+            categoryId: 3,
+            bucketType: BucketType.investment,
+            allocatedPaise: 250000,
+            rolloverPaise: 0,
+            spentPaise: 150000,
+            daysRemaining: 10,
+            alertLevel: BudgetAlertLevel.watch50,
+          ),
+        ],
+        insights: const [],
+      );
+
+      final insights = BudgetEngine.generateInsights(plan);
+      expect(
+        insights.any((i) => i.title.toLowerCase().contains('reserve exceeded')),
+        isFalse,
+      );
+    });
+
+    test('generateInsights warns when reserve bucket is overspent', () {
+      final plan = BudgetPlanStatus(
+        monthKey: '2026-06-17',
+        salaryPaise: salary,
+        allocationMode: AllocationMode.percentage,
+        rolloverEnabled: false,
+        buckets: [
+          const BucketStatus(
+            bucketKey: 'investments',
+            displayName: 'Investments',
+            categoryId: 3,
+            bucketType: BucketType.investment,
+            allocatedPaise: 250000,
+            rolloverPaise: 0,
+            spentPaise: 300000,
+            daysRemaining: 10,
+            alertLevel: BudgetAlertLevel.exceeded,
+          ),
+        ],
+        insights: const [],
+      );
+
+      final insights = BudgetEngine.generateInsights(plan);
+      expect(
+        insights.any((i) => i.title.contains('reserve exceeded')),
+        isTrue,
+      );
     });
   });
 }

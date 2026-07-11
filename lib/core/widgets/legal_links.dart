@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:rupee_track/core/constants/app_constants.dart';
 import 'package:rupee_track/core/design_system/design_tokens.dart';
+import 'package:rupee_track/core/design_system/premium_list_tile.dart';
 import 'package:rupee_track/core/design_system/premium_snackbar.dart';
 import 'package:url_launcher/url_launcher.dart';
 
@@ -22,24 +23,22 @@ class LegalLinksCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Card(
-      child: Column(
-        children: [
-          ListTile(
-            leading: const Icon(Icons.privacy_tip_outlined),
-            title: const Text('Privacy policy'),
-            trailing: const Icon(Icons.open_in_new_rounded, size: 18),
-            onTap: () => _open(context, AppConstants.privacyPolicyUrl),
-          ),
-          const Divider(height: 1),
-          ListTile(
-            leading: const Icon(Icons.description_outlined),
-            title: const Text('Terms of service'),
-            trailing: const Icon(Icons.open_in_new_rounded, size: 18),
-            onTap: () => _open(context, AppConstants.termsOfServiceUrl),
-          ),
-        ],
-      ),
+    return Column(
+      children: [
+        PremiumMenuTile(
+          icon: Icons.privacy_tip_outlined,
+          title: 'Privacy policy',
+          subtitle: 'How we handle your data',
+          onTap: () => _open(context, AppConstants.privacyPolicyUrl),
+        ),
+        const SizedBox(height: AppSpacing.sm),
+        PremiumMenuTile(
+          icon: Icons.description_outlined,
+          title: 'Terms of service',
+          subtitle: 'Rules for using ${AppConstants.appName}',
+          onTap: () => _open(context, AppConstants.termsOfServiceUrl),
+        ),
+      ],
     );
   }
 }

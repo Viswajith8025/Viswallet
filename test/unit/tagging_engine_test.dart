@@ -73,6 +73,30 @@ void main() {
     expect(result.tags, containsAll(['Food', 'Family']));
   });
 
+  test('engine prefers user learned over ai even when ai confidence is higher', () {
+    final result = engine.mergeSignals(
+      const ClassificationRequest(title: 'amazon pay'),
+      const [
+        ClassificationSignal(
+          source: ClassificationSource.ai,
+          confidence: 0.99,
+          categorySlug: 'shopping',
+          tags: ['Online'],
+        ),
+        ClassificationSignal(
+          source: ClassificationSource.userLearned,
+          confidence: 0.7,
+          categorySlug: 'food',
+          tags: ['Groceries'],
+          reason: 'User correction',
+        ),
+      ],
+      categories: categories,
+    );
+    expect(result.categorySlug, 'food');
+    expect(result.tags, containsAll(['Online', 'Groceries']));
+  });
+
   test('Swiggy maps to food via merchant rules', () async {
     const classifier = MerchantRuleClassifier();
     final signal = await classifier.classify(

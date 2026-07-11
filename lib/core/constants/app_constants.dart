@@ -12,10 +12,10 @@ class AppConstants {
 
   /// Hosted privacy policy — update before Play Store submission.
   static const privacyPolicyUrl =
-      'https://github.com/Viswajith8025/Vizwallet/blob/main/PRIVACY.md';
+      'https://github.com/Viswajith8025/Viswallet/blob/main/PRIVACY.md';
 
   static const termsOfServiceUrl =
-      'https://github.com/Viswajith8025/Vizwallet/blob/main/TERMS.md';
+      'https://github.com/Viswajith8025/Viswallet/blob/main/TERMS.md';
 
   /// Subscription cost as share of salary — warning thresholds.
   static const subscriptionBurdenWarningPercent = 10.0;
@@ -26,6 +26,16 @@ class AppConstants {
   static const budgetOnTrackMaxPercentUsed = 75.0;
 
   static const onboardingCompleteKey = 'onboarding_complete';
+  static const localOnlyModeKey = 'local_only_mode';
+
+  /// Deep link target for Supabase password-recovery emails.
+  static const authPasswordResetRedirect = 'viswallet://reset-password';
   static const selectedMonthKeyPref = 'selected_month_key';
   static const selectedCycleKeyPref = 'selected_cycle_key';
+
+  /// User id bound to the currently open SQLite file (account isolation).
+  static const activeDatabaseUserIdKey = 'active_database_user_id';
+
+  /// First account that claimed the legacy shared `vis_wallet.sqlite` file.
+  static const legacyDatabaseOwnerUserIdKey = 'legacy_database_owner_user_id';
 }

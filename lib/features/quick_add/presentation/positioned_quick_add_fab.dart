@@ -32,8 +32,8 @@ class _PositionedQuickAddFabState extends ConsumerState<PositionedQuickAddFab>
     _offset = FabPositionStore.load();
     _pulse = AnimationController(
       vsync: this,
-      duration: const Duration(milliseconds: 200),
-      lowerBound: 0.95,
+      duration: AppMotion.durationFast,
+      lowerBound: 0.94,
       upperBound: 1.0,
     )..value = 1.0;
   }
@@ -124,7 +124,7 @@ class _PositionedQuickAddFabState extends ConsumerState<PositionedQuickAddFab>
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final isDark = theme.brightness == Brightness.dark;
+    final brightness = theme.brightness;
 
     return Positioned(
       right: ShellBottomInset.fabMargin - _offset.dx,
@@ -138,10 +138,10 @@ class _PositionedQuickAddFabState extends ConsumerState<PositionedQuickAddFab>
         child: ScaleTransition(
           scale: _pulse,
           child: AnimatedContainer(
-            duration: const Duration(milliseconds: 150),
+            duration: AppMotion.durationFast,
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(AppRadius.fab),
-              boxShadow: AppShadows.fab(isDark),
+              boxShadow: AppElevation.shadow(brightness, AppElevationLevel.hero),
               border: _dragging
                   ? Border.all(
                       color: theme.colorScheme.primary.withValues(alpha: 0.7),
@@ -159,7 +159,7 @@ class _PositionedQuickAddFabState extends ConsumerState<PositionedQuickAddFab>
                 height: ShellBottomInset.fabSize,
                 child: Icon(
                   _dragging ? Icons.open_with_rounded : Icons.add_rounded,
-                  size: 26,
+                  size: AppIconSize.lg,
                   color: theme.colorScheme.onPrimary,
                 ),
               ),

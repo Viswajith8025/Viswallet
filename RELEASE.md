@@ -18,12 +18,20 @@
 
 ## 3. Groq API (AI Jithu)
 
-For personal builds, copy `groq_local.example.dart` → `groq_local.dart` and paste your Groq key (gitignored). It is included in release APKs.
+Jithu falls back to on-device rules when no key is configured (`GroqConfig.isConfigured`).
 
-For Play Store / CI, prefer `--dart-define=GROQ_API_KEY=...` or a server-side proxy instead of committing keys.
+For personal builds, copy `groq_local.example.dart` → `groq_local.dart` and paste your Groq key (gitignored). **Any non-empty key is compiled into release APKs/AABs** — treat as a dev-only shortcut.
+
+For Play Store / CI, use `--dart-define=GROQ_API_KEY=...` or a server-side proxy instead of shipping keys in the binary.
 
 ```bash
 flutter build appbundle --dart-define=GROQ_API_KEY=gsk_...
+```
+
+Build without a key for store submission if Jithu offline mode is acceptable:
+
+```bash
+flutter build appbundle --release
 ```
 
 ## 4. Play Store

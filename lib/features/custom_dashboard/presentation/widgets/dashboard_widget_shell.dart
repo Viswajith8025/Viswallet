@@ -7,7 +7,6 @@ import 'package:rupee_track/features/custom_dashboard/data/dashboard_layout_repo
 import 'package:rupee_track/features/custom_dashboard/domain/dashboard_layout_models.dart';
 import 'package:rupee_track/features/custom_dashboard/presentation/sheets/dashboard_widget_edit_sheet.dart';
 import 'package:rupee_track/features/custom_dashboard/presentation/widgets/dashboard_widget_registry.dart';
-import 'package:rupee_track/features/custom_dashboard/presentation/widgets/dashboard_widget_visibility.dart';
 
 class DashboardWidgetShell extends ConsumerWidget {
   const DashboardWidgetShell({
@@ -27,10 +26,6 @@ class DashboardWidgetShell extends ConsumerWidget {
     final padding = density == DashboardDensity.compact
         ? AppSpacing.xs
         : AppSpacing.sm;
-
-    if (!editMode && isDashboardWidgetEmpty(ref, instance)) {
-      return const SizedBox.shrink();
-    }
 
     var child = DashboardWidgetRegistry.build(context, ref, instance);
 

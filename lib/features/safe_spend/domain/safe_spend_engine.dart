@@ -57,6 +57,7 @@ abstract final class SafeSpendEngine {
       today: today,
       salaryPaise: salaryPaise,
       carryOverPaise: carryOverPaise,
+      extraIncomePaise: extraIncomePaise,
     );
 
     final risk = _riskLevel(
@@ -103,11 +104,12 @@ abstract final class SafeSpendEngine {
     required DateTime today,
     required int salaryPaise,
     required int carryOverPaise,
+    required int extraIncomePaise,
   }) {
     final elapsed = daysElapsed.clamp(1, totalCycleDays);
     final avgDaily = (cycleSpentPaise / elapsed).round();
     final projectedSpend = (avgDaily * totalCycleDays).round();
-    final totalBudget = salaryPaise + carryOverPaise;
+    final totalBudget = salaryPaise + carryOverPaise + extraIncomePaise;
     final expectedBalance = totalBudget - projectedSpend;
 
     DateTime? lastsUntil;
@@ -143,7 +145,10 @@ abstract final class SafeSpendEngine {
     required double usagePercent,
     required SafeSpendProjection projection,
   }) {
-    if (moneyLeftPaise < 0 || projection.expectsShortage && usagePercent > 120) {
+    if (moneyLeftPaise < 0 || projection.expectsShortage) {
+      return SafeSpendRiskLevel.critical;
+    }
+    if (safeDailyLimitPaise <= 0 && moneyLeftPaise <= 0) {
       return SafeSpendRiskLevel.critical;
     }
     if (usagePercent >= 200) return SafeSpendRiskLevel.critical;

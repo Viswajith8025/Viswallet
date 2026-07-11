@@ -16,6 +16,11 @@ class PremiumFilterChip extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final scheme = theme.colorScheme;
+    final isDark = theme.brightness == Brightness.dark;
+    final neutralContainer = isDark
+        ? AppColors.neutralContainerDark
+        : AppColors.neutralContainerLight;
 
     return Material(
       color: Colors.transparent,
@@ -27,27 +32,25 @@ class PremiumFilterChip extends StatelessWidget {
           curve: AppCurves.standard,
           padding: const EdgeInsets.symmetric(
             horizontal: AppSpacing.md,
-            vertical: AppSpacing.sm,
+            vertical: AppSpacing.xs,
           ),
           decoration: BoxDecoration(
             color: selected
-                ? theme.colorScheme.primary.withValues(alpha: 0.12)
-                : theme.colorScheme.surfaceContainerHighest
-                    .withValues(alpha: 0.5),
+                ? scheme.primary.withValues(alpha: isDark ? 0.2 : 0.12)
+                : neutralContainer,
             borderRadius: BorderRadius.circular(AppRadius.pill),
             border: Border.all(
               color: selected
-                  ? theme.colorScheme.primary.withValues(alpha: 0.35)
-                  : theme.dividerColor,
+                  ? scheme.primary.withValues(alpha: 0.45)
+                  : AppColors.hairline(theme.brightness),
             ),
           ),
           child: Text(
             label,
             style: theme.textTheme.labelLarge?.copyWith(
-              color: selected
-                  ? theme.colorScheme.primary
-                  : theme.colorScheme.onSurfaceVariant,
+              color: selected ? scheme.primary : scheme.onSurface,
               fontWeight: selected ? FontWeight.w600 : FontWeight.w500,
+              height: 1.25,
             ),
           ),
         ),

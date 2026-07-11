@@ -15,12 +15,13 @@ class PremiumBottomNav extends StatelessWidget {
   final ValueChanged<int> onSelected;
   final List<PremiumNavDestination> destinations;
 
-  static const _topRadius = BorderRadius.vertical(top: Radius.circular(AppRadius.xl));
+  static const _topRadius =
+      BorderRadius.vertical(top: Radius.circular(AppRadius.xl));
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final isDark = theme.brightness == Brightness.dark;
+    final brightness = theme.brightness;
 
     return PremiumSurfaces.glassNavBar(
       context: context,
@@ -28,11 +29,11 @@ class PremiumBottomNav extends StatelessWidget {
       child: DecoratedBox(
         decoration: BoxDecoration(
           border: Border(
-            top: BorderSide(
-              color: isDark
-                  ? Colors.white.withValues(alpha: 0.12)
-                  : Colors.black.withValues(alpha: 0.06),
-            ),
+            top: AppElevation.hairlineBorder(brightness),
+          ),
+          boxShadow: AppElevation.shadow(
+            brightness,
+            AppElevationLevel.raised,
           ),
         ),
         child: SafeArea(
@@ -106,20 +107,28 @@ class _NavItem extends StatelessWidget {
           borderRadius: BorderRadius.circular(AppRadius.md),
           splashColor: theme.colorScheme.primary.withValues(alpha: 0.08),
           child: AnimatedContainer(
-            duration: AppDurations.fast,
-            curve: AppCurves.standard,
-            padding: EdgeInsets.symmetric(vertical: compact ? 10 : 8),
+            duration: AppMotion.durationFast,
+            curve: AppMotion.curveStandard,
+            padding: EdgeInsets.symmetric(
+              horizontal: AppSpacing.xs,
+              vertical: compact ? AppSpacing.sm : AppSpacing.xs,
+            ),
             decoration: BoxDecoration(
               color: selected
                   ? theme.colorScheme.primary.withValues(alpha: 0.12)
                   : Colors.transparent,
               borderRadius: BorderRadius.circular(AppRadius.md),
+              border: selected
+                  ? Border.all(
+                      color: theme.colorScheme.primary.withValues(alpha: 0.2),
+                    )
+                  : null,
             ),
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
                 AnimatedSwitcher(
-                  duration: AppDurations.fast,
+                  duration: AppMotion.durationFast,
                   transitionBuilder: (child, animation) => ScaleTransition(
                     scale: animation,
                     child: child,
@@ -127,17 +136,17 @@ class _NavItem extends StatelessWidget {
                   child: Icon(
                     selected ? destination.selectedIcon : destination.icon,
                     key: ValueKey(selected),
-                    size: compact ? 24 : 22,
+                    size: compact ? AppIconSize.lg : AppIconSize.md,
                     color: color,
                   ),
                 ),
                 if (!compact) ...[
-                  const SizedBox(height: 4),
+                  const SizedBox(height: AppSpacing.xxs),
                   AnimatedDefaultTextStyle(
-                    duration: AppDurations.fast,
+                    duration: AppMotion.durationFast,
                     style: theme.textTheme.labelSmall!.copyWith(
                       color: color,
-                      fontWeight: selected ? FontWeight.w600 : FontWeight.w500,
+                      fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
                     ),
                     child: Text(
                       destination.label,

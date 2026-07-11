@@ -15,6 +15,7 @@ import 'package:rupee_track/features/insights/presentation/widgets/insights_feed
 import 'package:rupee_track/features/smart_tagging/data/tagging_repository.dart';
 import 'package:rupee_track/features/trends/data/spending_trends_repository.dart';
 
+/// Single scroll: tips at top, then health + trends + categories.
 class InsightsScreen extends ConsumerWidget {
   const InsightsScreen({super.key});
 
@@ -31,7 +32,7 @@ class InsightsScreen extends ConsumerWidget {
       return Scaffold(
         appBar: const PremiumAppBar(
           title: 'Insights',
-          subtitle: 'Tips and spending patterns',
+          subtitle: 'Patterns, health, and tips',
         ),
         body: const DashboardSkeleton(),
       );
@@ -48,7 +49,7 @@ class InsightsScreen extends ConsumerWidget {
     return Scaffold(
       appBar: PremiumAppBar(
         title: 'Insights',
-        subtitle: 'Tips and spending patterns',
+        subtitle: 'Patterns, health, and tips',
         actions: [
           IconButton(
             tooltip: 'Search',
@@ -66,7 +67,7 @@ class InsightsScreen extends ConsumerWidget {
             padding: ShellBottomInset.bottomOnly(context),
             children: [
               const InsightsFeedSection(),
-              const SizedBox(height: AppSpacing.lg),
+              const SizedBox(height: AppSpacing.md),
               trendsAsync.when(
                 loading: () => const Padding(
                   padding: EdgeInsets.symmetric(vertical: AppSpacing.lg),
@@ -79,7 +80,7 @@ class InsightsScreen extends ConsumerWidget {
                   ),
                   child: ErrorState(
                     message:
-                        'Charts could not load. Your tips above are still available.',
+                        'Charts could not load. Tips above are still available.',
                     onRetry: () => ref.invalidate(spendingTrendsProvider),
                   ),
                 ),

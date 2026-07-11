@@ -5,10 +5,11 @@ import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:rupee_track/core/constants/category_defaults.dart';
 import 'package:rupee_track/core/database/app_database.dart';
 import 'package:rupee_track/core/design_system/design_tokens.dart';
+import 'package:rupee_track/core/design_system/premium_app_bar.dart';
 import 'package:rupee_track/core/design_system/responsive.dart';
+import 'package:rupee_track/core/design_system/skeleton_loader.dart';
 import 'package:rupee_track/core/utils/money_utils.dart';
 import 'package:rupee_track/core/widgets/error_state.dart';
-import 'package:rupee_track/core/widgets/theme_toggle_button.dart';
 import 'package:rupee_track/features/expenses/data/expense_repository.dart';
 import 'package:rupee_track/features/expenses/presentation/widgets/expense_date_picker_row.dart';
 import 'package:rupee_track/features/smart_tagging/data/tagging_repository.dart';
@@ -64,16 +65,26 @@ class QuickAddExpenseScreen extends HookConsumerWidget {
     }
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Add expense'),
+      appBar: PremiumAppBar(
+        title: 'Add expense',
         leading: IconButton(
-          icon: const Icon(Icons.close),
+          icon: const Icon(Icons.close_rounded),
           onPressed: () => context.pop(),
         ),
-        actions: const [ThemeToggleButton()],
       ),
       body: categoriesAsync.when(
-        loading: () => const Center(child: CircularProgressIndicator()),
+        loading: () => const Padding(
+          padding: EdgeInsets.all(AppSpacing.md),
+          child: Column(
+            children: [
+              SkeletonCard(height: 56),
+              SizedBox(height: AppSpacing.sm),
+              SkeletonCard(height: 120),
+              SizedBox(height: AppSpacing.sm),
+              SkeletonCard(height: 200),
+            ],
+          ),
+        ),
         error: (e, _) => ErrorState(
           message: 'We couldn\'t load your categories.',
           onRetry: () => ref.invalidate(categoriesProvider),

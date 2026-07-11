@@ -16,7 +16,6 @@ class CycleSelector extends ConsumerWidget {
     final cycles = recentCycleKeys(salaryDay: salaryDay, count: 6);
 
     return AppHorizontalChipList(
-      height: 42,
       itemCount: cycles.length,
       itemBuilder: (context, index) {
         final key = cycles[index];

@@ -3,6 +3,15 @@ import 'package:flutter/material.dart';
 import 'package:rupee_track/core/utils/money_utils.dart';
 import 'package:rupee_track/features/trends/domain/spending_trends_report.dart';
 
+/// Short x-axis label — keeps day for cycle ranges (e.g. "Jun 25–Jul 24" → "Jun 25").
+String _chartAxisLabel(String label) {
+  final match = RegExp(r'^(\w+)\s+(\d+)').firstMatch(label);
+  if (match != null) {
+    return '${match.group(1)} ${match.group(2)}';
+  }
+  return label.split(' ').first;
+}
+
 class TrendsLineChart extends StatelessWidget {
   const TrendsLineChart({required this.points, super.key});
 
@@ -36,13 +45,16 @@ class TrendsLineChart extends StatelessWidget {
               sideTitles: SideTitles(
                 showTitles: true,
                 reservedSize: 28,
+                interval: points.length > 4
+                    ? (points.length / 4).ceilToDouble().clamp(1, points.length.toDouble())
+                    : 1,
                 getTitlesWidget: (value, meta) {
                   final i = value.toInt();
                   if (i < 0 || i >= points.length) return const SizedBox.shrink();
                   return Padding(
                     padding: const EdgeInsets.only(top: 6),
                     child: Text(
-                      points[i].label.split(' ').first,
+                      _chartAxisLabel(points[i].label),
                       style: theme.textTheme.labelSmall,
                     ),
                   );

@@ -5,6 +5,7 @@ import 'package:rupee_track/core/database/daos/expenses_dao.dart';
 import 'package:rupee_track/core/design_system/compact_label.dart';
 import 'package:rupee_track/core/design_system/design_tokens.dart';
 import 'package:rupee_track/core/design_system/responsive.dart';
+import 'package:rupee_track/core/utils/category_icon_utils.dart';
 import 'package:rupee_track/core/utils/money_utils.dart';
 
 /// Donut chart + category legend for the home expense breakdown widget.
@@ -109,9 +110,18 @@ class ExpenseBreakdownChart extends StatelessWidget {
             padding: const EdgeInsets.symmetric(vertical: AppSpacing.xxs),
             child: Row(
               children: [
-                CircleAvatar(
-                  radius: 6,
-                  backgroundColor: Color(row.colorValue),
+                Container(
+                  width: 28,
+                  height: 28,
+                  decoration: BoxDecoration(
+                    color: Color(row.colorValue).withValues(alpha: 0.14),
+                    borderRadius: BorderRadius.circular(AppRadius.xs),
+                  ),
+                  child: Icon(
+                    categoryIconFromName(row.iconName),
+                    size: 16,
+                    color: Color(row.colorValue),
+                  ),
                 ),
                 const SizedBox(width: AppSpacing.sm),
                 Expanded(

@@ -22,17 +22,20 @@ class BorrowedScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final paybacksAsync = ref.watch(activeBorrowedPaybacksProvider);
     final theme = Theme.of(context);
+    final showFab = paybacksAsync.valueOrNull?.isNotEmpty ?? false;
 
     return Scaffold(
       appBar: const PremiumAppBar(
         title: 'Borrowed money',
         subtitle: 'What you owe and when to pay back',
       ),
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: () => showSchedulePaybackSheet(context, ref),
-        icon: const Icon(Icons.add),
-        label: const Text('Schedule pay-back'),
-      ),
+      floatingActionButton: showFab
+          ? FloatingActionButton.extended(
+              onPressed: () => showSchedulePaybackSheet(context, ref),
+              icon: const Icon(Icons.add),
+              label: const Text('Schedule pay-back'),
+            )
+          : null,
       body: ResponsiveBody(
         child: paybacksAsync.when(
           loading: () => ListView.separated(

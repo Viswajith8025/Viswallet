@@ -2,16 +2,12 @@ import 'package:rupee_track/features/custom_dashboard/domain/dashboard_layout_mo
 
 abstract final class DashboardTemplates {
   static DashboardLayoutConfig defaults() => DashboardLayoutConfig(
-        quickActionsPinned: true,
+        quickActionsPinned: false,
         widgets: [
-          DashboardWidgetInstance.create(DashboardWidgetType.cycleHeader),
           DashboardWidgetInstance.create(DashboardWidgetType.currentBalance),
-          DashboardWidgetInstance.create(DashboardWidgetType.safeDailySpend),
-          DashboardWidgetInstance.create(DashboardWidgetType.summaryGrid),
+          DashboardWidgetInstance.create(DashboardWidgetType.recentTransactions),
           DashboardWidgetInstance.create(DashboardWidgetType.budgetProgress),
           DashboardWidgetInstance.create(DashboardWidgetType.expenseCategories),
-          DashboardWidgetInstance.create(DashboardWidgetType.loanSummary),
-          DashboardWidgetInstance.create(DashboardWidgetType.subscriptions),
         ],
       );
 
@@ -30,6 +26,18 @@ abstract final class DashboardTemplates {
         visible.contains(DashboardWidgetType.monthlyReport) &&
         visible.contains(DashboardWidgetType.financialHealth) &&
         visible.length >= 12;
+  }
+
+  /// Upgrade the prior 8-widget home (cycle header + duplicate safe spend) to lean default.
+  static bool shouldUpgradeFromPriorEightWidgetDefault(
+    DashboardLayoutConfig config,
+  ) {
+    final visible = config.visibleWidgets.map((w) => w.type).toSet();
+    return visible.contains(DashboardWidgetType.cycleHeader) &&
+        visible.contains(DashboardWidgetType.safeDailySpend) &&
+        visible.contains(DashboardWidgetType.summaryGrid) &&
+        visible.contains(DashboardWidgetType.loanSummary) &&
+        visible.length >= 7;
   }
 
   static DashboardLayoutConfig minimal() => DashboardLayoutConfig(

@@ -32,6 +32,11 @@ class DashboardLayoutNotifier extends StateNotifier<DashboardLayoutConfig> {
       stored = DashboardTemplates.defaults();
       await _ref.read(dashboardLayoutStoreProvider).save(stored);
     }
+    if (stored != null &&
+        DashboardTemplates.shouldUpgradeFromPriorEightWidgetDefault(stored)) {
+      stored = DashboardTemplates.defaults();
+      await _ref.read(dashboardLayoutStoreProvider).save(stored);
+    }
     if (stored != null && mounted) state = stored;
   }
 

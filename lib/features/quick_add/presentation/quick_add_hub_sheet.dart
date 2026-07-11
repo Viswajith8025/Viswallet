@@ -13,9 +13,14 @@ import 'package:rupee_track/features/quick_add/data/quick_add_repository.dart';
 import 'package:rupee_track/features/quick_add/domain/quick_add_models.dart';
 import 'package:rupee_track/features/quick_add/presentation/widgets/quick_add_calculator_pad.dart';
 import 'package:rupee_track/features/quick_add/presentation/widgets/quick_add_voice_input.dart';
+import 'package:rupee_track/features/smart_tagging/presentation/widgets/smart_tagging_widgets.dart';
 import 'package:rupee_track/features/smart_tagging/data/tagging_repository.dart';
+import 'package:rupee_track/core/design_system/money_preview_strip.dart';
 import 'package:rupee_track/core/design_system/design_tokens.dart';
 import 'package:rupee_track/core/design_system/premium_bottom_sheet.dart';
+import 'package:rupee_track/core/design_system/premium_snackbar.dart';
+import 'package:rupee_track/core/design_system/premium_text_field.dart';
+import 'package:rupee_track/core/design_system/skeleton_loader.dart';
 import 'package:rupee_track/core/design_system/app_scroll_behavior.dart';
 import 'package:rupee_track/core/design_system/responsive.dart';
 import 'package:rupee_track/core/design_system/shell_bottom_inset.dart';
@@ -38,11 +43,18 @@ class _QuickAddHubSheetState extends ConsumerState<QuickAddHubSheet> {
   String _amountDigits = '';
   int? _selectedCategoryId;
   final _labelController = TextEditingController();
-  final _labelSectionKey = GlobalKey();
   String? _note;
   DateTime _expenseDate = DateTime.now();
   bool _showCalculator = false;
   bool _saving = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _labelController.addListener(() {
+      if (mounted) setState(() {});
+    });
+  }
 
   @override
   void dispose() {
@@ -73,14 +85,9 @@ class _QuickAddHubSheetState extends ConsumerState<QuickAddHubSheet> {
   }
 
   void _showSavedSnackBar(BuildContext context, ExpenseSaveResult result) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        behavior: SnackBarBehavior.floating,
-        content: Text(
-          '${formatPaise(result.amountPaise)} · ${result.snackbarLine}',
-        ),
-        duration: const Duration(seconds: 3),
-      ),
+    showSaveConfirmation(
+      context,
+      message: '${formatPaise(result.amountPaise)} saved · ${result.snackbarLine}',
     );
   }
 
@@ -102,7 +109,7 @@ class _QuickAddHubSheetState extends ConsumerState<QuickAddHubSheet> {
         categoryId: category.id,
         title: title,
         notes: _note,
-        rememberLabel: label.isEmpty,
+        rememberLabel: label.isNotEmpty,
         occurredAt: _expenseDate,
       );
       ref.invalidate(quickAddContextProvider);
@@ -111,52 +118,16 @@ class _QuickAddHubSheetState extends ConsumerState<QuickAddHubSheet> {
       _showSavedSnackBar(context, result);
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Could not save this expense. Please try again.'),
-        ),
+      showPremiumSnackBar(
+        context,
+        message: 'Could not save this expense. Please try again.',
+        kind: PremiumSnackBarKind.error,
       );
     } finally {
       if (mounted) setState(() => _saving = false);
     }
   }
 
-  void _selectCategory(int categoryId) {
-    HapticFeedback.selectionClick();
-    setState(() => _selectedCategoryId = categoryId);
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      final target = _labelSectionKey.currentContext;
-      if (target == null) return;
-      Scrollable.ensureVisible(
-        target,
-        duration: const Duration(milliseconds: 320),
-        curve: Curves.easeOutCubic,
-        alignment: 0.12,
-      );
-    });
-  }
-
-  CategoriesTableData? _selectedCategory(List<CategoriesTableData> categories) {
-    if (_selectedCategoryId == null) return null;
-    for (final c in categories) {
-      if (c.id == _selectedCategoryId) return c;
-    }
-    return null;
-  }
-
-  String _labelHintFor(CategoriesTableData category) {
-    final name = category.name.toLowerCase();
-    if (name.contains('subscription')) {
-      return 'Which subscription? e.g. Netflix (optional)';
-    }
-    if (name.contains('food') || name.contains('dining')) {
-      return 'Where? e.g. Swiggy, restaurant (optional)';
-    }
-    if (name.contains('transport')) {
-      return 'e.g. Uber, petrol pump (optional)';
-    }
-    return 'Label or shop name (optional)';
-  }
 
   Future<void> _repeat(RepeatExpenseTemplate template) async {
     if (_saving) return;
@@ -180,11 +151,11 @@ class _QuickAddHubSheetState extends ConsumerState<QuickAddHubSheet> {
       builder: (ctx) => AlertDialog(
         title: const Text('Quick Add tips'),
         content: const Text(
-          'Fastest way: choose an amount, then tap what you spent on. It saves immediately.\n\n'
+          'Fastest way: enter an amount, add an optional label, then tap a category.\n\n'
           '• Long-press a category to keep it near the top\n'
           '• Repeat chips save common expenses in one tap\n'
-          '• Use the mic to fill amount and merchant\n'
-          '• Notes and merchant names are optional',
+          '• Use the mic to fill amount and label\n'
+          '• Tap expand for payment method and more details',
         ),
         actions: [
           TextButton(
@@ -251,7 +222,7 @@ class _QuickAddHubSheetState extends ConsumerState<QuickAddHubSheet> {
                             ),
                           ),
                           Text(
-                            'Amount → category → save',
+                            'Tap a category to save',
                             style: theme.textTheme.bodySmall?.copyWith(
                               color: theme.colorScheme.onSurfaceVariant,
                             ),
@@ -260,7 +231,7 @@ class _QuickAddHubSheetState extends ConsumerState<QuickAddHubSheet> {
                       ),
                     ),
                     IconButton(
-                      tooltip: 'Full form',
+                      tooltip: 'Add details (full form)',
                       icon: const Icon(Icons.open_in_full, size: 20),
                       onPressed: () {
                         Navigator.pop(context);
@@ -269,9 +240,9 @@ class _QuickAddHubSheetState extends ConsumerState<QuickAddHubSheet> {
                     ),
                   ],
                 ),
-                const SizedBox(height: 4),
+                const SizedBox(height: AppSpacing.xs),
                 _AmountHeader(
-                  amountDigits: _amountDigits,
+                  amountPaise: _amountPaise,
                   labelPreview: _labelController.text.trim().isEmpty
                       ? null
                       : _labelController.text.trim(),
@@ -279,10 +250,55 @@ class _QuickAddHubSheetState extends ConsumerState<QuickAddHubSheet> {
                       setState(() => _showCalculator = !_showCalculator),
                   showCalculator: _showCalculator,
                 ),
-                const SizedBox(height: 12),
+                const SizedBox(height: AppSpacing.sm),
                 ExpenseDatePickerRow(
                   date: _expenseDate,
                   onDateChanged: (d) => setState(() => _expenseDate = d),
+                ),
+                const SizedBox(height: AppSpacing.sm),
+                const _SectionLabel('Label (optional)'),
+                const SizedBox(height: AppSpacing.xs),
+                PremiumTextField(
+                  controller: _labelController,
+                  hint: 'e.g. Swiggy, Netflix, Petrol',
+                  prefixIcon: Icons.label_outline_rounded,
+                  textCapitalization: TextCapitalization.sentences,
+                  textInputAction: TextInputAction.done,
+                ),
+                if (_labelController.text.trim().isNotEmpty) ...[
+                  const SizedBox(height: AppSpacing.xs),
+                  ClassificationSuggestionBanner(
+                    title: _labelController.text.trim(),
+                  ),
+                ],
+                contextAsync.when(
+                  loading: () => const SizedBox.shrink(),
+                  error: (_, __) => const SizedBox.shrink(),
+                  data: (ctx) {
+                    if (ctx.recentMerchants.isEmpty) {
+                      return const SizedBox.shrink();
+                    }
+                    return Padding(
+                      padding: const EdgeInsets.only(top: AppSpacing.sm),
+                      child: Wrap(
+                        spacing: 8,
+                        runSpacing: 8,
+                        children: ctx.recentMerchants.map((m) {
+                          final selected =
+                              _labelController.text.trim() == m;
+                          return FilterChip(
+                            label: Text(m),
+                            selected: selected,
+                            onSelected: (_) {
+                              setState(() {
+                                _labelController.text = selected ? '' : m;
+                              });
+                            },
+                          );
+                        }).toList(),
+                      ),
+                    );
+                  },
                 ),
                 const SizedBox(height: 12),
                 contextAsync.when(
@@ -347,43 +363,33 @@ class _QuickAddHubSheetState extends ConsumerState<QuickAddHubSheet> {
                     );
                   },
                 ),
-                contextAsync.when(
-                  loading: () => const SizedBox.shrink(),
-                  error: (_, __) => const SizedBox.shrink(),
-                  data: (ctx) {
-                    if (ctx.recentMerchants.isEmpty) {
-                      return const SizedBox.shrink();
-                    }
-                    return Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        const _SectionLabel('Recent labels'),
-                        const SizedBox(height: 8),
-                        Wrap(
-                          spacing: 8,
-                          runSpacing: 8,
-                          children: ctx.recentMerchants.map((m) {
-                            return ActionChip(
-                              label: Text(m),
-                              onPressed: () {
-                                _labelController.text = m;
-                                setState(() {});
-                              },
-                            );
-                          }).toList(),
-                        ),
-                        const SizedBox(height: 16),
-                      ],
-                    );
-                  },
-                ),
+                const SizedBox(height: 16),
                 categoriesAsync.when(
-                  loading: () => const Center(child: CircularProgressIndicator()),
-                  error: (e, _) => Text(
-                    'Could not load categories. Please try again.',
-                    style: theme.textTheme.bodyMedium?.copyWith(
-                      color: theme.colorScheme.error,
-                    ),
+                  loading: () => const Column(
+                    children: [
+                      SkeletonCard(height: 56),
+                      SizedBox(height: AppSpacing.sm),
+                      SkeletonCard(height: 56),
+                      SizedBox(height: AppSpacing.sm),
+                      SkeletonCard(height: 56),
+                    ],
+                  ),
+                  error: (e, _) => Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      Text(
+                        'Could not load categories.',
+                        style: theme.textTheme.bodyMedium?.copyWith(
+                          color: theme.colorScheme.error,
+                        ),
+                      ),
+                      const SizedBox(height: AppSpacing.sm),
+                      OutlinedButton.icon(
+                        onPressed: () => ref.invalidate(categoriesProvider),
+                        icon: const Icon(Icons.refresh_rounded, size: 18),
+                        label: const Text('Try again'),
+                      ),
+                    ],
                   ),
                   data: (categories) {
                     final ctx = contextAsync.valueOrNull;
@@ -405,12 +411,11 @@ class _QuickAddHubSheetState extends ConsumerState<QuickAddHubSheet> {
                         : categories;
 
                     final favorites = ctx?.favoriteCategoryIds.toSet() ?? {};
-                    final selected = _selectedCategory(categories);
 
                     return Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        const _SectionLabel('1 · Choose category'),
+                        const _SectionLabel('Tap category to save'),
                         const SizedBox(height: AppSpacing.xs),
                         LayoutBuilder(
                           builder: (context, constraints) {
@@ -425,7 +430,8 @@ class _QuickAddHubSheetState extends ConsumerState<QuickAddHubSheet> {
                               children: ordered.map((cat) {
                                 final isFavorite = favorites.contains(cat.id);
                                 final isSuggested = suggestedId == cat.id;
-                                final isSelected = _selectedCategoryId == cat.id;
+                                final isSavingThis =
+                                    _saving && _selectedCategoryId == cat.id;
                                 return SizedBox(
                                   width: tileExtent,
                                   height: tileExtent,
@@ -433,20 +439,21 @@ class _QuickAddHubSheetState extends ConsumerState<QuickAddHubSheet> {
                                     category: cat,
                                     isFavorite: isFavorite,
                                     isSuggested: isSuggested,
-                                    isSelected: isSelected,
-                                    enabled: _amountPaise > 0,
-                                    onTap: _amountPaise > 0
-                                        ? () => _selectCategory(cat.id)
+                                    isSelected: isSavingThis,
+                                    enabled: _amountPaise > 0 && !_saving,
+                                    onTap: _amountPaise > 0 && !_saving
+                                        ? () {
+                                            setState(
+                                              () => _selectedCategoryId = cat.id,
+                                            );
+                                            _saveSelectedExpense(cat);
+                                          }
                                         : () {
                                             HapticFeedback.lightImpact();
-                                            ScaffoldMessenger.of(context)
-                                                .showSnackBar(
-                                              const SnackBar(
-                                                content: Text(
-                                                  'Enter an amount first',
-                                                ),
-                                                duration: Duration(seconds: 1),
-                                              ),
+                                            showPremiumSnackBar(
+                                              context,
+                                              message: 'Enter an amount first',
+                                              duration: const Duration(seconds: 2),
                                             );
                                           },
                                     onLongPress: () async {
@@ -455,16 +462,12 @@ class _QuickAddHubSheetState extends ConsumerState<QuickAddHubSheet> {
                                           .toggleFavorite(cat.id);
                                       ref.invalidate(quickAddContextProvider);
                                       if (!context.mounted) return;
-                                      ScaffoldMessenger.of(context)
-                                          .showSnackBar(
-                                        SnackBar(
-                                          content: Text(
-                                            isFavorite
-                                                ? 'Removed ${cat.name} from favorites'
-                                                : 'Favorited ${cat.name}',
-                                          ),
-                                          duration: const Duration(seconds: 1),
-                                        ),
+                                      showPremiumSnackBar(
+                                        context,
+                                        message: isFavorite
+                                            ? 'Removed ${cat.name} from favorites'
+                                            : 'Favorited ${cat.name}',
+                                        duration: const Duration(seconds: 2),
                                       );
                                     },
                                   ),
@@ -473,52 +476,18 @@ class _QuickAddHubSheetState extends ConsumerState<QuickAddHubSheet> {
                             );
                           },
                         ),
-                        if (selected != null) ...[
-                          const SizedBox(height: AppSpacing.lg),
-                          KeyedSubtree(
-                            key: _labelSectionKey,
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                const _SectionLabel('2 · Add a label (optional)'),
-                                const SizedBox(height: AppSpacing.sm),
-                                TextField(
-                                  controller: _labelController,
-                                  textCapitalization:
-                                      TextCapitalization.sentences,
-                                  autofocus: true,
-                                  decoration: InputDecoration(
-                                    labelText: 'Label',
-                                    hintText: _labelHintFor(selected),
-                                    border: const OutlineInputBorder(),
-                                  ),
-                                  onChanged: (_) => setState(() {}),
-                                ),
-                              ],
-                            ),
+                        const SizedBox(height: AppSpacing.sm),
+                        Align(
+                          alignment: Alignment.centerLeft,
+                          child: TextButton.icon(
+                            onPressed: () {
+                              Navigator.pop(context);
+                              context.push(AppRoutes.expenseAdd);
+                            },
+                            icon: const Icon(Icons.tune_rounded, size: 18),
+                            label: const Text('Add details (full form)'),
                           ),
-                          const SizedBox(height: AppSpacing.md),
-                          SizedBox(
-                            width: double.infinity,
-                            child: FilledButton(
-                              onPressed: _amountPaise > 0 && !_saving
-                                  ? () => _saveSelectedExpense(selected)
-                                  : null,
-                              child: _saving
-                                  ? const SizedBox(
-                                      height: 20,
-                                      width: 20,
-                                      child: CircularProgressIndicator(
-                                        strokeWidth: 2,
-                                      ),
-                                    )
-                                  : Text(
-                                      'Save · ${selected.name}'
-                                      '${_labelController.text.trim().isEmpty ? '' : ' · ${_labelController.text.trim()}'}',
-                                    ),
-                            ),
-                          ),
-                        ],
+                        ),
                       ],
                     );
                   },
@@ -582,54 +551,44 @@ class _QuickAddHubSheetState extends ConsumerState<QuickAddHubSheet> {
 
 class _AmountHeader extends StatelessWidget {
   const _AmountHeader({
-    required this.amountDigits,
+    required this.amountPaise,
     required this.labelPreview,
     required this.onToggleCalculator,
     required this.showCalculator,
   });
 
-  final String amountDigits;
+  final int amountPaise;
   final String? labelPreview;
   final VoidCallback onToggleCalculator;
   final bool showCalculator;
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final paise = amountDigits.isEmpty ? 0 : int.parse(amountDigits) * 100;
+    final expenseColor = context.semanticColors.expense;
 
     return Row(
-      crossAxisAlignment: CrossAxisAlignment.end,
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              FittedBox(
-                fit: BoxFit.scaleDown,
-                alignment: Alignment.centerLeft,
-                child: Text(
-                  formatPaise(paise),
-                  style: theme.textTheme.displaySmall?.copyWith(
-                    fontWeight: FontWeight.w800,
-                    height: 1,
-                  ),
-                ),
-              ),
-              if (labelPreview != null)
-                Text(
-                  labelPreview!,
-                  style: theme.textTheme.bodyMedium?.copyWith(
-                    color: theme.colorScheme.primary,
-                  ),
-                ),
-            ],
+          child: MoneyPreviewStrip(
+            label: 'Expense amount',
+            chipLabel: 'Not saved yet',
+            amountPaise: amountPaise,
+            moneyColor: amountPaise > 0 ? expenseColor : null,
+            subtitle: labelPreview,
+            detailLines: amountPaise <= 0
+                ? const ['Enter an amount, then tap a category to save']
+                : const [],
           ),
         ),
+        const SizedBox(width: AppSpacing.sm),
         IconButton.filledTonal(
           tooltip: showCalculator ? 'Hide calculator' : 'Calculator',
           onPressed: onToggleCalculator,
           icon: Icon(showCalculator ? Icons.keyboard_hide : Icons.calculate),
+          style: IconButton.styleFrom(
+            visualDensity: VisualDensity.compact,
+          ),
         ),
       ],
     );
@@ -657,7 +616,10 @@ class _AmountSuggestions extends StatelessWidget {
         final paise = suggestions[i];
         final selected = paise == selectedPaise;
         return ChoiceChip(
-          label: Text(formatPaise(paise)),
+          label: Text(
+            formatPaise(paise),
+            style: AppTypography.moneyCompact(context, color: null),
+          ),
           selected: selected,
           onSelected: (_) {
             HapticFeedback.selectionClick();

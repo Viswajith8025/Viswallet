@@ -62,8 +62,8 @@ abstract final class HelpFaqData {
       question: 'What happens after I sign in?',
       answer:
           'You land on Home. Add your salary when you\'re ready, then use the + button for expenses, '
-          'check today\'s spending guide, open ${JithuBranding.displayName} for quick advice, '
-          'and use More for budget planning, reports, and settings.',
+          'open ${JithuBranding.displayName} in the bottom bar for quick advice, '
+          'and use More for budget planning and settings.',
     ),
 
     // Adding expenses
@@ -72,9 +72,8 @@ abstract final class HelpFaqData {
       icon: Icons.add_circle_outline,
       question: 'How do I add an expense quickly?',
       answer:
-          'Tap the + button (you can drag it to a comfortable spot). '
-          'Enter the amount, then tap what you spent on — food, travel, bills, and so on. '
-          'It saves immediately. Tap Help inside Quick Add for more tips.',
+          'Tap the + button, enter an amount, then tap a category — it saves in one tap. '
+          'Use **Add details** or the expand icon for payment method, tags, and notes.',
     ),
     HelpFaqEntry(
       category: 'Adding expenses',
@@ -255,8 +254,8 @@ abstract final class HelpFaqData {
       icon: Icons.insights_outlined,
       question: 'How do I see last month\'s summary?',
       answer:
-          'Go to More → Monthly closing report, or tap the monthly report card on Home. '
-          'Pick a previous month and view spending, budget performance, and exports.',
+          'Tap **Insights** in the bottom bar for spending charts and health score. '
+          'After a pay cycle ends, check **Home** for your monthly review summary.',
     ),
 
     // Account & settings
@@ -265,9 +264,8 @@ abstract final class HelpFaqData {
       icon: Icons.settings_outlined,
       question: 'I forgot my password. What can I do?',
       answer:
-          'After signing in, open Settings → Account → View password hint. '
-          'If you added a hint during signup, it will appear there. '
-          'Viswallet does not email a reset link — the hint is what you saved yourself.',
+          'Tap **Forgot password?** on the sign-in screen. We email you a secure link to set a new password. '
+          'If you added an optional hint during signup, you can also view it in Settings → Account & Data after signing in.',
     ),
     HelpFaqEntry(
       category: 'Account & settings',
@@ -289,7 +287,7 @@ abstract final class HelpFaqData {
       category: 'Account & settings',
       question: 'How do I sign out?',
       answer:
-          'Go to Settings → Account → Sign out. '
+          'Go to Settings → Account & Data → Sign out. '
           'You will need to sign in again next time you open the app.',
       icon: Icons.settings_outlined,
     ),

@@ -22,17 +22,20 @@ class LoansScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final loansAsync = ref.watch(activeLentLoansProvider);
     final theme = Theme.of(context);
+    final showFab = loansAsync.valueOrNull?.isNotEmpty ?? false;
 
     return Scaffold(
       appBar: const PremiumAppBar(
         title: 'Lent money',
         subtitle: 'Money you gave to others',
       ),
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: () => showAddLoanSheet(context, ref),
-        icon: const Icon(Icons.add),
-        label: const Text('Record lending'),
-      ),
+      floatingActionButton: showFab
+          ? FloatingActionButton.extended(
+              onPressed: () => showAddLoanSheet(context, ref),
+              icon: const Icon(Icons.add),
+              label: const Text('Record lending'),
+            )
+          : null,
       body: ResponsiveBody(
         child: loansAsync.when(
           loading: () => ListView.separated(

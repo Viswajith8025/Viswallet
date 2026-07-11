@@ -78,7 +78,7 @@ abstract class VisWalletWidgetProvider(
 
         views.setTextViewText(
             R.id.widget_wishlist,
-            data.getString("wishlist_note", "Wishlist coming soon"),
+            data.getString("wishlist_note", "No wishlist items yet"),
         )
     }
 

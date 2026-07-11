@@ -6,7 +6,6 @@ import 'package:rupee_track/core/design_system/premium_app_bar.dart';
 import 'package:rupee_track/core/design_system/skeleton_loader.dart';
 import 'package:rupee_track/core/providers/salary_cycle_provider.dart';
 import 'package:rupee_track/core/utils/date_utils.dart';
-import 'package:rupee_track/core/utils/money_utils.dart';
 import 'package:rupee_track/core/widgets/error_state.dart';
 import 'package:rupee_track/features/dashboard/data/dashboard_repository.dart';
 import 'package:rupee_track/features/dashboard/domain/monthly_summary.dart';
@@ -16,7 +15,9 @@ import 'package:rupee_track/features/jithu/domain/jithu_chat_message.dart';
 import 'package:rupee_track/features/jithu/domain/jithu_fallback_advisor.dart';
 import 'package:rupee_track/features/safe_spend/data/safe_spend_repository.dart';
 import 'package:rupee_track/features/safe_spend/domain/safe_spend_snapshot.dart';
+import 'package:rupee_track/core/design_system/premium_card.dart';
 import 'package:rupee_track/core/design_system/responsive.dart';
+import 'package:rupee_track/features/safe_spend/presentation/widgets/safe_spend_card.dart';
 import 'package:rupee_track/core/design_system/shell_bottom_inset.dart';
 import 'package:rupee_track/core/router/routes.dart';
 
@@ -109,7 +110,9 @@ class _JithuScreenState extends ConsumerState<JithuScreen> {
       appBar: PremiumAppBar(
         title: JithuBranding.displayName,
         subtitle: 'Your money assistant',
-        leading: Padding(
+        leading: Navigator.of(context).canPop()
+            ? const BackButton()
+            : Padding(
           padding: const EdgeInsets.only(left: AppSpacing.sm),
           child: Center(
             child: Container(
@@ -169,7 +172,7 @@ class _JithuScreenState extends ConsumerState<JithuScreen> {
                     text: summary.salaryEntered
                         ? 'Ask me anything — your spending, saving tips, life questions, or where to find things in Viswallet.'
                         : 'I can help with budgets and spending — but first add your monthly salary. '
-                            'Tap the strip above or ask "Where do I add my salary?"',
+                            'Tap the card above or ask "Where do I add my salary?"',
                   ),
                 );
               });
@@ -234,10 +237,18 @@ class _JithuBodyState extends State<_JithuBody> {
                 vertical: AppSpacing.xs,
               ),
               children: [
-                _JithuSummaryStrip(
-                  summary: widget.summary,
-                  safeSpend: widget.safeSpend,
-                ),
+                if (!widget.summary.salaryEntered)
+                  PremiumCard(
+                    onTap: () => context.push(AppRoutes.salary),
+                    child: ListTile(
+                      leading: const Icon(Icons.payments_outlined),
+                      title: const Text('Add your salary to get started'),
+                      subtitle: const Text('Tap to enter monthly income'),
+                      trailing: const Icon(Icons.chevron_right_rounded),
+                    ),
+                  )
+                else
+                  SafeSpendCard(snapshot: widget.safeSpend, compact: true),
                 if (showPrompts) ...[
                   const SizedBox(height: AppSpacing.sm),
                   Text(
@@ -342,128 +353,6 @@ class _JithuBodyState extends State<_JithuBody> {
           ),
         ],
       ),
-    );
-  }
-}
-
-class _JithuSummaryStrip extends StatelessWidget {
-  const _JithuSummaryStrip({
-    required this.summary,
-    required this.safeSpend,
-  });
-
-  final CycleSummary summary;
-  final SafeSpendSnapshot safeSpend;
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final topCategory = summary.categoryBreakdown.isEmpty
-        ? null
-        : summary.categoryBreakdown.first;
-
-    return Material(
-      color: theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.45),
-      borderRadius: BorderRadius.circular(AppRadius.md),
-      child: InkWell(
-        onTap: summary.salaryEntered
-            ? null
-            : () => context.push(AppRoutes.salary),
-        borderRadius: BorderRadius.circular(AppRadius.md),
-        child: Padding(
-          padding: const EdgeInsets.symmetric(
-            horizontal: AppSpacing.md,
-            vertical: AppSpacing.sm,
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                children: [
-                  Expanded(
-                    child: Text(
-                      summary.salaryEntered
-                          ? safeSpend.riskLevel.label
-                          : 'Tap to add salary',
-                      style: theme.textTheme.labelLarge?.copyWith(
-                        fontWeight: FontWeight.w700,
-                      ),
-                    ),
-                  ),
-                  if (!summary.salaryEntered)
-                    Icon(
-                      Icons.chevron_right_rounded,
-                      size: 20,
-                      color: theme.colorScheme.onSurfaceVariant,
-                    ),
-                ],
-              ),
-              const SizedBox(height: AppSpacing.xs),
-              Row(
-                children: [
-                  Expanded(
-                    child: _CompactMetric(
-                      label: 'Left',
-                      value: formatPaise(summary.moneyLeftPaise),
-                    ),
-                  ),
-                  Expanded(
-                    child: _CompactMetric(
-                      label: 'Safe today',
-                      value: formatPaise(
-                        safeSpend.remainingSafeSpendTodayPaise,
-                      ),
-                    ),
-                  ),
-                  Expanded(
-                    child: _CompactMetric(
-                      label: 'Top',
-                      value: topCategory == null
-                          ? '—'
-                          : topCategory.categoryName,
-                    ),
-                  ),
-                ],
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class _CompactMetric extends StatelessWidget {
-  const _CompactMetric({
-    required this.label,
-    required this.value,
-  });
-
-  final String label;
-  final String value;
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          label,
-          style: theme.textTheme.labelSmall?.copyWith(
-            color: theme.colorScheme.onSurfaceVariant,
-            fontSize: 10,
-          ),
-        ),
-        Text(
-          value,
-          maxLines: 1,
-          overflow: TextOverflow.ellipsis,
-          style: theme.textTheme.labelMedium?.copyWith(
-            fontWeight: FontWeight.w700,
-          ),
-        ),
-      ],
     );
   }
 }

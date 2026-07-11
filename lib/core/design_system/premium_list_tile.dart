@@ -1,8 +1,13 @@
 import 'package:flutter/material.dart';
-import 'package:rupee_track/core/branding/brand_typography.dart';
+import 'package:rupee_track/core/utils/category_icon_utils.dart';
 import 'package:rupee_track/core/utils/money_utils.dart';
 import 'package:rupee_track/core/design_system/compact_label.dart';
 import 'package:rupee_track/core/design_system/design_tokens.dart';
+import 'package:rupee_track/core/design_system/tokens/app_colors.dart';
+import 'package:rupee_track/core/design_system/tokens/app_elevation.dart';
+import 'package:rupee_track/core/design_system/tokens/app_icon_size.dart';
+import 'package:rupee_track/core/design_system/tokens/app_motion.dart';
+import 'package:rupee_track/core/design_system/tokens/app_typography.dart';
 import 'package:rupee_track/core/design_system/premium_card.dart';
 import 'package:rupee_track/core/widgets/pressable_scale.dart';
 
@@ -72,68 +77,74 @@ class PremiumMenuTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final accent = iconColor ?? theme.colorScheme.primary;
+    final brightness = Theme.of(context).brightness;
+    final scheme = Theme.of(context).colorScheme;
+    final accent = iconColor ?? scheme.primary;
 
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: AppSpacing.xxs),
+      padding: const EdgeInsets.symmetric(vertical: AppSpacing.half),
       child: PressableScale(
         onTap: onTap,
+        scale: AppMotion.pressScale,
         semanticLabel: '$title. $subtitle',
-        child: Container(
-          padding: const EdgeInsets.all(AppSpacing.md),
-          decoration: BoxDecoration(
-            color: theme.cardColor,
-            borderRadius: BorderRadius.circular(AppRadius.md),
-            border: Border.all(color: theme.dividerColor),
+        child: DecoratedBox(
+          decoration: AppElevation.surface(
+            brightness: brightness,
+            background: AppColors.card(brightness),
+            level: AppElevationLevel.raised,
+            borderRadius: BorderRadius.circular(AppRadius.iconBox),
           ),
-          child: Row(
-            children: [
-              Container(
-                width: 44,
-                height: 44,
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                    colors: [
-                      accent.withValues(alpha: 0.22),
-                      accent.withValues(alpha: 0.08),
+          child: Padding(
+            padding: const EdgeInsets.all(AppSpacing.menuTilePadding),
+            child: Row(
+              children: [
+                DecoratedBox(
+                  decoration: BoxDecoration(
+                    color: accent.withValues(
+                      alpha: brightness == Brightness.dark ? 0.16 : 0.1,
+                    ),
+                    borderRadius: BorderRadius.circular(AppRadius.iconBox),
+                    border: Border.all(
+                      color: accent.withValues(alpha: 0.2),
+                      width: AppElevation.hairlineWidth,
+                    ),
+                  ),
+                  child: SizedBox(
+                    width: AppSpacing.iconBox,
+                    height: AppSpacing.iconBox,
+                    child: Icon(
+                      icon,
+                      color: accent,
+                      size: AppIconSize.menuLeading,
+                    ),
+                  ),
+                ),
+                SizedBox(width: AppSpacing.menuTilePadding),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      SingleLineLabel(
+                        title,
+                        style: AppTypography.menuTitle(brightness),
+                      ),
+                      SizedBox(height: AppSpacing.half),
+                      Text(
+                        subtitle,
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                        style: AppTypography.menuSubtitle(brightness),
+                      ),
                     ],
                   ),
-                  borderRadius: BorderRadius.circular(AppRadius.sm),
-                  border: Border.all(color: accent.withValues(alpha: 0.2)),
                 ),
-                child: Icon(icon, color: accent, size: 22),
-              ),
-              const SizedBox(width: AppSpacing.md),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    SingleLineLabel(
-                      title,
-                      style: theme.textTheme.titleSmall?.copyWith(
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                    const SizedBox(height: 2),
-                    Text(
-                      subtitle,
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                      style: theme.textTheme.bodySmall?.copyWith(
-                        color: theme.colorScheme.onSurfaceVariant,
-                      ),
-                    ),
-                  ],
+                Icon(
+                  Icons.chevron_right_rounded,
+                  color: scheme.onSurfaceVariant,
+                  size: AppIconSize.chevron,
                 ),
-              ),
-              Icon(
-                Icons.chevron_right_rounded,
-                color: theme.colorScheme.onSurfaceVariant,
-              ),
-            ],
+              ],
+            ),
           ),
         ),
       ),
@@ -210,6 +221,7 @@ class PremiumExpenseTile extends StatelessWidget {
     required this.amountPaise,
     required this.categoryName,
     required this.categoryColor,
+    required this.categoryIconName,
     required this.subtitle,
     super.key,
     this.tags = const [],
@@ -220,6 +232,7 @@ class PremiumExpenseTile extends StatelessWidget {
   final int amountPaise;
   final String categoryName;
   final int categoryColor;
+  final String categoryIconName;
   final String subtitle;
   final List<String> tags;
   final VoidCallback? onTap;
@@ -250,7 +263,11 @@ class PremiumExpenseTile extends StatelessWidget {
               ),
               borderRadius: BorderRadius.circular(AppRadius.sm),
             ),
-            child: Icon(Icons.receipt_long_rounded, color: color, size: 22),
+            child: Icon(
+              categoryIconFromName(categoryIconName),
+              color: color,
+              size: 22,
+            ),
           ),
           const SizedBox(width: AppSpacing.md),
           Expanded(
@@ -300,10 +317,9 @@ class PremiumExpenseTile extends StatelessWidget {
           const SizedBox(width: AppSpacing.sm),
           Text(
             formatPaise(amountPaise),
-            style: BrandTypography.money(
+            style: AppTypography.moneyCompact(
               context,
-              fontSize: 16,
-              fontWeight: FontWeight.w700,
+              color: context.semanticColors.expense,
             ),
           ),
         ],

@@ -97,9 +97,16 @@ abstract final class FinancialHealthEngine {
   }
 
   static CategoryScore _budgetingScore(FinancialHealthInput input) {
+    if (input.totalSpendingBuckets == 0) {
+      return const CategoryScore(
+        category: HealthCategory.budgeting,
+        score: 35,
+        summary: 'Set a budget to track spending against your plan',
+      );
+    }
+
     var score = (input.budgetDiscipline * 100).round();
     score -= input.bucketsOverBudget * 12;
-    if (input.totalSpendingBuckets == 0) score = 70;
 
     return CategoryScore(
       category: HealthCategory.budgeting,
@@ -239,7 +246,16 @@ abstract final class FinancialHealthEngine {
 
     final budget = categories
         .firstWhere((c) => c.category == HealthCategory.budgeting);
-    if (budget.score < 75 && input.bucketsOverBudget > 0) {
+    if (input.totalSpendingBuckets == 0) {
+      recs.add(
+        const HealthRecommendation(
+          message:
+              'Set a budget so Viswallet can score how well you stay on plan.',
+          potentialGain: 8,
+          category: HealthCategory.budgeting,
+        ),
+      );
+    } else if (budget.score < 75 && input.bucketsOverBudget > 0) {
       recs.add(
         HealthRecommendation(
           message:

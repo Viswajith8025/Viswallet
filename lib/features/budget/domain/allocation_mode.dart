@@ -2,7 +2,7 @@ enum AllocationMode {
   manual('manual', 'I will type amounts'),
   percentage('percentage', 'Split by percentage'),
   perCategory('per_category', 'One budget per category'),
-  aiSuggested('ai_suggested', 'Suggest for me');
+  aiSuggested('ai_suggested', 'Suggested');
 
   const AllocationMode(this.storageKey, this.label);
 

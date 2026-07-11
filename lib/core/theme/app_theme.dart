@@ -1,8 +1,9 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'package:rupee_track/core/branding/brand_colors.dart';
-import 'package:rupee_track/core/branding/brand_typography.dart';
-import 'package:rupee_track/core/design_system/design_tokens.dart';
+import 'package:rupee_track/core/design_system/tokens/app_colors.dart';
+import 'package:rupee_track/core/design_system/tokens/app_radius.dart';
+import 'package:rupee_track/core/design_system/tokens/app_spacing.dart';
+import 'package:rupee_track/core/design_system/tokens/app_typography.dart';
 
 abstract final class AppTheme {
   static ThemeData get light => _build(Brightness.light);
@@ -10,31 +11,26 @@ abstract final class AppTheme {
 
   static ThemeData _build(Brightness brightness) {
     final isDark = brightness == Brightness.dark;
-    final scheme =
-        isDark ? BrandColors.darkScheme : BrandColors.lightScheme;
-    final bg =
-        isDark ? BrandColors.backgroundDark : BrandColors.backgroundLight;
-    final cardColor =
-        isDark ? BrandColors.cardDark : BrandColors.cardLight;
-    final borderColor =
-        isDark ? BrandColors.cardBorderDark : BrandColors.cardBorderLight;
+    final scheme = AppColors.colorScheme(brightness);
+    final semantics = AppSemanticColors.of(brightness);
 
     return ThemeData(
       useMaterial3: true,
       colorScheme: scheme,
       brightness: brightness,
-      scaffoldBackgroundColor: bg,
-      cardColor: cardColor,
-      dividerColor: isDark ? BrandColors.dividerDark : BrandColors.dividerLight,
-      textTheme: BrandTypography.textTheme(brightness),
+      scaffoldBackgroundColor: AppColors.background(brightness),
+      cardColor: AppColors.card(brightness),
+      dividerColor: AppColors.hairline(brightness),
+      textTheme: AppTypography.textTheme(brightness),
+      extensions: [semantics],
       cardTheme: CardThemeData(
         elevation: 0,
         margin: EdgeInsets.zero,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(AppRadius.card),
-          side: BorderSide(color: borderColor, width: 1),
+          side: BorderSide(color: AppColors.hairline(brightness)),
         ),
-        color: cardColor,
+        color: AppColors.card(brightness),
       ),
       appBarTheme: AppBarTheme(
         centerTitle: false,
@@ -42,34 +38,39 @@ abstract final class AppTheme {
         scrolledUnderElevation: 0,
         backgroundColor: Colors.transparent,
         foregroundColor: scheme.onSurface,
-        titleTextStyle: BrandTypography.textTheme(brightness).titleLarge
-            ?.copyWith(color: scheme.onSurface, fontWeight: FontWeight.w700),
+        titleTextStyle: AppTypography.appBarTitle(brightness),
       ),
       filledButtonTheme: FilledButtonThemeData(
         style: FilledButton.styleFrom(
-          minimumSize: const Size(0, 52),
-          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
+          minimumSize: Size(0, AppSpacing.s5 + AppSpacing.s1),
+          padding: const EdgeInsets.symmetric(
+            horizontal: AppSpacing.s3,
+            vertical: AppSpacing.s2 - AppSpacing.half,
+          ),
           elevation: 0,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(AppRadius.button),
           ),
-          textStyle: BrandTypography.button(brightness),
+          textStyle: AppTypography.button(brightness),
         ),
       ),
       outlinedButtonTheme: OutlinedButtonThemeData(
         style: OutlinedButton.styleFrom(
-          minimumSize: const Size(0, 48),
-          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-          side: BorderSide(color: borderColor),
+          minimumSize: Size(0, AppSpacing.s6),
+          padding: const EdgeInsets.symmetric(
+            horizontal: AppSpacing.s3 - AppSpacing.half,
+            vertical: AppSpacing.s2,
+          ),
+          side: BorderSide(color: AppColors.outline(brightness)),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(AppRadius.button),
           ),
-          textStyle: BrandTypography.button(brightness),
+          textStyle: AppTypography.button(brightness),
         ),
       ),
       textButtonTheme: TextButtonThemeData(
         style: TextButton.styleFrom(
-          textStyle: BrandTypography.button(brightness),
+          textStyle: AppTypography.button(brightness),
           foregroundColor: scheme.primary,
         ),
       ),
@@ -89,11 +90,11 @@ abstract final class AppTheme {
             : scheme.surfaceContainerHighest.withValues(alpha: 0.65),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(AppRadius.md),
-          borderSide: BorderSide(color: borderColor),
+          borderSide: BorderSide(color: AppColors.outline(brightness)),
         ),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(AppRadius.md),
-          borderSide: BorderSide(color: borderColor),
+          borderSide: BorderSide(color: AppColors.outline(brightness)),
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(AppRadius.md),
@@ -101,14 +102,13 @@ abstract final class AppTheme {
         ),
         contentPadding: const EdgeInsets.symmetric(
           horizontal: AppSpacing.md,
-          vertical: 14,
+          vertical: AppSpacing.s2 - AppSpacing.half,
         ),
       ),
       snackBarTheme: SnackBarThemeData(
         behavior: SnackBarBehavior.floating,
-        backgroundColor: isDark ? cardColor : scheme.inverseSurface,
-        contentTextStyle: BrandTypography.textTheme(brightness).bodyMedium
-            ?.copyWith(
+        backgroundColor: isDark ? AppColors.card(brightness) : scheme.inverseSurface,
+        contentTextStyle: AppTypography.textTheme(brightness).bodyMedium?.copyWith(
           color: isDark ? scheme.onSurface : scheme.onInverseSurface,
         ),
         shape: RoundedRectangleBorder(
@@ -116,47 +116,19 @@ abstract final class AppTheme {
         ),
       ),
       dividerTheme: DividerThemeData(
-        color: isDark ? BrandColors.dividerDark : BrandColors.dividerLight,
+        color: AppColors.hairline(brightness),
         thickness: 1,
         space: 1,
       ),
-      scrollbarTheme: ScrollbarThemeData(
-        thumbVisibility: WidgetStateProperty.resolveWith((states) {
-          return states.contains(WidgetState.hovered) ||
-              states.contains(WidgetState.dragged);
-        }),
-        trackVisibility: const WidgetStatePropertyAll(false),
-        interactive: true,
-        radius: const Radius.circular(8),
-        thickness: WidgetStateProperty.all(5),
-        crossAxisMargin: 4,
-        mainAxisMargin: 8,
-        thumbColor: WidgetStateProperty.all(
-          scheme.onSurfaceVariant.withValues(alpha: 0.45),
-        ),
-      ),
-      chipTheme: ChipThemeData(
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(AppRadius.sm),
-        ),
-        side: BorderSide(color: borderColor),
-      ),
-      listTileTheme: ListTileThemeData(
-        contentPadding: const EdgeInsets.symmetric(
-          horizontal: AppSpacing.md,
-          vertical: AppSpacing.xxs,
-        ),
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(AppRadius.md),
-        ),
-      ),
-      pageTransitionsTheme: const PageTransitionsTheme(
+      pageTransitionsTheme: PageTransitionsTheme(
         builders: {
           TargetPlatform.android: CupertinoPageTransitionsBuilder(),
           TargetPlatform.iOS: CupertinoPageTransitionsBuilder(),
           TargetPlatform.windows: CupertinoPageTransitionsBuilder(),
         },
       ),
+      splashFactory: InkRipple.splashFactory,
+      visualDensity: VisualDensity.standard,
     );
   }
 }

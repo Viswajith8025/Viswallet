@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
-import 'package:rupee_track/core/branding/brand_colors.dart';
-import 'package:rupee_track/core/design_system/design_tokens.dart';
+import 'package:rupee_track/core/design_system/tokens/app_motion.dart';
+import 'package:rupee_track/core/design_system/tokens/app_spacing.dart';
 import 'package:rupee_track/core/design_system/premium_surfaces.dart';
 import 'package:rupee_track/core/widgets/pressable_scale.dart';
 
-/// Elevated surface card with gradient, accent stripe, and press feedback.
+/// Elevated surface card — hairline border + soft shadow from elevation tokens.
 class PremiumCard extends StatelessWidget {
   const PremiumCard({
     required this.child,
@@ -29,38 +29,21 @@ class PremiumCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final isDark = theme.brightness == Brightness.dark;
+    final BoxDecoration decoration = switch (variant) {
+      PremiumCardVariant.hero => PremiumSurfaces.heroDecoration(context),
+      PremiumCardVariant.tinted =>
+        PremiumSurfaces.tintedCard(context, tint: tintColor),
+      PremiumCardVariant.elevated => PremiumSurfaces.elevatedCard(context),
+      PremiumCardVariant.standard => PremiumSurfaces.standardCard(context),
+    };
 
-    final BoxDecoration decoration;
-    switch (variant) {
-      case PremiumCardVariant.hero:
-        decoration = PremiumSurfaces.heroDecoration(context);
-      case PremiumCardVariant.tinted:
-        decoration = PremiumSurfaces.tintedCard(context, tint: tintColor);
-      case PremiumCardVariant.elevated:
-        decoration = BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: BrandColors.cardGradient(theme.brightness),
-          ),
-          borderRadius: BorderRadius.circular(AppRadius.card),
-          border: Border.all(color: theme.dividerColor),
-          boxShadow: showShadow ? AppShadows.elevated(isDark) : null,
-        );
-      case PremiumCardVariant.standard:
-        decoration = BoxDecoration(
-          color: theme.cardColor,
-          borderRadius: BorderRadius.circular(AppRadius.card),
-          border: Border.all(color: theme.dividerColor),
-          boxShadow: showShadow ? AppShadows.card(isDark) : null,
-        );
-    }
+    final resolvedDecoration = showShadow
+        ? decoration
+        : decoration.copyWith(boxShadow: const []);
 
     final card = Container(
       margin: margin,
-      decoration: decoration,
+      decoration: resolvedDecoration,
       clipBehavior: Clip.antiAlias,
       child: Column(
         mainAxisSize: MainAxisSize.min,
@@ -68,15 +51,8 @@ class PremiumCard extends StatelessWidget {
         children: [
           if (accentColor != null)
             Container(
-              height: 3,
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  colors: [
-                    accentColor!,
-                    accentColor!.withValues(alpha: 0.5),
-                  ],
-                ),
-              ),
+              height: AppSpacing.half,
+              color: accentColor,
             ),
           Padding(
             padding: padding ?? const EdgeInsets.all(AppSpacing.cardPadding),
@@ -94,7 +70,7 @@ class PremiumCard extends StatelessWidget {
       button: true,
       child: PressableScale(
         onTap: onTap,
-        scale: 0.98,
+        scale: AppMotion.pressScale,
         child: card,
       ),
     );

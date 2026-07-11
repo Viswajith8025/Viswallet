@@ -46,21 +46,39 @@ class SettingsScreen extends ConsumerWidget {
                 PremiumCard(
                   variant: PremiumCardVariant.elevated,
                   child: SegmentedButton<ThemeMode>(
+                    showSelectedIcon: false,
+                    style: SegmentedButton.styleFrom(
+                      visualDensity: VisualDensity.compact,
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: AppSpacing.s1,
+                        vertical: AppSpacing.s2,
+                      ),
+                      textStyle: Theme.of(context).textTheme.labelMedium,
+                    ),
                     segments: const [
                       ButtonSegment(
                         value: ThemeMode.system,
-                        label: Text('System'),
-                        icon: Icon(Icons.brightness_auto_rounded),
+                        label: Text(
+                          'System',
+                          maxLines: 1,
+                          softWrap: false,
+                        ),
                       ),
                       ButtonSegment(
                         value: ThemeMode.light,
-                        label: Text('Light'),
-                        icon: Icon(Icons.light_mode_rounded),
+                        label: Text(
+                          'Light',
+                          maxLines: 1,
+                          softWrap: false,
+                        ),
                       ),
                       ButtonSegment(
                         value: ThemeMode.dark,
-                        label: Text('Dark'),
-                        icon: Icon(Icons.dark_mode_rounded),
+                        label: Text(
+                          'Dark',
+                          maxLines: 1,
+                          softWrap: false,
+                        ),
                       ),
                     ],
                     selected: {themeMode},
@@ -94,18 +112,11 @@ class SettingsScreen extends ConsumerWidget {
               ],
             ),
             const SettingsGroup(
-              title: 'Account',
-              subtitle: 'Sign in and cloud profile',
+              title: 'Account & Data',
+              subtitle: 'Sign in, cloud backup, export, and selective resets',
               children: [
                 CloudAccountPanel(),
-              ],
-            ),
-            const SettingsGroup(
-              title: 'Data',
-              subtitle: 'Export, reset, and legal',
-              children: [
                 AppManagementSettingsCard(),
-                SizedBox(height: AppSpacing.sm),
                 LegalLinksCard(),
               ],
             ),

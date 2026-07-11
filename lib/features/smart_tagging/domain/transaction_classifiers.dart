@@ -137,13 +137,3 @@ class KeywordClassifier extends TransactionClassifier {
     );
   }
 }
-
-/// Placeholder for future AI-powered classification.
-class AiTransactionClassifier extends TransactionClassifier {
-  const AiTransactionClassifier();
-
-  @override
-  Future<ClassificationSignal?> classify(ClassificationRequest request) async {
-    return null;
-  }
-}

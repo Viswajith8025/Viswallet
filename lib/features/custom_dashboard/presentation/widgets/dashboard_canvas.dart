@@ -6,6 +6,7 @@ import 'package:rupee_track/core/design_system/shell_bottom_inset.dart';
 import 'package:rupee_track/core/providers/salary_cycle_provider.dart';
 import 'package:rupee_track/features/custom_dashboard/data/dashboard_layout_repository.dart';
 import 'package:rupee_track/features/custom_dashboard/domain/dashboard_layout_models.dart';
+import 'package:rupee_track/features/custom_dashboard/presentation/widgets/dashboard_customize_bar.dart';
 import 'package:rupee_track/features/custom_dashboard/presentation/widgets/dashboard_quick_actions_bar.dart';
 import 'package:rupee_track/features/custom_dashboard/presentation/widgets/dashboard_widget_shell.dart';
 import 'package:rupee_track/features/dashboard/data/dashboard_repository.dart';
@@ -135,6 +136,7 @@ class _SingleColumnBody extends ConsumerWidget {
         physics: const AlwaysScrollableScrollPhysics(),
         padding: _dashboardListPadding(context),
         children: [
+          const DashboardCustomizeBar(),
           if (showQuickActions) ...[
             const DashboardQuickActionsBar(),
             const SizedBox(height: AppSpacing.sm),
@@ -175,6 +177,7 @@ class _TwoColumnBody extends ConsumerWidget {
         physics: const AlwaysScrollableScrollPhysics(),
         padding: _dashboardListPadding(context),
         children: [
+          const DashboardCustomizeBar(),
           if (showQuickActions) ...[
             const DashboardQuickActionsBar(),
             const SizedBox(height: AppSpacing.sm),

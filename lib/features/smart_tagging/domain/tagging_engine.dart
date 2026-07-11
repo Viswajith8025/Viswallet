@@ -5,11 +5,11 @@ class TaggingEngine {
   const TaggingEngine();
 
   static const _sourcePriority = {
-    ClassificationSource.userLearned: 5,
+    ClassificationSource.userLearned: 6,
     ClassificationSource.history: 4,
     ClassificationSource.merchant: 3,
     ClassificationSource.keyword: 2,
-    ClassificationSource.ai: 6,
+    ClassificationSource.ai: 1,
   };
 
   TransactionClassification mergeSignals(

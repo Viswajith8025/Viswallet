@@ -98,13 +98,13 @@ class _WrappedHero extends StatelessWidget {
       padding: const EdgeInsets.all(AppSpacing.lg),
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(AppRadius.xl),
-        gradient: const LinearGradient(
+        gradient: LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
           colors: [
-            Color(0xFF0F3D5E),
-            Color(0xFF1A6B7A),
-            BrandColors.primaryLight,
+            BrandColors.primaryDark,
+            BrandColors.accentContainerDark,
+            BrandColors.primaryDarkMuted,
           ],
         ),
         boxShadow: [

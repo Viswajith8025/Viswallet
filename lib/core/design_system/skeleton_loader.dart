@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:rupee_track/core/design_system/design_tokens.dart';
+import 'package:rupee_track/core/design_system/tokens/app_motion.dart';
 
 /// Shimmer skeleton placeholder — avoids spinners for premium loading feel.
 class SkeletonBox extends StatefulWidget {
@@ -41,6 +42,18 @@ class _SkeletonBoxState extends State<SkeletonBox>
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final base = theme.colorScheme.surfaceContainerHighest;
+
+    if (AppMotion.reducedMotion(context)) {
+      return Container(
+        width: widget.width,
+        height: widget.height,
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(widget.borderRadius),
+          color: base,
+        ),
+      );
+    }
+
     final highlight = theme.brightness == Brightness.dark
         ? base.withValues(alpha: 0.9)
         : Colors.white.withValues(alpha: 0.7);

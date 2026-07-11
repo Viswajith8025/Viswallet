@@ -36,7 +36,15 @@ class FetchBackupResult {
 
 
 
-enum CloudSyncAction { none, restored, uploaded, skipped, failed }
+enum CloudSyncAction {
+  none,
+  restored,
+  uploaded,
+  skipped,
+  failed,
+  needsConfirmation,
+  restoreAvailable,
+}
 
 
 

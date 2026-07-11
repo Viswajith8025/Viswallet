@@ -14,6 +14,7 @@ import 'package:rupee_track/core/router/routes.dart';
 import 'package:rupee_track/core/utils/money_utils.dart';
 import 'package:rupee_track/core/widgets/money_text.dart';
 import 'package:rupee_track/core/widgets/summary_card.dart';
+import 'package:rupee_track/features/budget/data/budget_repository.dart';
 import 'package:rupee_track/features/budget/presentation/widgets/budget_overview_section.dart';
 import 'package:rupee_track/features/budget_alerts/presentation/widgets/budget_alerts_panel.dart';
 import 'package:rupee_track/features/custom_dashboard/domain/dashboard_layout_models.dart';
@@ -30,6 +31,7 @@ import 'package:rupee_track/features/safe_spend/data/safe_spend_repository.dart'
 import 'package:rupee_track/features/safe_spend/presentation/widgets/safe_spend_card.dart';
 import 'package:rupee_track/features/savings_forecast/data/savings_forecast_repository.dart';
 import 'package:rupee_track/features/savings_forecast/domain/savings_forecast_engine.dart';
+import 'package:rupee_track/core/utils/category_icon_utils.dart';
 import 'package:rupee_track/features/insights/presentation/widgets/insights_feed_section.dart';
 
 /// Renders a single dashboard widget type — each watches its own providers.
@@ -72,14 +74,20 @@ class _BalanceWidget extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final cycleKey = _cycleKey(ref);
-    final async = ref.watch(monthlySummaryProvider(cycleKey));
-    return async.when(
-      loading: () => const SkeletonCard(height: 120),
+    final summaryAsync = ref.watch(monthlySummaryProvider(cycleKey));
+    final safeSpendAsync = ref.watch(safeSpendProvider(cycleKey));
+    return summaryAsync.when(
+      loading: () => const SkeletonCard(height: 200),
       error: (_, __) => CompactWidgetError(
         message: "Couldn't load balance",
         onRetry: () => ref.invalidate(monthlySummaryProvider(cycleKey)),
       ),
-      data: (s) => DashboardHero(summary: s),
+      data: (summary) => safeSpendAsync.when(
+        loading: () => DashboardHero(summary: summary),
+        error: (_, __) => DashboardHero(summary: summary),
+        data: (safeSpend) =>
+            DashboardHero(summary: summary, safeSpend: safeSpend),
+      ),
     );
   }
 }
@@ -151,7 +159,27 @@ class _SafeSpendWidget extends ConsumerWidget {
 class _BudgetProgressWidget extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    return BudgetOverviewSection(monthKey: _cycleKey(ref));
+    final cycleKey = _cycleKey(ref);
+    final planAsync = ref.watch(budgetPlanStatusProvider(cycleKey));
+    return planAsync.when(
+      loading: () => const SkeletonCard(height: 140),
+      error: (_, __) => CompactWidgetError(
+        message: "Couldn't load budget",
+        onRetry: () => ref.invalidate(budgetPlanStatusProvider(cycleKey)),
+      ),
+      data: (plan) {
+        if (plan == null) {
+          return DashboardSlotEmpty(
+            icon: Icons.pie_chart_outline_rounded,
+            title: 'No budget plan yet',
+            message: 'Split your salary into groups to track pace and alerts.',
+            actionLabel: 'Set up budget',
+            onAction: () => context.push(AppRoutes.budgetSetup),
+          );
+        }
+        return BudgetOverviewSection(monthKey: cycleKey);
+      },
+    );
   }
 }
 
@@ -161,13 +189,21 @@ class _BudgetSetupWidget extends ConsumerWidget {
     final cycleKey = _cycleKey(ref);
     final async = ref.watch(monthlySummaryProvider(cycleKey));
     return async.when(
-      loading: () => const DashboardEmpty(),
+      loading: () => const SkeletonCard(height: 88),
       error: (_, __) => CompactWidgetError(
         message: "Couldn't load budget setup",
         onRetry: () => ref.invalidate(monthlySummaryProvider(cycleKey)),
       ),
       data: (summary) {
-        if (!summary.salaryEntered) return const DashboardEmpty();
+        if (!summary.salaryEntered) {
+          return DashboardSlotEmpty(
+            icon: Icons.payments_outlined,
+            title: 'Add salary first',
+            message: 'Budget groups are based on your in-hand income each cycle.',
+            actionLabel: 'Add salary',
+            onAction: () => context.push(AppRoutes.salary),
+          );
+        }
         final theme = Theme.of(context);
         return PremiumCard(
           accentColor: theme.colorScheme.tertiary,
@@ -299,7 +335,15 @@ class _CategoryChartWidget extends ConsumerWidget {
         onRetry: () => ref.invalidate(monthlySummaryProvider(_cycleKey(ref))),
       ),
       data: (summary) {
-        if (summary.categoryBreakdown.isEmpty) return const DashboardEmpty();
+        if (summary.categoryBreakdown.isEmpty) {
+          return DashboardSlotEmpty(
+            icon: Icons.donut_large_outlined,
+            title: 'No expenses yet',
+            message: 'Log spending to see where your money goes this cycle.',
+            actionLabel: 'Add expense',
+            onAction: () => context.push(AppRoutes.expenseAdd),
+          );
+        }
         return Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -328,23 +372,23 @@ class _CalendarPromoWidget extends StatelessWidget {
     final theme = Theme.of(context);
     return PremiumCard(
       accentColor: theme.colorScheme.tertiary,
-      onTap: () => context.push(AppRoutes.calendar),
+      onTap: () => context.go(AppRoutes.insights),
       child: Row(
         children: [
-          Icon(Icons.calendar_month_rounded, color: theme.colorScheme.tertiary),
+          Icon(Icons.insights_outlined, color: theme.colorScheme.tertiary),
           const SizedBox(width: AppSpacing.md),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  'Financial calendar',
+                  'Spending analytics',
                   style: theme.textTheme.titleSmall?.copyWith(
                     fontWeight: FontWeight.w600,
                   ),
                 ),
                 Text(
-                  'Your money timeline',
+                  'Trends, health, and categories',
                   style: theme.textTheme.bodySmall?.copyWith(
                     color: theme.colorScheme.onSurfaceVariant,
                   ),
@@ -368,7 +412,7 @@ class _LoanWidget extends ConsumerWidget {
     final async = ref.watch(monthlySummaryProvider(_cycleKey(ref)));
     final theme = Theme.of(context);
     return async.when(
-      loading: () => const DashboardEmpty(),
+      loading: () => const SkeletonCard(height: 72),
       error: (_, __) => CompactWidgetError(
         message: "Couldn't load borrow & lend",
         onRetry: () => ref.invalidate(monthlySummaryProvider(_cycleKey(ref))),
@@ -376,7 +420,13 @@ class _LoanWidget extends ConsumerWidget {
       data: (summary) {
         if (summary.pendingBorrowedPaise <= 0 &&
             summary.overdueLoansCount <= 0) {
-          return const DashboardEmpty();
+          return DashboardSlotEmpty(
+            icon: Icons.handshake_outlined,
+            title: 'No active loans',
+            message: 'Track money you borrowed or lent from More.',
+            actionLabel: 'Open borrow & lend',
+            onAction: () => context.push(AppRoutes.borrowed),
+          );
         }
         final isOverdueLent = summary.overdueLoansCount > 0;
         return PremiumCard(
@@ -413,14 +463,20 @@ class _SubscriptionsWidget extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final async = ref.watch(monthlySummaryProvider(_cycleKey(ref)));
     return async.when(
-      loading: () => const DashboardEmpty(),
+      loading: () => const SkeletonCard(height: 72),
       error: (_, __) => CompactWidgetError(
         message: "Couldn't load subscriptions",
         onRetry: () => ref.invalidate(monthlySummaryProvider(_cycleKey(ref))),
       ),
       data: (summary) {
         if (summary.upcomingSubscriptionsCount <= 0) {
-          return const DashboardEmpty();
+          return DashboardSlotEmpty(
+            icon: Icons.event_outlined,
+            title: 'No subscriptions due soon',
+            message: 'Add recurring bills to get reminded before they hit.',
+            actionLabel: 'Manage subscriptions',
+            onAction: () => context.push(AppRoutes.subscriptions),
+          );
         }
         final theme = Theme.of(context);
         return PremiumCard(
@@ -455,7 +511,7 @@ class _SavingsForecastWidget extends ConsumerWidget {
         onRetry: () => ref.invalidate(savingsForecastReportProvider),
       ),
       data: (report) => PremiumCard(
-        onTap: () => context.push(AppRoutes.savingsForecast),
+        onTap: () => context.go(AppRoutes.insights),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -524,9 +580,9 @@ class _QuickActionsInlineWidget extends StatelessWidget {
           onPressed: () => context.push(AppRoutes.salary),
         ),
         ActionChip(
-          avatar: const Icon(Icons.calendar_month_outlined, size: 18),
-          label: const Text('Calendar'),
-          onPressed: () => context.push(AppRoutes.calendar),
+          avatar: const Icon(Icons.insights_outlined, size: 18),
+          label: const Text('Insights'),
+          onPressed: () => context.go(AppRoutes.insights),
         ),
         ActionChip(
           avatar: const Icon(Icons.subscriptions_outlined, size: 18),
@@ -554,14 +610,18 @@ class _AchievementsWidget extends ConsumerWidget {
     final async = ref.watch(previousCycleClosingReportProvider);
     final theme = Theme.of(context);
     return async.when(
-      loading: () => const DashboardEmpty(),
+      loading: () => const SkeletonCard(height: 72),
       error: (_, __) => CompactWidgetError(
         message: "Couldn't load achievements",
         onRetry: () => ref.invalidate(previousCycleClosingReportProvider),
       ),
       data: (report) {
         if (report == null || report.goalsAchieved.isEmpty) {
-          return const DashboardEmpty();
+          return const DashboardSlotEmpty(
+            icon: Icons.emoji_events_outlined,
+            title: 'No recent wins yet',
+            message: 'Finish a cycle on track to see achievements here.',
+          );
         }
         return PremiumCard(
           child: Column(
@@ -598,12 +658,23 @@ class _WishlistWidget extends ConsumerWidget {
 
     return goalsAsync.when(
       loading: () => const SkeletonCard(height: 72),
-      error: (_, __) => const DashboardEmpty(),
+      error: (_, __) => CompactWidgetError(
+        message: "Couldn't load wishlist",
+        onRetry: () => ref.invalidate(_wishlistGoalsProvider),
+      ),
       data: (items) {
-        if (items.isEmpty) return const DashboardEmpty();
+        if (items.isEmpty) {
+          return DashboardSlotEmpty(
+            icon: Icons.favorite_rounded,
+            title: 'Wishlist is empty',
+            message: 'Save toward something you want from Insights.',
+            actionLabel: 'Open insights',
+            onAction: () => context.go(AppRoutes.insights),
+          );
+        }
         final top = items.first;
         return PremiumCard(
-          onTap: () => context.push(AppRoutes.savingsForecast),
+          onTap: () => context.go(AppRoutes.insights),
           child: Row(
             children: [
               Icon(Icons.favorite_rounded, color: theme.colorScheme.primary),
@@ -661,7 +732,16 @@ class _RecentTransactionsWidget extends ConsumerWidget {
         onRetry: () => ref.invalidate(expensesForMonthProvider(cycleKey)),
       ),
       data: (items) {
-        if (items.isEmpty) return const DashboardEmpty();
+        if (items.isEmpty) {
+          return DashboardSlotEmpty(
+            icon: Icons.receipt_long_outlined,
+            title: 'No transactions yet',
+            message: 'Quick Add or log an expense to see recent activity.',
+            actionLabel: 'Add expense',
+            onAction: () => context.push(AppRoutes.expenseAdd),
+          );
+        }
+        final semantics = context.semanticColors;
         return PremiumCard(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -676,11 +756,21 @@ class _RecentTransactionsWidget extends ConsumerWidget {
                     (row) => ListTile(
                       dense: true,
                       contentPadding: EdgeInsets.zero,
+                      leading: Icon(
+                        categoryIconFromName(row.category.iconName),
+                        color: Color(row.category.colorValue),
+                        size: 20,
+                      ),
                       title: Text(row.expense.title),
                       subtitle: Text(row.category.name),
-                      trailing: Text(
-                        formatPaise(row.expense.amountPaise),
-                        style: const TextStyle(fontWeight: FontWeight.w700),
+                      trailing: MoneyText(
+                        row.expense.amountPaise,
+                        compact: true,
+                        color: semantics.expense,
+                        style: AppTypography.moneyCompact(
+                          context,
+                          color: semantics.expense,
+                        ),
                       ),
                     ),
                   ),

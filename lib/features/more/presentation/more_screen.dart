@@ -17,7 +17,7 @@ class MoreScreen extends StatelessWidget {
     return Scaffold(
       appBar: const PremiumAppBar(
         title: 'More',
-        subtitle: 'Everything else in one place',
+        subtitle: 'Tools, planning, and account settings',
       ),
       body: ResponsiveBody(
         child: ListView(
@@ -27,29 +27,35 @@ class MoreScreen extends StatelessWidget {
             const ContextBanner(
               icon: Icons.explore_outlined,
               message:
-                  'Reports, planning tools, and account settings live here. Pick what you need — no hunting through menus.',
+                  'Tools beyond the main tabs — subscriptions, budgets, loans, and settings.',
             ),
             _Section(
               title: 'See your money',
-              subtitle: 'Visualize spending over time',
+              subtitle: 'Search across your data',
               children: [
-                PremiumMenuTile(
-                  icon: Icons.calendar_month_rounded,
-                  title: 'Financial calendar',
-                  subtitle: 'Salary days, bills, and spending on a timeline',
-                  onTap: () => context.push(AppRoutes.calendar),
-                ),
-                PremiumMenuTile(
-                  icon: Icons.grid_on_rounded,
-                  title: 'Expense heatmap',
-                  subtitle: 'Which days you spend the most',
-                  onTap: () => context.push(AppRoutes.expenseHeatmap),
-                ),
                 PremiumMenuTile(
                   icon: Icons.search_rounded,
                   title: 'Search',
                   subtitle: 'Find any expense, sub, or goal instantly',
                   onTap: () => context.push(AppRoutes.search),
+                ),
+              ],
+            ),
+            _Section(
+              title: 'Subscriptions & alerts',
+              subtitle: 'Recurring bills and budget warnings',
+              children: [
+                PremiumMenuTile(
+                  icon: Icons.subscriptions_outlined,
+                  title: 'Subscription health',
+                  subtitle: 'Track renewals, overlap, and monthly cost',
+                  onTap: () => context.push(AppRoutes.subscriptions),
+                ),
+                PremiumMenuTile(
+                  icon: Icons.notifications_active_outlined,
+                  title: 'Budget alerts',
+                  subtitle: 'See every spending-group warning in one place',
+                  onTap: () => context.push(AppRoutes.budgetAlerts),
                 ),
               ],
             ),
@@ -73,31 +79,13 @@ class MoreScreen extends StatelessWidget {
             ),
             _Section(
               title: 'Plan ahead',
-              subtitle: 'Budgets, forecasts, and reviews',
+              subtitle: 'Budgets and goals',
               children: [
                 PremiumMenuTile(
                   icon: Icons.pie_chart_outline,
                   title: 'Budget planner',
                   subtitle: 'Split salary into Food, Bills, Fun, and more',
                   onTap: () => context.push(AppRoutes.budget),
-                ),
-                PremiumMenuTile(
-                  icon: Icons.category_outlined,
-                  title: 'Category budgets',
-                  subtitle: 'Set limits per category and get alerts',
-                  onTap: () => context.push(AppRoutes.categoryBudget),
-                ),
-                PremiumMenuTile(
-                  icon: Icons.trending_up_rounded,
-                  title: 'Savings forecast',
-                  subtitle: 'Where your money could be in 12 months',
-                  onTap: () => context.push(AppRoutes.savingsForecast),
-                ),
-                PremiumMenuTile(
-                  icon: Icons.auto_awesome_rounded,
-                  title: 'AI monthly review',
-                  subtitle: 'Highlights from your month, explained simply',
-                  onTap: () => context.push(AppRoutes.monthlyReport),
                 ),
               ],
             ),
@@ -132,7 +120,7 @@ class MoreScreen extends StatelessWidget {
                 PremiumMenuTile(
                   icon: Icons.settings_outlined,
                   title: 'Settings',
-                  subtitle: 'Theme, salary day, lock, and data',
+                  subtitle: 'Account, data, theme, and salary',
                   onTap: () => context.push(AppRoutes.settings),
                 ),
               ],

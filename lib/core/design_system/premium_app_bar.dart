@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:rupee_track/core/design_system/premium_surfaces.dart';
 import 'package:rupee_track/core/design_system/responsive.dart';
-import 'package:rupee_track/core/widgets/theme_toggle_button.dart';
-/// Consistent screen app bar — transparent, bold title, optional subtitle.
-class PremiumAppBar extends StatelessWidget implements PreferredSizeWidget {
-  const PremiumAppBar({
+import 'package:rupee_track/core/design_system/tokens/app_spacing.dart';
+import 'package:rupee_track/core/design_system/tokens/app_typography.dart';
+
+/// Consistent screen app bar — token typography, hairline underline.
+class PremiumAppBar extends StatelessWidget implements PreferredSizeWidget {  const PremiumAppBar({
     required this.title,
     super.key,
     this.subtitle,
@@ -18,57 +20,48 @@ class PremiumAppBar extends StatelessWidget implements PreferredSizeWidget {
   final Widget? leading;
   final bool centerTitle;
 
+  static double toolbarHeightFor({required bool hasSubtitle}) =>
+      hasSubtitle ? AppSpacing.s6 + AppSpacing.s2 : kToolbarHeight;
+
   @override
-  Size get preferredSize => Size.fromHeight(subtitle != null ? 72 : kToolbarHeight);
+  Size get preferredSize =>
+      Size.fromHeight(toolbarHeightFor(hasSubtitle: subtitle != null));
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
+    final brightness = Theme.of(context).brightness;
     final horizontal = AppResponsive.horizontalPadding(
       MediaQuery.sizeOf(context).width,
     );
-    final appBarActions = [
-      ...?actions,
-      const ThemeToggleButton(),
-    ];
+    final appBarActions = actions;
     final titleWidget = subtitle == null
-        ? Text(
-            title,
-            style: theme.textTheme.titleLarge?.copyWith(
-              fontWeight: FontWeight.w700,
-            ),
-          )
+        ? Text(title, style: AppTypography.appBarTitle(brightness))
         : Column(
             crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Text(
-                title,
-                style: theme.textTheme.titleLarge?.copyWith(
-                  fontWeight: FontWeight.w700,
-                ),
-              ),
-              Text(
-                subtitle!,
-                style: theme.textTheme.labelMedium?.copyWith(
-                  color: theme.colorScheme.onSurfaceVariant,
-                ),
-              ),
+              Text(title, style: AppTypography.appBarTitle(brightness)),
+              SizedBox(height: AppSpacing.half),
+              Text(subtitle!, style: AppTypography.appBarSubtitle(brightness)),
             ],
           );
 
-    return AppBar(
-      toolbarHeight: subtitle != null ? 72 : kToolbarHeight,
-      titleSpacing: leading == null ? 0 : null,
-      leading: leading,
-      automaticallyImplyLeading: leading == null,
-      centerTitle: centerTitle,
-      actions: appBarActions,
-      title: centerTitle
-          ? titleWidget
-          : Padding(
-              padding: EdgeInsets.only(left: leading == null ? horizontal : 0),
-              child: titleWidget,
-            ),
+    return DecoratedBox(
+      decoration: PremiumSurfaces.appBarUnderline(context),
+      child: AppBar(
+        toolbarHeight: toolbarHeightFor(hasSubtitle: subtitle != null),
+        titleSpacing: leading == null ? 0 : null,
+        leading: leading,
+        automaticallyImplyLeading: leading == null,
+        centerTitle: centerTitle,
+        actions: appBarActions,
+        title: centerTitle
+            ? titleWidget
+            : Padding(
+                padding: EdgeInsets.only(left: leading == null ? horizontal : 0),
+                child: titleWidget,
+              ),
+      ),
     );
   }
 }
@@ -78,7 +71,7 @@ class PremiumScreenBody extends StatelessWidget {
   const PremiumScreenBody({
     required this.child,
     super.key,
-    this.bottomPadding = 100,
+    this.bottomPadding = AppSpacing.s6 + AppSpacing.s4 + AppSpacing.s2,
   });
 
   final Widget child;

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:rupee_track/core/design_system/tokens/app_motion.dart';
 
 /// Subtle scale feedback for premium micro-interactions.
 class PressableScale extends StatefulWidget {
@@ -6,7 +7,7 @@ class PressableScale extends StatefulWidget {
     required this.child,
     super.key,
     this.onTap,
-    this.scale = 0.97,
+    this.scale = AppMotion.pressScale,
     this.semanticLabel,
     this.enabled = true,
   });
@@ -27,11 +28,12 @@ class _PressableScaleState extends State<PressableScale> {
   @override
   Widget build(BuildContext context) {
     final interactive = widget.enabled && widget.onTap != null;
+    final duration = AppMotion.resolve(context, AppMotion.durationFast);
 
     Widget content = AnimatedScale(
       scale: _pressed && interactive ? widget.scale : 1,
-      duration: const Duration(milliseconds: 100),
-      curve: Curves.easeOut,
+      duration: duration,
+      curve: AppMotion.curveStandard,
       child: widget.child,
     );
 

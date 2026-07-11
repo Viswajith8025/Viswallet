@@ -40,5 +40,6 @@ class IncomeSourcesDao extends DatabaseAccessor<AppDatabase>
         updatedAt: Value(DateTime.now().toUtc()),
       ),
     );
+    await db.remapDataToSalaryDay(dayOfMonth);
   }
 }

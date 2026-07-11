@@ -83,6 +83,7 @@ class ExpensesDao extends DatabaseAccessor<AppDatabase> with _$ExpensesDaoMixin 
       ..addColumns([
         categoriesTable.id,
         categoriesTable.name,
+        categoriesTable.iconName,
         categoriesTable.colorValue,
         amountSum,
       ])
@@ -98,6 +99,7 @@ class ExpensesDao extends DatabaseAccessor<AppDatabase> with _$ExpensesDaoMixin 
       ..groupBy([
         categoriesTable.id,
         categoriesTable.name,
+        categoriesTable.iconName,
         categoriesTable.colorValue,
       ])
       ..orderBy([OrderingTerm.desc(amountSum)]);
@@ -108,6 +110,7 @@ class ExpensesDao extends DatabaseAccessor<AppDatabase> with _$ExpensesDaoMixin 
           (row) => CategorySpendRow(
             categoryId: row.read(categoriesTable.id)!,
             categoryName: row.read(categoriesTable.name)!,
+            iconName: row.read(categoriesTable.iconName)!,
             colorValue: row.read(categoriesTable.colorValue)!,
             totalPaise: row.read(amountSum) ?? 0,
           ),
@@ -527,12 +530,14 @@ class CategorySpendRow {
   const CategorySpendRow({
     required this.categoryId,
     required this.categoryName,
+    required this.iconName,
     required this.colorValue,
     required this.totalPaise,
   });
 
   final int categoryId;
   final String categoryName;
+  final String iconName;
   final int colorValue;
   final int totalPaise;
 }

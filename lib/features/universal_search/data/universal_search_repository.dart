@@ -255,7 +255,7 @@ class UniversalSearchRepository {
           subtitle:
               '${formatPaise(goal.savedPaise)} / ${formatPaise(goal.targetPaise)}',
           amountPaise: goal.targetPaise,
-          route: AppRoutes.savingsForecast,
+          route: AppRoutes.insights,
           icon: goal.isWishlist
               ? Icons.favorite_border
               : Icons.flag_outlined,
@@ -274,7 +274,7 @@ class UniversalSearchRepository {
           kind: SearchResultKind.category,
           title: cat.name,
           subtitle: 'Category',
-          route: AppRoutes.categoryBudget,
+          route: AppRoutes.budget,
           icon: Icons.category_outlined,
           colorValue: cat.colorValue,
         ),
@@ -337,14 +337,12 @@ class UniversalSearchRepository {
 
   List<SearchResultItem> _navigationShortcuts(ParsedSearchQuery parsed) {
     const shortcuts = [
-      ('calendar', 'Financial calendar', AppRoutes.calendar, Icons.calendar_month),
-      ('report', 'Monthly report', AppRoutes.monthlyReport, Icons.auto_awesome),
-      ('budget', 'Budget planner', AppRoutes.budget, Icons.pie_chart_outline),
-      ('forecast', 'Savings forecast', AppRoutes.savingsForecast, Icons.trending_up),
-      ('heatmap', 'Expense heatmap', AppRoutes.expenseHeatmap, Icons.grid_on),
-      ('health', 'Financial health', AppRoutes.financialHealth, Icons.favorite),
-      ('settings', 'Settings', AppRoutes.settings, Icons.settings_outlined),
       ('insights', 'Insights', AppRoutes.insights, Icons.insights_outlined),
+      ('report', 'Monthly review (Insights)', AppRoutes.insights, Icons.auto_awesome),
+      ('budget', 'Budget planner', AppRoutes.budget, Icons.pie_chart_outline),
+      ('forecast', 'Savings forecast (Insights)', AppRoutes.insights, Icons.trending_up),
+      ('health', 'Financial health (Insights)', AppRoutes.insights, Icons.favorite),
+      ('settings', 'Settings', AppRoutes.settings, Icons.settings_outlined),
     ];
 
     if (parsed.rawQuery.isEmpty) return [];

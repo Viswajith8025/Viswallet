@@ -37,6 +37,24 @@ void main() {
       expect(report.hasEnoughData, isFalse);
     });
 
+    test('no budget buckets returns low score and setup nudge', () {
+      final report = FinancialHealthEngine.compute(
+        input: healthyInput().copyWith(
+          totalSpendingBuckets: 0,
+          bucketsOnTrack: 0,
+          bucketsOverBudget: 0,
+        ),
+      );
+      final budgeting = report.categories
+          .firstWhere((c) => c.category == HealthCategory.budgeting);
+      expect(budgeting.score, lessThan(50));
+      expect(budgeting.summary.toLowerCase(), contains('set a budget'));
+      expect(
+        report.recommendations.any((r) => r.message.toLowerCase().contains('budget')),
+        isTrue,
+      );
+    });
+
     test('generates subscription recommendation when burden high', () {
       final report = FinancialHealthEngine.compute(
         input: healthyInput().copyWith(subscriptionMonthlyPaise: 400000),
@@ -59,6 +77,9 @@ extension on FinancialHealthInput {
   FinancialHealthInput copyWith({
     int? salaryPaise,
     int? subscriptionMonthlyPaise,
+    int? totalSpendingBuckets,
+    int? bucketsOnTrack,
+    int? bucketsOverBudget,
   }) {
     return FinancialHealthInput(
       cycleKey: cycleKey,
@@ -72,9 +93,9 @@ extension on FinancialHealthInput {
       impulsePurchasePaise: impulsePurchasePaise,
       impulsePurchaseCount: impulsePurchaseCount,
       dailySpendsPaise: dailySpendsPaise,
-      bucketsOverBudget: bucketsOverBudget,
-      bucketsOnTrack: bucketsOnTrack,
-      totalSpendingBuckets: totalSpendingBuckets,
+      bucketsOverBudget: bucketsOverBudget ?? this.bucketsOverBudget,
+      bucketsOnTrack: bucketsOnTrack ?? this.bucketsOnTrack,
+      totalSpendingBuckets: totalSpendingBuckets ?? this.totalSpendingBuckets,
       emergencyFundRemainingPercent: emergencyFundRemainingPercent,
       savingsBucketTouched: savingsBucketTouched,
       previousCycleScore: previousCycleScore,

@@ -61,11 +61,11 @@ class _WidgetLaunchHandlerState extends ConsumerState<WidgetLaunchHandler>
       case WidgetActions.dashboard:
         context.go(AppRoutes.home);
       case WidgetActions.calendar:
-        context.push(AppRoutes.calendar);
+        context.go(AppRoutes.insights);
       case WidgetActions.budget:
         context.push(AppRoutes.budget);
       case WidgetActions.health:
-        context.push(AppRoutes.financialHealth);
+        context.go(AppRoutes.insights);
       case WidgetActions.subscriptions:
         context.push(AppRoutes.subscriptions);
       case WidgetActions.wishlist:

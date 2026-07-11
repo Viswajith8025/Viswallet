@@ -1,11 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:rupee_track/core/branding/brand_colors.dart';
+import 'package:rupee_track/core/design_system/design_tokens.dart';
+import 'package:rupee_track/core/design_system/premium_app_bar.dart';
+import 'package:rupee_track/core/design_system/premium_snackbar.dart';
+import 'package:rupee_track/core/design_system/skeleton_loader.dart';
 import 'package:rupee_track/core/providers/salary_cycle_provider.dart';
 import 'package:rupee_track/core/router/routes.dart';
 import 'package:rupee_track/core/widgets/error_state.dart';
-import 'package:rupee_track/core/widgets/theme_toggle_button.dart';
 import 'package:rupee_track/features/budget/domain/allocation_mode.dart';
 import 'package:rupee_track/features/budget_alerts/data/budget_alerts_repository.dart';
 import 'package:rupee_track/features/budget_alerts/domain/budget_alert.dart';
@@ -51,16 +53,13 @@ class _BudgetAlertsListenerState extends ConsumerState<BudgetAlertsListener> {
             : null;
         final text = group?.summary ?? snapshot.newEscalations.first.message;
 
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            behavior: SnackBarBehavior.floating,
-            duration: const Duration(seconds: 5),
-            content: Text(text),
-            action: SnackBarAction(
-              label: 'View',
-              onPressed: () => context.push(AppRoutes.budgetAlerts),
-            ),
-          ),
+        ScaffoldMessenger.of(context).hideCurrentSnackBar();
+        showPremiumSnackBar(
+          context,
+          message: text,
+          actionLabel: 'View',
+          onAction: () => context.push(AppRoutes.budgetAlerts),
+          duration: const Duration(seconds: 5),
         );
       });
     });
@@ -122,12 +121,21 @@ class BudgetAlertsScreen extends ConsumerWidget {
     final theme = Theme.of(context);
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Budget alerts'),
-        actions: const [ThemeToggleButton()],
+      appBar: const PremiumAppBar(
+        title: 'Budget alerts',
+        subtitle: 'Spending warnings for this cycle',
       ),
       body: alertsAsync.when(
-        loading: () => const Center(child: CircularProgressIndicator()),
+        loading: () => ListView(
+          padding: const EdgeInsets.all(AppSpacing.md),
+          children: const [
+            SkeletonCard(height: 72),
+            SizedBox(height: AppSpacing.sm),
+            SkeletonCard(height: 88),
+            SizedBox(height: AppSpacing.sm),
+            SkeletonCard(height: 88),
+          ],
+        ),
         error: (e, _) => ErrorState(
           message: 'We couldn\'t load your budget alerts.',
           onRetry: () => ref.invalidate(budgetAlertsProvider(cycleKey)),
@@ -292,13 +300,15 @@ class _AlertGroupCard extends StatelessWidget {
     );
   }
 
-  static Color _colorForLevel(BuildContext context, BudgetAlertLevel level) =>
-      switch (level) {
-        BudgetAlertLevel.exceeded => Theme.of(context).colorScheme.error,
-        BudgetAlertLevel.critical90 => const Color(0xFFF97316),
-        BudgetAlertLevel.watch75 => BrandColors.warning,
-        _ => BrandColors.secondary,
-      };
+  static Color _colorForLevel(BuildContext context, BudgetAlertLevel level) {
+    final semantics = context.semanticColors;
+    return switch (level) {
+      BudgetAlertLevel.exceeded => Theme.of(context).colorScheme.error,
+      BudgetAlertLevel.critical90 => semantics.expense,
+      BudgetAlertLevel.watch75 => semantics.warning,
+      _ => Theme.of(context).colorScheme.primary,
+    };
+  }
 
   static IconData _iconForLevel(BudgetAlertLevel level) => switch (level) {
         BudgetAlertLevel.exceeded => Icons.info_outline,

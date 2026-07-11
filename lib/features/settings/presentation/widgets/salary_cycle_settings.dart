@@ -5,6 +5,9 @@ import 'package:rupee_track/core/providers/salary_cycle_provider.dart';
 import 'package:rupee_track/core/providers/settings_provider.dart';
 import 'package:rupee_track/core/salary_cycle/salary_cycle_engine.dart';
 import 'package:rupee_track/core/utils/date_utils.dart';
+import 'package:rupee_track/features/cloud_backup/data/cloud_backup_coordinator.dart';
+import 'package:rupee_track/features/salary/data/salary_repository.dart';
+import 'package:rupee_track/features/dashboard/data/dashboard_repository.dart';
 
 class SalaryCycleSettings extends ConsumerStatefulWidget {
   const SalaryCycleSettings({super.key});
@@ -124,7 +127,10 @@ class _SalaryCycleSettingsState extends ConsumerState<SalaryCycleSettings> {
     final dao = await ref.read(incomeSourcesDaoProvider.future);
     await dao.updateSalaryDay(day);
     ref.invalidate(appSettingsProvider);
+    ref.invalidate(salaryBreakdownProvider);
+    ref.invalidate(monthlySummaryProvider);
     ref.read(selectedCycleKeyProvider.notifier).syncWithSalaryDay();
+    ref.read(cloudBackupCoordinatorProvider).schedulePush();
     if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Salary date set to the $day${_ordinal(day)}')),

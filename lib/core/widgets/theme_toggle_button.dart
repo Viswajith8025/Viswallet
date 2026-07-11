@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:rupee_track/core/design_system/tokens/app_motion.dart';
 import 'package:rupee_track/core/providers/settings_provider.dart';
 
+/// Compact theme switch — prefer Settings → Appearance for full control.
 class ThemeToggleButton extends ConsumerWidget {
   const ThemeToggleButton({super.key});
 
@@ -11,6 +13,7 @@ class ThemeToggleButton extends ConsumerWidget {
     final brightness = Theme.of(context).brightness;
     final isDark = themeMode == ThemeMode.dark ||
         (themeMode == ThemeMode.system && brightness == Brightness.dark);
+    final duration = AppMotion.resolve(context, AppMotion.durationFast);
 
     return Padding(
       padding: const EdgeInsets.only(right: 8),
@@ -28,8 +31,8 @@ class ThemeToggleButton extends ConsumerWidget {
                   );
             },
             child: AnimatedContainer(
-              duration: const Duration(milliseconds: 180),
-              curve: Curves.easeOutCubic,
+              duration: duration,
+              curve: AppMotion.curveStandard,
               height: 34,
               width: 58,
               padding: const EdgeInsets.all(4),
@@ -43,8 +46,8 @@ class ThemeToggleButton extends ConsumerWidget {
                 ),
               ),
               child: AnimatedAlign(
-                duration: const Duration(milliseconds: 180),
-                curve: Curves.easeOutCubic,
+                duration: duration,
+                curve: AppMotion.curveStandard,
                 alignment: isDark ? Alignment.centerRight : Alignment.centerLeft,
                 child: Container(
                   height: 26,
@@ -52,7 +55,7 @@ class ThemeToggleButton extends ConsumerWidget {
                   decoration: BoxDecoration(
                     color: isDark
                         ? Theme.of(context).colorScheme.primary
-                        : Theme.of(context).colorScheme.secondary,
+                        : Theme.of(context).colorScheme.primary,
                     shape: BoxShape.circle,
                   ),
                   child: Icon(
@@ -62,7 +65,7 @@ class ThemeToggleButton extends ConsumerWidget {
                     size: 16,
                     color: isDark
                         ? Theme.of(context).colorScheme.onPrimary
-                        : Theme.of(context).colorScheme.onSecondary,
+                        : Theme.of(context).colorScheme.onPrimary,
                   ),
                 ),
               ),

@@ -32,74 +32,71 @@ class DashboardScreen extends ConsumerWidget {
             ),
           ),
         ),
-        actions: [
-          if (compact && editMode)
-            PopupMenuButton<String>(
-              tooltip: 'Dashboard options',
-              icon: const Icon(Icons.more_vert_rounded),
-              onSelected: (value) {
-                switch (value) {
-                  case 'done':
-                    ref.read(dashboardEditModeProvider.notifier).state = false;
-                  case 'add':
-                    showDashboardAddWidgetSheet(context, ref);
-                  case 'settings':
-                    showDashboardCustomizeSheet(context, ref);
-                }
-              },
-              itemBuilder: (context) => const [
-                PopupMenuItem(
-                  value: 'done',
-                  child: ListTile(
-                    leading: Icon(Icons.check_rounded),
-                    title: Text('Done editing'),
-                    contentPadding: EdgeInsets.zero,
+        actions: editMode
+            ? [
+                if (compact)
+                  PopupMenuButton<String>(
+                    tooltip: 'Dashboard options',
+                    icon: const Icon(Icons.more_vert_rounded),
+                    onSelected: (value) {
+                      switch (value) {
+                        case 'done':
+                          ref.read(dashboardEditModeProvider.notifier).state =
+                              false;
+                        case 'add':
+                          showDashboardAddWidgetSheet(context, ref);
+                        case 'settings':
+                          showDashboardCustomizeSheet(context, ref);
+                      }
+                    },
+                    itemBuilder: (context) => const [
+                      PopupMenuItem(
+                        value: 'done',
+                        child: ListTile(
+                          leading: Icon(Icons.check_rounded),
+                          title: Text('Done editing'),
+                          contentPadding: EdgeInsets.zero,
+                        ),
+                      ),
+                      PopupMenuItem(
+                        value: 'add',
+                        child: ListTile(
+                          leading: Icon(Icons.add_box_outlined),
+                          title: Text('Add widget'),
+                          contentPadding: EdgeInsets.zero,
+                        ),
+                      ),
+                      PopupMenuItem(
+                        value: 'settings',
+                        child: ListTile(
+                          leading: Icon(Icons.tune_rounded),
+                          title: Text('Dashboard settings'),
+                          contentPadding: EdgeInsets.zero,
+                        ),
+                      ),
+                    ],
+                  )
+                else ...[
+                  TextButton.icon(
+                    onPressed: () {
+                      ref.read(dashboardEditModeProvider.notifier).state = false;
+                    },
+                    icon: const Icon(Icons.check_rounded, size: AppIconSize.md),
+                    label: const Text('Done'),
                   ),
-                ),
-                PopupMenuItem(
-                  value: 'add',
-                  child: ListTile(
-                    leading: Icon(Icons.add_box_outlined),
-                    title: Text('Add widget'),
-                    contentPadding: EdgeInsets.zero,
+                  IconButton(
+                    tooltip: 'Add widget',
+                    icon: const Icon(Icons.add_box_outlined),
+                    onPressed: () => showDashboardAddWidgetSheet(context, ref),
                   ),
-                ),
-                PopupMenuItem(
-                  value: 'settings',
-                  child: ListTile(
-                    leading: Icon(Icons.tune_rounded),
-                    title: Text('Dashboard settings'),
-                    contentPadding: EdgeInsets.zero,
+                  IconButton(
+                    tooltip: 'Dashboard settings',
+                    icon: const Icon(Icons.tune_rounded),
+                    onPressed: () => showDashboardCustomizeSheet(context, ref),
                   ),
-                ),
-              ],
-            )
-          else ...[
-            IconButton(
-              tooltip: editMode ? 'Done editing' : 'Customize dashboard',
-              icon: Icon(
-                editMode
-                    ? Icons.check_rounded
-                    : Icons.dashboard_customize_outlined,
-              ),
-              onPressed: () {
-                ref.read(dashboardEditModeProvider.notifier).state = !editMode;
-              },
-            ),
-            if (editMode)
-              IconButton(
-                tooltip: 'Add widget',
-                icon: const Icon(Icons.add_box_outlined),
-                onPressed: () => showDashboardAddWidgetSheet(context, ref),
-              ),
-            if (editMode)
-              IconButton(
-                tooltip: 'Dashboard settings',
-                icon: const Icon(Icons.tune_rounded),
-                onPressed: () => showDashboardCustomizeSheet(context, ref),
-              ),
-          ],
-        ],
+                ],
+              ]
+            : null,
       ),
       body: const DashboardCanvas(),
     );

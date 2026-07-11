@@ -6,6 +6,7 @@ import 'package:rupee_track/core/router/routes.dart';
 import 'package:rupee_track/core/design_system/premium_card.dart';
 import 'package:rupee_track/core/design_system/premium_confirm_dialog.dart';
 import 'package:rupee_track/core/design_system/premium_list_tile.dart';
+import 'package:rupee_track/core/design_system/premium_snackbar.dart';
 import 'package:rupee_track/features/settings/data/app_management_service.dart';
 
 class AppManagementSettingsCard extends ConsumerStatefulWidget {
@@ -39,20 +40,18 @@ class _AppManagementSettingsCardState
     try {
       await action();
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('$title completed'),
-            behavior: SnackBarBehavior.floating,
-          ),
+        showPremiumSnackBar(
+          context,
+          message: '$title completed',
+          kind: PremiumSnackBarKind.success,
         );
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Something went wrong: $e'),
-            behavior: SnackBarBehavior.floating,
-          ),
+        showPremiumSnackBar(
+          context,
+          message: 'Something went wrong: $e',
+          kind: PremiumSnackBarKind.error,
         );
       }
     } finally {
@@ -71,14 +70,14 @@ class _AppManagementSettingsCardState
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            'App management',
+            'Data on this device',
             style: theme.textTheme.titleSmall?.copyWith(
               fontWeight: FontWeight.w700,
             ),
           ),
           const SizedBox(height: AppSpacing.xs),
           Text(
-            'Export, backup to your account, or factory reset. Updates and reinstalls keep your data unless you reset here.',
+            'Export a file, clear specific modules, or factory reset everything.',
             style: theme.textTheme.bodySmall?.copyWith(
               color: theme.colorScheme.onSurfaceVariant,
               height: 1.45,
@@ -148,6 +147,30 @@ class _AppManagementSettingsCardState
             ),
           ),
           _ActionTile(
+            icon: Icons.subscriptions_outlined,
+            title: 'Clear subscriptions',
+            subtitle: 'Remove all subscriptions and payment history',
+            enabled: !_busy,
+            destructive: true,
+            onTap: () => _run(
+              'Clear subscriptions',
+              'Every subscription and its payment history will be deleted from this device.',
+              service.clearSubscriptions,
+            ),
+          ),
+          _ActionTile(
+            icon: Icons.handshake_outlined,
+            title: 'Clear loans',
+            subtitle: 'Remove borrowed and lent money records',
+            enabled: !_busy,
+            destructive: true,
+            onTap: () => _run(
+              'Clear loans',
+              'All loan and repayment records will be deleted from this device.',
+              service.clearLoans,
+            ),
+          ),
+          _ActionTile(
             icon: Icons.delete_forever_rounded,
             title: 'Factory reset',
             subtitle: 'Erase all data on this device and in your cloud backup',
@@ -155,7 +178,7 @@ class _AppManagementSettingsCardState
             destructive: true,
             onTap: () => _run(
               'Factory reset',
-              'This permanently deletes all finance data — on this phone and in your account backup.\n\nExpenses, salary, budgets, goals, subscriptions, and loans will be gone. Your sign-in stays, but data will not come back unless you exported a file first.\n\nUninstalling or updating the app does not do this.',
+              'This permanently deletes all finance data — on this phone and in your account backup — and signs you out.\n\nExpenses, salary, budgets, goals, subscriptions, and loans will be gone. Your sign-in is removed; data will not come back unless you exported a file first.\n\nUninstalling or updating the app does not do this.',
               () async {
                 await service.factoryReset();
                 if (context.mounted) context.go(AppRoutes.onboarding);

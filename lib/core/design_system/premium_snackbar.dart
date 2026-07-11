@@ -3,6 +3,19 @@ import 'package:rupee_track/core/design_system/design_tokens.dart';
 
 enum PremiumSnackBarKind { info, success, error }
 
+/// Brief save confirmation — calm success feedback after persisting money data.
+void showSaveConfirmation(
+  BuildContext context, {
+  required String message,
+}) {
+  showPremiumSnackBar(
+    context,
+    message: message,
+    kind: PremiumSnackBarKind.success,
+    duration: const Duration(seconds: 2),
+  );
+}
+
 /// Floating snackbar aligned with the Viswallet design system.
 void showPremiumSnackBar(
   BuildContext context, {

@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:rupee_track/core/branding/brand_colors.dart';
 import 'package:rupee_track/core/design_system/design_tokens.dart';
 
 /// Branded, friendly error view with an optional retry action.
@@ -24,7 +23,7 @@ class ErrorState extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    const accent = BrandColors.error;
+    final accent = theme.colorScheme.error;
 
     return Center(
       child: Padding(

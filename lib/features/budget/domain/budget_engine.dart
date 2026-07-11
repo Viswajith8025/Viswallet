@@ -12,9 +12,30 @@ abstract final class BudgetEngine {
     List<BudgetTemplate> templates = defaultBudgetTemplates,
     required Map<String, int> categorySlugToId,
   }) {
-    return templates.asMap().entries.map((entry) {
+    final rows = templates.asMap().entries.map((entry) {
       final template = entry.value;
-      final allocated = (salaryPaise * template.defaultPercent / 100).round();
+      final exact = salaryPaise * template.defaultPercent / 100;
+      return (
+        template: template,
+        sortOrder: entry.key,
+        floored: exact.floor(),
+        fraction: exact - exact.floor(),
+      );
+    }).toList();
+
+    var allocated = rows.fold<int>(0, (sum, row) => sum + row.floored);
+    var remainder = salaryPaise - allocated;
+    final indices = List.generate(rows.length, (index) => index)
+      ..sort((a, b) => rows[b].fraction.compareTo(rows[a].fraction));
+
+    final amounts = [for (final row in rows) row.floored];
+    for (var i = 0; i < remainder; i++) {
+      amounts[indices[i % indices.length]]++;
+    }
+
+    return rows.asMap().entries.map((entry) {
+      final row = entry.value;
+      final template = row.template;
       return BucketAllocationInput(
         bucketKey: template.bucketKey,
         displayName: template.displayName,
@@ -22,9 +43,9 @@ abstract final class BudgetEngine {
             ? categorySlugToId[template.categorySlug!]
             : null,
         bucketType: template.bucketType,
-        allocatedPaise: allocated,
+        allocatedPaise: amounts[entry.key],
         allocatedPercent: template.defaultPercent,
-        sortOrder: entry.key,
+        sortOrder: row.sortOrder,
       );
     }).toList();
   }
@@ -258,15 +279,17 @@ abstract final class BudgetEngine {
       );
     }
 
-    final savings = plan.buckets
-        .where((b) => b.bucketKey == 'savings')
-        .firstOrNull;
-    if (savings != null && savings.percentUsed > 0) {
+    for (final bucket in plan.buckets) {
+      if (bucket.bucketType != BucketType.reserve &&
+          bucket.bucketType != BucketType.investment) {
+        continue;
+      }
+      if (!bucket.isOverBudget) continue;
       insights.add(
-        const BudgetInsight(
-          title: 'Savings bucket touched',
+        BudgetInsight(
+          title: '${bucket.displayName} reserve exceeded',
           message:
-              'Reserve buckets should stay untouched. Review if this was intentional.',
+              'You spent ${formatPaise(bucket.spentPaise - bucket.totalBudgetPaise)} beyond your ${bucket.displayName.toLowerCase()} allocation. Review if this was an unplanned withdrawal.',
           severity: BudgetAlertLevel.watch75,
         ),
       );
@@ -308,24 +331,53 @@ abstract final class BudgetEngine {
     List<BucketAllocationInput> inputs,
     int salaryPaise,
   ) {
+    if (inputs.isEmpty) return inputs;
+
     final total = inputs.fold<int>(0, (s, b) => s + b.allocatedPaise);
     var diff = salaryPaise - total;
-    if (diff == 0 || inputs.isEmpty) return inputs;
+    if (diff == 0) return inputs;
 
-    final miscIndex = inputs.indexWhere((b) => b.bucketKey == 'miscellaneous');
-    final targetIndex = miscIndex >= 0 ? miscIndex : inputs.length - 1;
-    final target = inputs[targetIndex];
     final updated = [...inputs];
-    updated[targetIndex] = BucketAllocationInput(
-      bucketKey: target.bucketKey,
-      displayName: target.displayName,
-      categoryId: target.categoryId,
-      bucketType: target.bucketType,
-      allocatedPaise: (target.allocatedPaise + diff).clamp(0, salaryPaise),
-      allocatedPercent: target.allocatedPercent,
-      rolloverPaise: target.rolloverPaise,
-      sortOrder: target.sortOrder,
-    );
+    final adjustable = List.generate(updated.length, (index) => index)
+      ..sort((a, b) {
+        final left = updated[a].allocatedPaise;
+        final right = updated[b].allocatedPaise;
+        if (diff > 0) return right.compareTo(left);
+        return left.compareTo(right);
+      });
+
+    var remaining = diff.abs();
+    var cursor = 0;
+    while (remaining > 0 && adjustable.isNotEmpty) {
+      final index = adjustable[cursor % adjustable.length];
+      final bucket = updated[index];
+      if (diff > 0) {
+        updated[index] = BucketAllocationInput(
+          bucketKey: bucket.bucketKey,
+          displayName: bucket.displayName,
+          categoryId: bucket.categoryId,
+          bucketType: bucket.bucketType,
+          allocatedPaise: bucket.allocatedPaise + 1,
+          allocatedPercent: bucket.allocatedPercent,
+          rolloverPaise: bucket.rolloverPaise,
+          sortOrder: bucket.sortOrder,
+        );
+      } else if (bucket.allocatedPaise > 0) {
+        updated[index] = BucketAllocationInput(
+          bucketKey: bucket.bucketKey,
+          displayName: bucket.displayName,
+          categoryId: bucket.categoryId,
+          bucketType: bucket.bucketType,
+          allocatedPaise: bucket.allocatedPaise - 1,
+          allocatedPercent: bucket.allocatedPercent,
+          rolloverPaise: bucket.rolloverPaise,
+          sortOrder: bucket.sortOrder,
+        );
+      }
+      remaining--;
+      cursor++;
+    }
+
     return updated;
   }
 }

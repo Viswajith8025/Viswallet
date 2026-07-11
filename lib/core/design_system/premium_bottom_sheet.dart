@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:rupee_track/core/design_system/design_tokens.dart';
+import 'package:rupee_track/core/design_system/tokens/app_motion.dart';
 
 Future<T?> showPremiumBottomSheet<T>({
   required BuildContext context,
@@ -21,6 +22,7 @@ Future<T?> showPremiumBottomSheet<T>({
     useSafeArea: true,
     isDismissible: isDismissible,
     backgroundColor: Colors.transparent,
+    sheetAnimationStyle: AppMotion.sheetAnimation(context),
     builder: (ctx) {
       return Padding(
         padding: EdgeInsets.only(bottom: MediaQuery.viewInsetsOf(ctx).bottom),

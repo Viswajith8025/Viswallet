@@ -1,4 +1,5 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:rupee_track/core/constants/app_constants.dart';
 import 'package:rupee_track/core/providers/supabase_provider.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
@@ -47,6 +48,13 @@ class AuthRepository {
   }
 
   Future<void> signOut() => _client.auth.signOut();
+
+  Future<void> sendPasswordResetEmail(String email) {
+    return _client.auth.resetPasswordForEmail(
+      email.trim(),
+      redirectTo: AppConstants.authPasswordResetRedirect,
+    );
+  }
 
   /// Returns the signed-in user's password hint (server requires auth + email match).
   Future<String?> fetchPasswordHintForCurrentUser() async {

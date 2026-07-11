@@ -45,7 +45,6 @@ class TaggingRepository {
         dbRules: rules.where((r) => r.source == 'builtin').toList(),
       ),
       const KeywordClassifier(),
-      const AiTransactionClassifier(),
     ];
 
     final signals = <ClassificationSignal>[];

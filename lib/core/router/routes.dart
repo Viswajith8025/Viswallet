@@ -13,13 +13,7 @@ abstract final class AppRoutes {
   static const settings = '/settings';
   static const budget = '/budget';
   static const budgetSetup = '/budget/setup';
-  static const categoryBudget = '/budget/categories';
   static const budgetAlerts = '/budget/alerts';
-  static const financialHealth = '/health';
-  static const monthlyReport = '/report';
-  static const calendar = '/calendar';
-  static const savingsForecast = '/forecast';
-  static const expenseHeatmap = '/heatmap';
   static const search = '/search';
   static const activityHistory = '/activity';
   static const recycleBin = '/recycle-bin';

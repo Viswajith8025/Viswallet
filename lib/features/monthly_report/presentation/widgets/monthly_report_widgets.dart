@@ -24,10 +24,7 @@ class MonthlyReportSummaryCard extends ConsumerWidget {
         return Card(
           clipBehavior: Clip.antiAlias,
           child: InkWell(
-            onTap: () => context.push(
-              AppRoutes.monthlyReport,
-              extra: report.cycleKey,
-            ),
+            onTap: () => context.go(AppRoutes.insights),
             child: Container(
               decoration: const BoxDecoration(
                 gradient: LinearGradient(

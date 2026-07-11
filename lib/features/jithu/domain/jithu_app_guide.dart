@@ -9,15 +9,14 @@ Viswallet app navigation (use these exact paths when users ask how to do somethi
 - Salary pay date (cycle): More → Settings → Money cycle → "Salary cycle" slider (not the salary amount).
 - Add an expense: tap the floating + button on any main tab, enter amount, pick a category.
 - View all expenses: Home → Recent transactions, or More → Activity history.
-- Budget / spending groups: More → Budget planner, or tap "Set up your budget" on Home after salary is set.
-- Category budgets: More → Category budgets.
-- Today's spending guide: Home → "Safe daily spend" card.
-- ${JithuBranding.displayName} (this chat): bottom navigation → ${JithuBranding.displayName}.
-- Insights & charts: bottom navigation → Insights.
-- More tools (reports, loans, calendar): bottom navigation → More.
+- Budget / spending groups: More → Budget planner → **Set up your budget** (one flow for all split modes).
+- Today's spending guide: Home → **Safe daily spend** card (same numbers everywhere).
+- ${JithuBranding.displayName} (this chat): More → ${JithuBranding.displayName}.
+- Insights & charts: bottom navigation → **Insights** (trends, health score, category breakdown).
+- More tools (subscriptions, loans, settings): bottom navigation → More.
 - Settings (theme, lock, export): More → Settings.
 - Help articles: More → Settings → Help & support.
-- Subscriptions: Home summary grid → Subscriptions, or More → Subscriptions.
+- Subscriptions: More → **Subscription health**, or Home summary grid → Subscriptions.
 - Loans: More → Loans.
 - Savings goals / forecast: More → Savings forecast, or Home Quick actions → Goals.
 - Search anything: Home Quick actions → Search, or universal search from More.
@@ -47,8 +46,8 @@ Do not say "Settings" alone for salary amount — Settings only has salary date 
             q.contains('set') ||
             q.contains('setup') ||
             q.contains('plan'))) {
-      return 'Open **More** → **Budget planner** to split your salary into spending groups like Food and Bills. '
-          'For limits per category, use More → **Category budgets**.';
+      return 'Open **More** → **Budget planner** → **Set up your budget** to split your salary. '
+          'You can choose percentages, per-category limits, or a suggested split in one wizard.';
     }
 
     if ((q.contains('salary date') ||
@@ -73,7 +72,8 @@ Do not say "Settings" alone for salary amount — Settings only has salary date 
 
     if (q.contains('subscription') &&
         (q.contains('where') || q.contains('add') || q.contains('manage'))) {
-      return 'Open **More** → **Subscriptions**, or tap **Subscriptions** on the Home summary grid.';
+      return 'Subscriptions are under **More** → **Subscription health**. '
+          'You can also tap **Subscriptions** on the Home summary grid.';
     }
 
     if (q.contains('loan') &&
@@ -83,14 +83,24 @@ Do not say "Settings" alone for salary amount — Settings only has salary date 
 
     if ((q.contains('insight') || q.contains('chart') || q.contains('report')) &&
         (q.contains('where') || q.contains('see') || q.contains('open'))) {
-      return 'Tap **Insights** in the bottom bar for spending charts. '
-          'For a month-end summary, open More → **Monthly closing report**.';
+      return 'Tap **Insights** in the bottom bar for spending charts, financial health, and category breakdown.';
+    }
+
+    if (q.contains(JithuBranding.displayName.toLowerCase()) &&
+        (q.contains('where') || q.contains('find') || q.contains('open'))) {
+      return 'Open **More** → **${JithuBranding.displayName}** to chat about your money.';
+    }
+
+    if (q.contains('budget alert') &&
+        (q.contains('where') || q.contains('see') || q.contains('open'))) {
+      return 'Open **More** → **Budget alerts** for every spending-group warning.';
     }
 
     if (q.contains('safe') &&
         q.contains('spend') &&
         (q.contains('where') || q.contains('see') || q.contains('find'))) {
-      return 'On **Home**, look for the **Safe daily spend** card — it shows how much you can spend today and stay on track.';
+      return 'On **Home**, look for the **Safe daily spend** card — it shows how much you can spend today. '
+          'The same card appears in compact form on the ${JithuBranding.displayName} tab.';
     }
 
     if (q.contains('sign out') || q.contains('log out') || q.contains('logout')) {

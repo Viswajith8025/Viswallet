@@ -5,10 +5,10 @@ import 'package:go_router/go_router.dart';
 import 'package:rupee_track/core/design_system/premium_confirm_dialog.dart';
 import 'package:rupee_track/core/design_system/premium_bottom_nav.dart';
 import 'package:rupee_track/core/design_system/premium_side_nav.dart';
-import 'package:rupee_track/features/jithu/domain/jithu_branding.dart';
 import 'package:rupee_track/core/design_system/responsive.dart';
 import 'package:rupee_track/core/design_system/shell_bottom_inset.dart';
 import 'package:rupee_track/core/router/routes.dart';
+import 'package:rupee_track/features/jithu/domain/jithu_branding.dart';
 import 'package:rupee_track/features/quick_add/presentation/positioned_quick_add_fab.dart';
 import 'package:rupee_track/features/quick_add/presentation/quick_add_fab.dart';
 
@@ -73,12 +73,12 @@ class _MainShellState extends ConsumerState<MainShell> {
     }
   }
 
-  Widget _phoneBody(BuildContext context, {required bool showFab}) {
+  Widget _phoneBody(BuildContext context) {
     return Stack(
       clipBehavior: Clip.none,
       children: [
         widget.child,
-        if (showFab) const PositionedQuickAddFab(),
+        const PositionedQuickAddFab(),
       ],
     );
   }
@@ -119,7 +119,6 @@ class _MainShellState extends ConsumerState<MainShell> {
     final location = GoRouterState.of(context).uri.toString();
     final index = _indexForLocation(location);
     final useRail = AppResponsive.isMediumOrWider(context);
-    final showFab = !location.startsWith(AppRoutes.jithu);
 
     if (useRail) {
       return _wrapWithExitGuard(
@@ -144,7 +143,7 @@ class _MainShellState extends ConsumerState<MainShell> {
               ),
             ],
           ),
-          floatingActionButton: showFab ? QuickAddFab() : null,
+          floatingActionButton: QuickAddFab(),
           floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
         ),
       );
@@ -166,7 +165,7 @@ class _MainShellState extends ConsumerState<MainShell> {
         child: Scaffold(
           extendBody: true,
           backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-          body: _phoneBody(context, showFab: showFab),
+          body: _phoneBody(context),
           bottomNavigationBar: PremiumBottomNav(
             selectedIndex: index,
             destinations: _destinations,
