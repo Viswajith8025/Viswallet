@@ -122,9 +122,9 @@ abstract final class HelpFaqData {
       icon: Icons.pie_chart_outline,
       question: 'How do I set a budget for each category?',
       answer:
-          'Go to More → Category budgets. Enter your salary, then type a monthly limit '
-          'for Food, Transport, Bills, and every other category. Expenses automatically '
-          'count against the matching category.',
+          'Go to More → Budget planner → Set up your budget. Enter your salary, then set '
+          'a monthly limit for Food, Transport, Bills, and every other category. Expenses '
+          'automatically count against the matching category.',
     ),
     HelpFaqEntry(
       category: 'Budget & salary',
@@ -185,7 +185,7 @@ abstract final class HelpFaqData {
       question: 'Why does Home show only this month?',
       answer:
           'Home focuses on your current month so it stays simple. '
-          'To look at older months, go to More → Monthly closing report or Insights.',
+          'To look at trends and older cycles, open the Insights tab.',
     ),
     HelpFaqEntry(
       category: 'Home screen',

@@ -8,22 +8,23 @@ Viswallet app navigation (use these exact paths when users ask how to do somethi
 - Add or change monthly salary: Home tab → scroll to the summary grid → tap the "Salary" tile; OR Home → Quick actions → "Income"; OR More tab → Settings → Money cycle → "Monthly salary".
 - Salary pay date (cycle): More → Settings → Money cycle → "Salary cycle" slider (not the salary amount).
 - Add an expense: tap the floating + button on any main tab, enter amount, pick a category.
-- View all expenses: Home → Recent transactions, or More → Activity history.
-- Budget / spending groups: More → Budget planner → **Set up your budget** (one flow for all split modes).
-- Today's spending guide: Home → **Safe daily spend** card (same numbers everywhere).
-- ${JithuBranding.displayName} (this chat): More → ${JithuBranding.displayName}.
-- Insights & charts: bottom navigation → **Insights** (trends, health score, category breakdown).
+- View all expenses: Expenses tab, or Home → Recent transactions, or More → Activity history.
+- Budget / spending groups: More → Budget planner → Set up your budget (one flow for all split modes).
+- Today's spending guide: Home → Safe daily spend card (same numbers everywhere).
+- ${JithuBranding.displayName} (this chat): bottom navigation → ${JithuBranding.displayName} tab.
+- Insights & charts: bottom navigation → Insights (trends, health score, category breakdown).
 - More tools (subscriptions, loans, settings): bottom navigation → More.
 - Settings (theme, lock, export): More → Settings.
-- Help articles: More → Settings → Help & support.
-- Subscriptions: More → **Subscription health**, or Home summary grid → Subscriptions.
-- Loans: More → Loans.
-- Savings goals / forecast: More → Savings forecast, or Home Quick actions → Goals.
-- Search anything: Home Quick actions → Search, or universal search from More.
+- Help articles: More → Help & support.
+- Subscriptions: More → Subscription health.
+- Borrowed money (you owe): More → Borrowed money.
+- Lent money (others owe you): More → Lent money.
+- Search anything: More → Search.
 - Sign out: More → Settings → Account section.
 
 When salary is not set, always tell the user the clearest path: Home → Salary tile or Quick actions → Income.
 Do not say "Settings" alone for salary amount — Settings only has salary date unless they use "Monthly salary" there.
+Do not mention Category budgets, Savings forecast, Financial calendar, Expense heatmap, or Monthly closing report as separate screens — those were removed.
 ''';
 
   /// Offline rule-based navigation replies. Returns null if not a navigation question.
@@ -37,7 +38,7 @@ Do not say "Settings" alone for salary amount — Settings only has salary date 
 
     if (_asksExpensePath(q)) {
       return 'Tap the **+** button (floating action button), enter the amount, then choose a category like Food or Travel. '
-          'It saves right away. To see past expenses, open More → **Activity history**.';
+          'It saves right away. To see past expenses, open the **Expenses** tab or More → **Activity history**.';
     }
 
     if (q.contains('budget') &&
@@ -45,7 +46,8 @@ Do not say "Settings" alone for salary amount — Settings only has salary date 
             q.contains('how') ||
             q.contains('set') ||
             q.contains('setup') ||
-            q.contains('plan'))) {
+            q.contains('plan') ||
+            q.contains('category'))) {
       return 'Open **More** → **Budget planner** → **Set up your budget** to split your salary. '
           'You can choose percentages, per-category limits, or a suggested split in one wizard.';
     }
@@ -54,7 +56,10 @@ Do not say "Settings" alone for salary amount — Settings only has salary date 
             q.contains('salary cycle') ||
             q.contains('pay date') ||
             q.contains('when do i get paid')) &&
-        (q.contains('where') || q.contains('how') || q.contains('change') || q.contains('set'))) {
+        (q.contains('where') ||
+            q.contains('how') ||
+            q.contains('change') ||
+            q.contains('set'))) {
       return 'Your salary **date** (which day defines each month) is in More → Settings → Money cycle → **Salary cycle**. '
           'That is different from your salary **amount**, which is on the Home Salary tile.';
     }
@@ -67,18 +72,17 @@ Do not say "Settings" alone for salary amount — Settings only has salary date 
 
     if (q.contains('help') &&
         (q.contains('where') || q.contains('faq') || q.contains('support'))) {
-      return 'Go to More → Settings → **Help & support** for step-by-step answers to common questions.';
+      return 'Go to More → **Help & support** for step-by-step answers to common questions.';
     }
 
     if (q.contains('subscription') &&
         (q.contains('where') || q.contains('add') || q.contains('manage'))) {
-      return 'Subscriptions are under **More** → **Subscription health**. '
-          'You can also tap **Subscriptions** on the Home summary grid.';
+      return 'Subscriptions are under **More** → **Subscription health**.';
     }
 
-    if (q.contains('loan') &&
-        (q.contains('where') || q.contains('add') || q.contains('borrow'))) {
-      return 'Loans are under **More** → **Loans**. You can track money you borrowed or lent there.';
+    if ((q.contains('borrow') || q.contains('lent') || q.contains('loan')) &&
+        (q.contains('where') || q.contains('add') || q.contains('track'))) {
+      return 'Open **More** → **Borrowed money** for what you owe, or **More** → **Lent money** for money you gave others.';
     }
 
     if ((q.contains('insight') || q.contains('chart') || q.contains('report')) &&
@@ -88,7 +92,7 @@ Do not say "Settings" alone for salary amount — Settings only has salary date 
 
     if (q.contains(JithuBranding.displayName.toLowerCase()) &&
         (q.contains('where') || q.contains('find') || q.contains('open'))) {
-      return 'Open **More** → **${JithuBranding.displayName}** to chat about your money.';
+      return 'Tap **${JithuBranding.displayName}** in the bottom navigation bar to chat about your money.';
     }
 
     if (q.contains('budget alert') &&
@@ -99,8 +103,7 @@ Do not say "Settings" alone for salary amount — Settings only has salary date 
     if (q.contains('safe') &&
         q.contains('spend') &&
         (q.contains('where') || q.contains('see') || q.contains('find'))) {
-      return 'On **Home**, look for the **Safe daily spend** card — it shows how much you can spend today. '
-          'The same card appears in compact form on the ${JithuBranding.displayName} tab.';
+      return 'On **Home**, look for the **Safe daily spend** card — it shows how much you can spend today.';
     }
 
     if (q.contains('sign out') || q.contains('log out') || q.contains('logout')) {
@@ -135,7 +138,9 @@ Do not say "Settings" alone for salary amount — Settings only has salary date 
   }
 
   static bool _asksExpensePath(String q) {
-    if (!q.contains('expense') && !q.contains('spending') && !q.contains('spend')) {
+    if (!q.contains('expense') &&
+        !q.contains('spending') &&
+        !q.contains('spend')) {
       return false;
     }
     return q.contains('where') ||

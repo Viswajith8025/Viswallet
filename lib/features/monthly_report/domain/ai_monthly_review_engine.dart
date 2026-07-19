@@ -51,7 +51,7 @@ abstract final class AiMonthlyReviewEngine {
       consecutiveBudgetDays: behaviourStats.consecutiveBudgetDays,
       expenseLogCount: behaviourStats.expenseLogCount,
       wishlistProgressNote:
-          'Mark items as wishlist in Savings forecast to track future purchases.',
+          'Mark items as wishlist on Home (wishlist widget) to track future purchases.',
       savingsHighlight: savingsHighlight,
     );
   }

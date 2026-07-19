@@ -8,6 +8,7 @@ import 'package:rupee_track/core/database/database_backup.dart';
 import 'package:rupee_track/core/database/database_paths.dart';
 import 'package:rupee_track/core/providers/database_provider.dart';
 import 'package:rupee_track/core/providers/supabase_provider.dart';
+import 'package:rupee_track/core/utils/backup_sanitizer.dart';
 import 'package:rupee_track/features/auth/data/auth_repository.dart';
 import 'package:rupee_track/features/cloud_backup/data/cloud_backup_repository.dart';
 import 'package:rupee_track/features/cloud_backup/domain/cloud_backup_models.dart';
@@ -126,10 +127,28 @@ class CloudBackupCoordinator {
     }
 
     if (remote != null && !localIsPristine) {
-      final result = CloudSyncResult(
-        action: CloudSyncAction.restoreAvailable,
+      // Never silently overwrite cloud when both sides have data.
+      // Only push when this device already owns the latest known upload.
+      final lastUpload = lastUploadAt(user.id);
+      final remoteIsNewer = lastUpload == null ||
+          remote.updatedAt.toUtc().isAfter(
+                lastUpload.toUtc().add(const Duration(seconds: 2)),
+              );
+
+      if (remoteIsNewer) {
+        const result = CloudSyncResult(
+          action: CloudSyncAction.restoreAvailable,
+          message:
+              'This device and your cloud backup both have data. Local data was kept — cloud was not overwritten. Use Restore from cloud only if you want to replace what is on this phone.',
+        );
+        _ref.read(cloudBackupSyncStateProvider.notifier).state = result;
+        return result;
+      }
+
+      const result = CloudSyncResult(
+        action: CloudSyncAction.uploaded,
         message:
-            'Cloud backup found. Your local data on this device was kept. Use Restore from cloud if you want to replace it.',
+            'Kept local data on this device and updated your cloud backup.',
       );
       _ref.read(cloudBackupSyncStateProvider.notifier).state = result;
       return pushBackup(silent: true);
@@ -231,7 +250,9 @@ class CloudBackupCoordinator {
         return const CloudSyncResult(action: CloudSyncAction.skipped);
       }
 
-      final payload = await DatabaseBackup.exportPayload(db);
+      final payload = BackupSanitizer.sanitizeBackup(
+        await DatabaseBackup.exportPayload(db),
+      );
       final repo = _ref.read(cloudBackupRepositoryProvider);
       final uploadedAt = await repo.uploadBackup(
         userId: user.id,

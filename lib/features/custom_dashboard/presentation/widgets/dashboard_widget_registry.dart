@@ -519,7 +519,7 @@ class _SavingsForecastWidget extends ConsumerWidget {
               children: [
                 Expanded(
                   child: Text(
-                    'Savings forecast',
+                    'Savings outlook',
                     style: theme.textTheme.titleSmall?.copyWith(
                       fontWeight: FontWeight.w600,
                     ),

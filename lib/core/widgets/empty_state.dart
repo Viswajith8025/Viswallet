@@ -206,7 +206,7 @@ abstract final class EmptyStates {
         title: 'Your wishlist is empty',
         message:
             'Save for things you want — not just things you need.\n'
-            'Add a wishlist item from Savings forecast.',
+            'Add a wishlist item from Home when the wishlist widget is enabled.',
         accentColor: Theme.of(context).colorScheme.primary,
         action: onAdd == null
             ? null

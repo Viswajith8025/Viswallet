@@ -129,13 +129,17 @@ abstract final class DatabaseBackup {
         .toList();
   }
 
+  static final _safeColumnName = RegExp(r'^[a-zA-Z_][a-zA-Z0-9_]*$');
+
   static Future<void> _insertRow(
     AppDatabase db,
     String tableName,
     Map<String, dynamic> row,
   ) async {
     if (row.isEmpty) return;
-    final columns = row.keys.toList();
+    final columns = row.keys.where(_safeColumnName.hasMatch).toList();
+    if (columns.isEmpty) return;
+
     final placeholders = <String>[];
     final variables = <Variable<Object>>[];
 

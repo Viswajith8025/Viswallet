@@ -1,5 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:rupee_track/core/database/app_database.dart';
+import 'package:rupee_track/core/database/reactive_db_stream.dart';
 import 'package:rupee_track/core/providers/database_provider.dart';
 import 'package:rupee_track/core/salary_cycle/salary_cycle_engine.dart';
 import 'package:rupee_track/core/utils/date_utils.dart';
@@ -32,13 +33,21 @@ class FinancialHealthRepository {
     final salaryDay =
         (await db.settingsDao.getSettings()).salaryDay;
 
-    await for (final _ in db.expensesDao.watchSpendingChanges()) {
-      final report = await _build(cycleKey, salaryDay);
-      if (report.hasEnoughData) {
-        await _historyStore.record(cycleKey, report.overallScore);
-      }
-      yield report;
-    }
+    yield* mergeReactiveStreams(
+      () async {
+        final report = await _build(cycleKey, salaryDay);
+        if (report.hasEnoughData) {
+          await _historyStore.record(cycleKey, report.overallScore);
+        }
+        return report;
+      },
+      [
+        db.expensesDao.watchSpendingChanges(),
+        db.salaryDao.watchBreakdownForMonth(cycleKey),
+        db.subscriptionsDao.watchActiveSubscriptions(),
+        db.loansDao.watchActiveLoans(),
+      ],
+    );
   }
 
   Future<FinancialHealthReport> _build(String cycleKey, int salaryDay) async {

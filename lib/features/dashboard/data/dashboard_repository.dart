@@ -23,6 +23,8 @@ class DashboardRepository {
       [
         db.salaryDao.watchBreakdownForMonth(cycleKey),
         db.expensesDao.watchExpensesForMonth(cycleKey),
+        db.subscriptionsDao.watchActiveSubscriptions(),
+        db.loansDao.watchActiveLoans(),
       ],
     );
   }

@@ -340,7 +340,7 @@ class UniversalSearchRepository {
       ('insights', 'Insights', AppRoutes.insights, Icons.insights_outlined),
       ('report', 'Monthly review (Insights)', AppRoutes.insights, Icons.auto_awesome),
       ('budget', 'Budget planner', AppRoutes.budget, Icons.pie_chart_outline),
-      ('forecast', 'Savings forecast (Insights)', AppRoutes.insights, Icons.trending_up),
+      ('forecast', 'Savings outlook (Insights)', AppRoutes.insights, Icons.trending_up),
       ('health', 'Financial health (Insights)', AppRoutes.insights, Icons.favorite),
       ('settings', 'Settings', AppRoutes.settings, Icons.settings_outlined),
     ];
