@@ -51,18 +51,18 @@ export function DashboardSkeleton() {
         <SkeletonBlock className="h-4 w-96 max-w-full" />
       </div>
       <div className="grid gap-4 lg:grid-cols-4">
-        <SkeletonBlock className="h-36 lg:col-span-2 rounded-2xl" />
-        <SkeletonBlock className="h-36 rounded-2xl" />
-        <SkeletonBlock className="h-36 rounded-2xl" />
+        <SkeletonBlock className="h-36 lg:col-span-2 rounded-xl" />
+        <SkeletonBlock className="h-36 rounded-xl" />
+        <SkeletonBlock className="h-36 rounded-xl" />
       </div>
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
         {Array.from({ length: 4 }).map((_, i) => (
-          <SkeletonBlock key={i} className="h-28 rounded-2xl" />
+          <SkeletonBlock key={i} className="h-28 rounded-xl" />
         ))}
       </div>
       <div className="grid gap-6 xl:grid-cols-3">
-        <SkeletonBlock className="h-80 xl:col-span-2 rounded-2xl" />
-        <SkeletonBlock className="h-80 rounded-2xl" />
+        <SkeletonBlock className="h-80 xl:col-span-2 rounded-xl" />
+        <SkeletonBlock className="h-80 rounded-xl" />
       </div>
     </StaggerSkeleton>
   );

@@ -11,6 +11,7 @@ import { db } from "@/lib/db";
 import type { Category } from "@/lib/db/types";
 import { useInvalidateFinance, useAsyncAction } from "@/hooks";
 import { confirmAction } from "@/lib/store/confirm-store";
+import { DEFAULT_CATEGORY_COLOR } from "@/lib/categories-default";
 
 export default function CategoriesPage() {
   const { version } = useDb();
@@ -19,7 +20,7 @@ export default function CategoriesPage() {
   const [categories, setCategories] = useState<Category[]>([]);
   const [showForm, setShowForm] = useState(false);
   const [name, setName] = useState("");
-  const [color, setColor] = useState("#64748B");
+  const [color, setColor] = useState<string>(DEFAULT_CATEGORY_COLOR);
 
   useEffect(() => {
     db.categories.filter((c) => !c.isDeleted).sortBy("sortOrder").then(setCategories);
@@ -42,7 +43,7 @@ export default function CategoriesPage() {
         isDeleted: false,
       });
       setName("");
-      setColor("#64748B");
+      setColor(DEFAULT_CATEGORY_COLOR);
       setShowForm(false);
       await invalidate();
     });

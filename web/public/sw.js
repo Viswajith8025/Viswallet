@@ -1,5 +1,5 @@
-const CACHE = "viswallet-v3";
-const ASSETS = ["/manifest.json", "/icon", "/apple-icon"];
+const CACHE = "viswallet-v4";
+const ASSETS = ["/manifest.json", "/icon", "/apple-icon", "/icon-192", "/icon-512"];
 
 self.addEventListener("install", (event) => {
   event.waitUntil(

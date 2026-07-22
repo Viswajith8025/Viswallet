@@ -4,6 +4,7 @@ import "./globals.css";
 import { AppProviders } from "@/components/providers/app-providers";
 import { AppShell } from "@/components/shell/app-shell";
 import { RegisterSW } from "@/components/pwa/register-sw";
+import { InstallPrompt } from "@/components/pwa/install-prompt";
 
 const display = Plus_Jakarta_Sans({
   variable: "--font-display",
@@ -27,7 +28,7 @@ export const metadata: Metadata = {
   description: APP_DESCRIPTION,
   applicationName: APP_NAME,
   manifest: "/manifest.json",
-  appleWebApp: { capable: true, title: APP_NAME, statusBarStyle: "default" },
+  appleWebApp: { capable: true, title: APP_NAME, statusBarStyle: "black-translucent" },
   keywords: ["personal finance", "budget tracker", "expense tracker", "India", "offline", "PWA"],
   authors: [{ name: "Viswallet" }],
   creator: "Viswallet",
@@ -49,11 +50,12 @@ export const metadata: Metadata = {
 
 export const viewport: Viewport = {
   themeColor: [
-    { media: "(prefers-color-scheme: light)", color: "#0c4a6e" },
-    { media: "(prefers-color-scheme: dark)", color: "#07090d" },
+    { media: "(prefers-color-scheme: light)", color: "#5f4a8b" },
+    { media: "(prefers-color-scheme: dark)", color: "#14111c" },
   ],
   width: "device-width",
   initialScale: 1,
+  viewportFit: "cover",
   colorScheme: "light dark",
 };
 
@@ -69,6 +71,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         </a>
         <AppProviders>
           <RegisterSW />
+          <InstallPrompt />
           <AppShell>{children}</AppShell>
         </AppProviders>
       </body>

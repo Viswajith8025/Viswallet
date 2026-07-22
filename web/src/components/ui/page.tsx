@@ -16,7 +16,7 @@ export function PageContainer({
   children: React.ReactNode;
   className?: string;
 }) {
-  return <div className={cn("mx-auto max-w-7xl space-y-8", className)}>{children}</div>;
+  return <div className={cn("mx-auto max-w-7xl space-y-6 md:space-y-8", className)}>{children}</div>;
 }
 
 export function PageHeader({
@@ -33,13 +33,17 @@ export function PageHeader({
   className?: string;
 }) {
   return (
-    <div className={cn("flex flex-wrap items-end justify-between gap-6", className)}>
-      <div className="space-y-2">
+    <div className={cn("flex flex-col gap-4 sm:flex-row sm:flex-wrap sm:items-end sm:justify-between sm:gap-6", className)}>
+      <div className="min-w-0 space-y-1.5 sm:space-y-2">
         {eyebrow && <p className={cn(typography.eyebrow, "text-primary")}>{eyebrow}</p>}
         <h1 className={cn(typography.display, "text-foreground")}>{title}</h1>
         {description && <p className={cn(typography.body, "max-w-2xl text-muted-foreground")}>{description}</p>}
       </div>
-      {actions && <div className="flex shrink-0 items-center gap-2">{actions}</div>}
+      {actions && (
+        <div className="flex w-full shrink-0 flex-col gap-2 sm:w-auto sm:flex-row sm:items-center">
+          {actions}
+        </div>
+      )}
     </div>
   );
 }
@@ -74,7 +78,7 @@ export function StatCard({
       <div className="flex items-start justify-between gap-3">
         <p className={cn(typography.label, "text-muted-foreground")}>{label}</p>
         {icon && (
-          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-muted/80 text-muted-foreground transition-colors duration-200 group-hover:bg-accent group-hover:text-primary">
+          <div className="flex h-8 w-8 items-center justify-center rounded-md bg-primary-muted text-primary transition-colors duration-200 group-hover:bg-primary group-hover:text-primary-foreground">
             {icon}
           </div>
         )}
@@ -102,11 +106,11 @@ export function EmptyState({
 }) {
   return (
     <FadeIn>
-      <div className="flex flex-col items-center justify-center rounded-2xl border border-dashed border-border/80 bg-gradient-to-b from-card/80 to-muted/30 px-6 py-20 text-center">
+      <div className="flex flex-col items-center justify-center rounded-xl border border-dashed border-border bg-surface-secondary/80 px-6 py-20 text-center">
         {illustration ? (
           <EmptyIllustration variant={illustration} className="mb-5" />
         ) : (
-          <div className="mb-5 flex h-14 w-14 items-center justify-center rounded-2xl bg-muted/80 text-muted-foreground">
+          <div className="mb-5 flex h-14 w-14 items-center justify-center rounded-xl border border-border-light bg-primary-muted/50 text-primary">
             <Icon icon={IconComponent} size="xl" className="opacity-70" />
           </div>
         )}
@@ -135,7 +139,7 @@ export function ErrorState({
 }) {
   return (
     <FadeIn>
-      <div className="flex flex-col items-center justify-center rounded-2xl border border-destructive/20 bg-destructive-muted/50 px-6 py-16 text-center">
+      <div className="flex flex-col items-center justify-center rounded-xl border border-destructive/20 bg-destructive-muted/50 px-6 py-16 text-center">
         <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-xl bg-destructive/10 text-destructive">
           <Icon icon={AlertCircle} size="lg" />
         </div>

@@ -19,7 +19,7 @@ export function SuccessMark({
 
   return (
     <div className={cn("flex flex-col items-center text-center", className)}>
-      <SuccessPop className={cn("relative flex items-center justify-center rounded-2xl bg-success-muted text-success", box)}>
+      <SuccessPop className={cn("relative flex items-center justify-center rounded-xl bg-success-muted text-success", box)}>
         <motion.div
           initial={{ scale: 0, rotate: -20 }}
           animate={{ scale: 1, rotate: 0 }}

@@ -1,18 +1,39 @@
 {
+  "id": "/",
   "name": "Viswallet",
   "short_name": "Viswallet",
   "description": "Premium personal finance — private, offline-first.",
   "start_url": "/",
+  "scope": "/",
   "display": "standalone",
-  "background_color": "#0c4a6e",
-  "theme_color": "#0c4a6e",
+  "display_override": ["standalone", "minimal-ui"],
+  "background_color": "#fefacd",
+  "theme_color": "#5f4a8b",
   "orientation": "portrait-primary",
   "icons": [
+    {
+      "src": "/icon-192",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icon-512",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icon-512",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    },
     {
       "src": "/apple-icon",
       "sizes": "180x180",
       "type": "image/png",
-      "purpose": "any maskable"
+      "purpose": "any"
     },
     {
       "src": "/icon",
@@ -21,6 +42,7 @@
     }
   ],
   "categories": ["finance", "productivity"],
+  "prefer_related_applications": false,
   "shortcuts": [
     {
       "name": "Add expense",

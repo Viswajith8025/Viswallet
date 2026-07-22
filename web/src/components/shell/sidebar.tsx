@@ -88,7 +88,7 @@ export function Sidebar() {
       <div className="flex h-16 items-center justify-between border-b border-border/60 px-4">
         {!collapsed && (
           <Link href="/" className="flex items-center gap-3 transition-opacity hover:opacity-80">
-            <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-primary to-[#0369a1] text-sm font-bold text-primary-foreground shadow-soft">
+            <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary text-sm font-semibold text-primary-foreground shadow-xs">
               V
             </div>
             <div>
@@ -127,15 +127,15 @@ export function Sidebar() {
               href={item.href}
               title={item.label}
               className={cn(
-                "group relative flex items-center gap-3 rounded-xl px-3 py-2.5 text-[13px] font-medium transition-all duration-200",
+                "group relative flex items-center gap-3 rounded-lg px-3 py-2 text-[13px] font-medium transition-all duration-200",
                 pathname === item.href
-                  ? "bg-primary/10 text-primary shadow-xs"
-                  : "text-muted-foreground hover:bg-accent/60 hover:text-foreground",
+                  ? "bg-primary-muted text-primary"
+                  : "text-muted-foreground hover:bg-surface-hover hover:text-foreground",
                 collapsed && "justify-center px-0",
               )}
             >
               {pathname === item.href && (
-                <span className="absolute left-0 top-1/2 h-5 w-[3px] -translate-y-1/2 rounded-r-full bg-primary" />
+                <span className="absolute left-0 top-1/2 h-4 w-[2px] -translate-y-1/2 rounded-r-full bg-primary" />
               )}
               <item.icon
                 size={18}

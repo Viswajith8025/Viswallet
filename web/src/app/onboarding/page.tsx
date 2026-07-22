@@ -53,7 +53,7 @@ export default function OnboardingPage() {
         animate={{ x: [0, -15, 0], y: [0, 12, 0] }}
         transition={{ duration: 7, repeat: Infinity, ease: "easeInOut", delay: 0.5 }}
       />
-      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_60%_50%_at_50%_-10%,rgba(2,132,199,0.12),transparent)]" />
+      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_60%_50%_at_50%_-10%,rgba(95,74,139,0.08),transparent)]" />
 
       <motion.div
         initial={{ opacity: 0, y: 20 }}
@@ -63,7 +63,7 @@ export default function OnboardingPage() {
       >
         <div className="mb-10 text-center">
           <motion.div
-            className="mx-auto mb-5 flex h-[4.5rem] w-[4.5rem] items-center justify-center rounded-2xl bg-gradient-to-br from-primary to-[color-mix(in_srgb,var(--primary)_70%,#0369a1)] text-3xl font-bold text-primary-foreground shadow-glow"
+            className="mx-auto mb-5 flex h-[4.5rem] w-[4.5rem] items-center justify-center rounded-xl bg-primary text-3xl font-semibold text-primary-foreground shadow-glow"
             animate={{ scale: [1, 1.02, 1] }}
             transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}
           >

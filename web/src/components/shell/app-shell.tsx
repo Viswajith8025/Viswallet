@@ -38,7 +38,11 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           <div className="flex min-w-0 flex-1 flex-col">
             <OfflineBanner />
             <TopBar />
-            <main id="main-content" className="flex-1 px-4 py-6 pb-24 md:px-8 md:py-8 md:pb-8" tabIndex={-1}>
+            <main
+              id="main-content"
+              className="flex-1 px-4 py-5 pb-[calc(5.5rem+env(safe-area-inset-bottom))] pt-[max(1.25rem,env(safe-area-inset-top))] md:px-8 md:py-8 md:pb-8"
+              tabIndex={-1}
+            >
               {children}
             </main>
           </div>

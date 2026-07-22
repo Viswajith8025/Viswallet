@@ -26,4 +26,4 @@ export { SuccessMark } from "./success-mark";
 export { EmptyIllustration } from "./empty-illustration";
 export { SplashScreen } from "./splash-screen";
 export { Skeleton, DashboardSkeleton, PageSkeleton } from "./skeleton";
-export { ChartTooltip, ChartCard, CHART_COLORS } from "./chart";
+export { ChartTooltip, ChartCard, CHART_COLORS, CHART_VIOLET_SCALE } from "./chart";

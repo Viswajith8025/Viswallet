@@ -53,7 +53,7 @@ export default function SettingsPage() {
   const fileRef = useRef<HTMLInputElement>(null);
   const csvRef = useRef<HTMLInputElement>(null);
   const [theme, setTheme] = useState<"system" | "light" | "dark">("system");
-  const [accent, setAccent] = useState<AccentColor>("ocean");
+  const [accent, setAccent] = useState<AccentColor>("violet");
   const [biometricEnabled, setBiometricEnabled] = useState(false);
   const [widgets, setWidgets] = useState<DashboardWidgetId[]>(DEFAULT_DASHBOARD_WIDGETS);
   const [resetting, setResetting] = useState(false);
@@ -72,7 +72,7 @@ export default function SettingsPage() {
   useEffect(() => {
     getSettings().then((s) => {
       setTheme(s.themeMode);
-      setAccent(s.accentColor ?? "ocean");
+      setAccent(s.accentColor ?? "violet");
       setBiometricEnabled(s.biometricEnabled ?? false);
       setWidgets(s.dashboardWidgets ?? DEFAULT_DASHBOARD_WIDGETS);
       setAppLockEnabled(s.appLockEnabled);
@@ -374,9 +374,9 @@ export default function SettingsPage() {
             <option value="dark">Dark</option>
           </Select>
           <Select label="Accent color" value={accent} onChange={(e) => handleAccentChange(e.target.value)}>
-            <option value="ocean">Ocean</option>
-            <option value="emerald">Emerald</option>
             <option value="violet">Violet</option>
+            <option value="ocean">Classic</option>
+            <option value="emerald">Emerald</option>
             <option value="rose">Rose</option>
             <option value="amber">Amber</option>
             <option value="slate">Slate</option>

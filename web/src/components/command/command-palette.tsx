@@ -61,7 +61,7 @@ export function CommandPalette() {
           <motion.button
             type="button"
             aria-label="Close command palette"
-            className="absolute inset-0 bg-black/45 backdrop-blur-[3px]"
+            className="absolute inset-0 bg-overlay backdrop-blur-[3px]"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
@@ -75,7 +75,7 @@ export function CommandPalette() {
             className="relative w-full max-w-xl"
           >
             <Command
-              className="overflow-hidden rounded-2xl border border-border bg-card/95 shadow-glow backdrop-blur-xl"
+              className="overflow-hidden rounded-xl border border-border bg-elevated/98 shadow-glow backdrop-blur-xl"
               onKeyDown={(e) => e.key === "Escape" && setOpen(false)}
             >
               <div className="flex items-center gap-3 border-b border-border/80 px-4">
@@ -148,7 +148,7 @@ function CommandItem({
 }) {
   return (
     <Command.Item
-      className="flex cursor-pointer items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium outline-none transition-colors aria-selected:bg-accent aria-selected:text-accent-foreground"
+      className="flex cursor-pointer items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium outline-none transition-colors aria-selected:bg-primary-muted aria-selected:text-primary"
       onSelect={onSelect}
     >
       {children}

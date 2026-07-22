@@ -27,7 +27,7 @@ const profileSchema = z.object({
 const settingsSchema = z.object({
   id: z.literal(1),
   themeMode: z.enum(["system", "light", "dark"]),
-  accentColor: z.enum(["ocean", "emerald", "violet", "rose", "amber", "slate"]).optional().default("ocean"),
+  accentColor: z.enum(["ocean", "emerald", "violet", "rose", "amber", "slate"]).optional().default("violet"),
   salaryDay: z.number().int().min(1).max(28),
   majorExpenseThresholdPaise: z.number().int().min(0).max(MAX_AMOUNT_PAISE),
   onboardingComplete: z.boolean(),

@@ -31,11 +31,15 @@ export function ConfirmDialog() {
             {description && <p className="mt-1.5 text-body text-muted-foreground">{description}</p>}
           </div>
         </div>
-        <div className="flex justify-end gap-2">
-          <Button variant="ghost" onClick={() => close(false)}>
+        <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+          <Button variant="ghost" onClick={() => close(false)} className="min-h-11 w-full sm:w-auto">
             {cancelLabel ?? "Cancel"}
           </Button>
-          <Button variant={destructive ? "destructive" : "primary"} onClick={() => close(true)}>
+          <Button
+            variant={destructive ? "destructive" : "primary"}
+            onClick={() => close(true)}
+            className="min-h-11 w-full sm:w-auto"
+          >
             {confirmLabel ?? "Confirm"}
           </Button>
         </div>

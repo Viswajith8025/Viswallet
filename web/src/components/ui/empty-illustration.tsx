@@ -45,7 +45,7 @@ export function EmptyIllustration({
   return (
     <div
       className={cn(
-        "flex h-20 w-20 items-center justify-center rounded-2xl bg-gradient-to-br from-muted/80 to-muted/40 shadow-xs animate-gentle-float",
+        "flex h-20 w-20 items-center justify-center rounded-xl border border-border-light bg-surface-secondary shadow-xs animate-gentle-float",
         className,
       )}
       aria-hidden

@@ -31,7 +31,7 @@ export function AppProviders({ children }: { children: React.ReactNode }) {
       if (settings.themeMode !== "system") {
         document.documentElement.setAttribute("data-theme", settings.themeMode);
       }
-      applyAccentColor((settings.accentColor ?? "ocean") as AccentColor);
+      applyAccentColor((settings.accentColor ?? "violet") as AccentColor);
       setReady(true);
     });
   }, []);

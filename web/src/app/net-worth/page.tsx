@@ -37,7 +37,7 @@ export default function NetWorthPage() {
             />
             <GlobalFilterBar />
 
-            <Card className="border-primary/20 bg-gradient-to-br from-card to-muted/30">
+            <Card className="border-primary/15 bg-elevated">
               <CardContent className="p-8 text-center">
                 <p className="text-sm text-muted-foreground">Total net worth</p>
                 <p className="mt-2 text-5xl font-semibold tabular-nums tracking-tight">{formatINR(data.netWorthPaise)}</p>

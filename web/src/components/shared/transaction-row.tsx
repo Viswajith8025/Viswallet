@@ -35,7 +35,7 @@ export const TransactionRow = memo(function TransactionRow({
       <div className="flex min-w-0 items-center gap-3">
         <div
           className={cn(
-            "flex shrink-0 items-center justify-center rounded-xl font-bold text-white",
+            "flex shrink-0 items-center justify-center rounded-xl font-semibold text-primary-foreground",
             compact ? "h-9 w-9 text-xs" : "h-10 w-10 text-xs",
           )}
           style={{ background: categoryColor ?? "var(--primary)" }}

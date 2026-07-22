@@ -1,5 +1,5 @@
 /**
- * Viswallet Design System v3 — token reference.
+ * Viswallet Design System v4 — Lemon Chiffon × Ultra Violet.
  * Source of truth for runtime values is globals.css (`:root` + `@theme inline`).
  */
 

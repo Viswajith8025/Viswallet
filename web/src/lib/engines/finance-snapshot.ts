@@ -143,7 +143,7 @@ export function sumByCategory(
   return Array.from(totals.entries())
     .map(([id, amount]) => {
       const cat = map.get(id);
-      return { name: cat?.name ?? "Unknown", color: cat?.color ?? "#64748B", amount };
+      return { name: cat?.name ?? "Unknown", color: cat?.color ?? "#5f4a8b", amount };
     })
     .sort((a, b) => b.amount - a.amount);
 }

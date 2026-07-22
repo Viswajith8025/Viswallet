@@ -71,6 +71,15 @@ export function ChartCard({
 export const CHART_COLORS = {
   grid: "var(--border)",
   axis: "var(--muted-foreground)",
-  primary: "var(--primary)",
-  cursor: "var(--accent)",
+  primary: "var(--chart-1)",
+  cursor: "var(--primary-muted)",
 };
+
+export const CHART_VIOLET_SCALE = [
+  "var(--chart-1)",
+  "var(--chart-2)",
+  "var(--chart-3)",
+  "var(--chart-4)",
+  "var(--chart-5)",
+  "var(--chart-6)",
+] as const;

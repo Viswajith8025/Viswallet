@@ -1,40 +1,42 @@
 import { cn } from "./cn";
 
-/** Shared transition for interactive elements */
 export const interactiveTransition =
   "transition-all duration-[var(--duration-normal)] ease-[var(--ease-out-expo)]";
 
-/** Focus ring — consistent across form controls & buttons */
 export const focusRing =
   "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background";
 
 export const buttonVariants = {
   base: cn(
-    "inline-flex items-center justify-center gap-2 rounded-xl font-medium",
+    "inline-flex items-center justify-center gap-2 rounded-lg font-medium",
     interactiveTransition,
     focusRing,
     "disabled:pointer-events-none disabled:opacity-45",
-    "active:scale-[0.97]",
+    "active:scale-[0.98]",
   ),
   variant: {
-    primary: "bg-primary text-primary-foreground shadow-soft hover:brightness-110 hover:shadow-elevated",
-    secondary: "bg-secondary text-secondary-foreground hover:bg-accent hover:shadow-xs",
-    ghost: "text-muted-foreground hover:bg-accent/80 hover:text-foreground",
-    outline: "border border-border bg-card/80 hover:border-border-strong hover:bg-accent/50 hover:shadow-xs",
-    destructive: "bg-destructive text-destructive-foreground shadow-soft hover:brightness-110",
+    primary:
+      "bg-primary text-primary-foreground shadow-xs hover:bg-[var(--primary-hover)] hover:shadow-soft",
+    secondary:
+      "bg-surface-secondary text-secondary-foreground border border-border-light hover:bg-surface-hover hover:border-border",
+    ghost: "text-muted-foreground hover:bg-primary-muted/60 hover:text-primary",
+    outline:
+      "border border-primary/35 bg-transparent text-primary hover:bg-primary-muted/50 hover:border-primary/55",
+    destructive:
+      "bg-destructive text-destructive-foreground shadow-xs hover:brightness-[1.03]",
   },
   size: {
-    sm: "h-8 px-3 text-xs rounded-lg",
-    md: "h-10 px-4 text-sm",
-    lg: "h-11 px-5 text-sm",
+    sm: "h-8 px-3 text-xs rounded-md",
+    md: "h-9 px-4 text-sm",
+    lg: "h-10 px-5 text-sm",
     icon: "h-10 w-10 shrink-0",
   },
 } as const;
 
 export const badgeVariants = {
-  base: "inline-flex items-center rounded-md px-2 py-0.5 text-caption font-semibold tracking-wide",
+  base: "inline-flex items-center rounded-md px-2 py-0.5 text-caption font-medium tracking-wide",
   variant: {
-    default: "bg-secondary text-secondary-foreground",
+    default: "bg-surface-secondary text-secondary-foreground border border-border-light",
     primary: "bg-primary-muted text-primary",
     success: "bg-success-muted text-success",
     warning: "bg-warning-muted text-warning",
@@ -44,17 +46,17 @@ export const badgeVariants = {
 } as const;
 
 export const fieldVariants = {
-  label: "text-label",
+  label: "text-label text-foreground/85",
   hint: "text-caption text-muted-foreground",
   error: "text-caption font-medium text-destructive",
   input: cn(
-    "flex w-full rounded-xl border border-input bg-card/90 px-3.5 text-sm shadow-xs",
+    "flex w-full rounded-lg border border-input bg-elevated px-3.5 text-sm shadow-xs",
     interactiveTransition,
-    "placeholder:text-muted-foreground/60",
+    "placeholder:text-muted-foreground/55",
     "hover:border-border-strong",
-    "focus-visible:border-ring focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-ring/15",
+    "focus-visible:border-primary focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-primary/12",
   ),
-  inputError: "border-destructive focus-visible:ring-destructive/15",
+  inputError: "border-destructive focus-visible:ring-destructive/12",
 } as const;
 
 export const cardVariants = {
@@ -69,10 +71,10 @@ export const cardVariants = {
 } as const;
 
 export const dialogVariants = {
-  overlay: "absolute inset-0 bg-overlay backdrop-blur-[2px]",
+  overlay: "absolute inset-0 bg-overlay backdrop-blur-[3px]",
   panel: cn(
-    "relative z-10 w-full overflow-hidden border border-border bg-card shadow-glow",
-    "rounded-t-3xl sm:rounded-2xl",
+    "relative z-10 w-full overflow-hidden border border-border bg-elevated shadow-glow",
+    "rounded-t-2xl sm:rounded-xl",
   ),
   panelCentered: "max-w-lg",
   panelSheet: "max-h-[90vh] overflow-y-auto sm:max-w-lg sm:mb-6",
@@ -80,23 +82,23 @@ export const dialogVariants = {
 } as const;
 
 export const progressVariants = {
-  track: "overflow-hidden rounded-full bg-muted",
-  fill: "h-full rounded-full transition-all duration-500 ease-[var(--ease-out-expo)]",
+  track: "overflow-hidden rounded-full bg-primary-muted/50",
+  fill: "h-full rounded-full bg-primary transition-all duration-500 ease-[var(--ease-out-expo)]",
   size: {
-    sm: "h-1.5",
-    md: "h-2",
-    lg: "h-2.5",
+    sm: "h-1",
+    md: "h-1.5",
+    lg: "h-2",
   },
 } as const;
 
 export const segmentedControlVariants = {
-  root: "flex gap-1 rounded-xl bg-muted/50 p-1",
+  root: "flex gap-0.5 rounded-lg border border-border-light bg-surface-secondary p-0.5",
   item: cn(
-    "rounded-lg px-4 py-2 text-sm font-medium capitalize transition-all duration-[var(--duration-fast)]",
+    "rounded-md px-3.5 py-1.5 text-sm font-medium capitalize transition-all duration-[var(--duration-fast)]",
     "text-muted-foreground hover:text-foreground",
     "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
   ),
-  itemActive: "bg-card text-foreground shadow-xs",
+  itemActive: "bg-elevated text-primary shadow-xs border border-border-light",
 } as const;
 
 export const tableVariants = {
@@ -104,27 +106,27 @@ export const tableVariants = {
   table: "w-full text-sm",
   head: "border-b border-border text-left",
   headCell: "px-4 py-3 text-caption font-semibold uppercase tracking-wider text-muted-foreground",
-  body: "divide-y divide-border/60",
-  row: "transition-colors hover:bg-muted/30",
+  body: "divide-y divide-border-light",
+  row: "transition-colors hover:bg-surface-hover/80",
   cell: "px-4 py-3.5 align-middle",
 } as const;
 
 export const listVariants = {
-  root: "divide-y divide-border/60",
-  item: "transition-colors hover:bg-muted/30",
+  root: "divide-y divide-border-light",
+  item: "transition-colors hover:bg-surface-hover/60",
 } as const;
 
 export const hintVariants = {
-  root: "flex items-start gap-2 rounded-xl bg-muted/50 p-3 text-caption leading-relaxed text-muted-foreground",
+  root: "flex items-start gap-2 rounded-lg border border-border-light bg-primary-muted/40 p-3 text-caption leading-relaxed text-muted-foreground",
 } as const;
 
 export const toastVariants = {
   base: cn(
-    "pointer-events-auto flex max-w-sm items-center gap-3 rounded-xl border px-4 py-3 text-sm shadow-lg backdrop-blur-md",
+    "pointer-events-auto flex max-w-sm items-center gap-3 rounded-lg border px-4 py-3 text-sm shadow-lg backdrop-blur-md",
   ),
   tone: {
-    default: "border-border bg-card/95",
-    success: "border-success/30 bg-success-muted/95",
-    warning: "border-warning/30 bg-warning-muted/95",
+    default: "border-border bg-elevated/95",
+    success: "border-success/25 bg-success-muted/95 text-success",
+    warning: "border-warning/25 bg-warning-muted/95 text-warning",
   },
 } as const;

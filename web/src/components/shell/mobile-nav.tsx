@@ -34,7 +34,7 @@ export function MobileNav() {
                 className="flex -translate-y-3 flex-col items-center gap-1"
                 aria-label="Quick add transaction"
               >
-                <span className="flex h-12 w-12 items-center justify-center rounded-2xl bg-primary text-primary-foreground shadow-glow transition-transform active:scale-95">
+                <span className="flex h-11 w-11 items-center justify-center rounded-xl bg-primary text-primary-foreground shadow-glow transition-transform active:scale-95">
                   <Plus size={22} strokeWidth={2.5} />
                 </span>
               </button>

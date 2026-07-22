@@ -45,7 +45,7 @@ export default function ProfilePage() {
         <CardContent className="p-5">
           <form onSubmit={handleSave} className="mx-auto max-w-md space-y-4">
             <div className="flex items-center gap-4">
-              <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-primary text-2xl font-semibold text-primary-foreground">
+              <div className="flex h-16 w-16 items-center justify-center rounded-xl bg-primary text-2xl font-semibold text-primary-foreground">
                 {displayName.charAt(0).toUpperCase() || "V"}
               </div>
               <div>

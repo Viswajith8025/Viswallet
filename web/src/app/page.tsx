@@ -67,17 +67,16 @@ export default function DashboardPage() {
             {show("hero") && (
             <Stagger className="grid gap-4 lg:grid-cols-4">
               <StaggerItem className="lg:col-span-2">
-                <Card className="relative overflow-hidden border-0 bg-[var(--gradient-hero)] text-primary-foreground shadow-glow">
-                  <div className="pointer-events-none absolute -right-8 -top-8 h-40 w-40 rounded-full bg-white/10 blur-2xl" />
-                  <div className="pointer-events-none absolute -bottom-12 -left-8 h-32 w-32 rounded-full bg-black/10 blur-2xl" />
+                <Card className="relative overflow-hidden border border-primary/15 bg-primary text-primary-foreground shadow-glow">
+                  <div className="pointer-events-none absolute -right-6 -top-6 h-32 w-32 rounded-full bg-primary-foreground/5 blur-2xl" />
                   <CardContent className="relative p-6 md:p-7">
                     <div className="flex items-start justify-between">
                       <p className="text-sm font-medium text-primary-foreground/75">Available this cycle</p>
-                      <Badge className="border-0 bg-white/15 text-primary-foreground">
+                      <Badge className="border border-primary-foreground/15 bg-primary-foreground/10 text-primary-foreground">
                         {data.daysLeft}d left
                       </Badge>
                     </div>
-                    <p className="mt-3 text-4xl font-semibold tabular-nums tracking-tight md:text-[2.75rem]">
+                    <p className="mt-3 text-3xl font-semibold tabular-nums tracking-tight sm:text-4xl md:text-[2.75rem]">
                       {formatINR(data.remainingPaise)}
                     </p>
                     <div className="mt-5 flex flex-wrap gap-4 text-sm text-primary-foreground/80">
@@ -177,7 +176,7 @@ export default function DashboardPage() {
                           >
                             <div className="flex min-w-0 items-center gap-3">
                               <div
-                                className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl text-xs font-bold text-white shadow-xs"
+                                className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl text-xs font-semibold text-primary-foreground shadow-xs"
                                 style={{ background: cat?.color ?? "var(--primary)" }}
                               >
                                 {cat?.name?.charAt(0) ?? "?"}

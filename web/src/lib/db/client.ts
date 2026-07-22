@@ -196,7 +196,7 @@ class ViswalletDB extends Dexie {
         const settings = await tx.table("settings").get(1);
         if (settings) {
           await tx.table("settings").update(1, {
-            accentColor: "ocean",
+            accentColor: "violet",
             biometricEnabled: false,
             dashboardWidgets: DEFAULT_DASHBOARD_WIDGETS,
           });
@@ -208,7 +208,7 @@ class ViswalletDB extends Dexie {
             name: "Primary Wallet",
             type: "wallet",
             balancePaise: 0,
-            color: "#0c4a6e",
+            color: "#5f4a8b",
             iconName: "Wallet",
             isDefault: true,
             isActive: true,
@@ -299,7 +299,7 @@ export async function ensureDbSeeded(): Promise<void> {
     await db.settings.put({
       id: 1,
       themeMode: "system",
-      accentColor: "ocean",
+      accentColor: "violet",
       salaryDay: 1,
       majorExpenseThresholdPaise: 50000,
       onboardingComplete: false,
@@ -317,7 +317,7 @@ export async function ensureDbSeeded(): Promise<void> {
       name: "Primary Wallet",
       type: "wallet",
       balancePaise: 0,
-      color: "#0c4a6e",
+      color: "#5f4a8b",
       iconName: "Wallet",
       isDefault: true,
       isActive: true,
@@ -509,7 +509,7 @@ export async function importAllData(json: string): Promise<void> {
         await db.settings.bulkAdd(
           validated.settings.map((s) => ({
             ...s,
-            accentColor: s.accentColor ?? "ocean",
+            accentColor: s.accentColor ?? "violet",
             biometricEnabled: s.biometricEnabled ?? false,
             dashboardWidgets: (s.dashboardWidgets ?? DEFAULT_DASHBOARD_WIDGETS) as AppSettings["dashboardWidgets"],
           })) as AppSettings[],

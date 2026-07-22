@@ -309,13 +309,13 @@ export const DEFAULT_DASHBOARD_WIDGETS: DashboardWidgetId[] = [
   "heatmap",
 ];
 
-export const ACCENT_PALETTES: Record<AccentColor, { primary: string; ring: string; gradient: string }> = {
-  ocean: { primary: "#0c4a6e", ring: "#0284c7", gradient: "linear-gradient(135deg, #0c4a6e 0%, #0369a1 50%, #0e7490 100%)" },
-  emerald: { primary: "#065f46", ring: "#10b981", gradient: "linear-gradient(135deg, #065f46 0%, #059669 50%, #0d9488 100%)" },
-  violet: { primary: "#5b21b6", ring: "#8b5cf6", gradient: "linear-gradient(135deg, #5b21b6 0%, #7c3aed 50%, #6366f1 100%)" },
-  rose: { primary: "#9f1239", ring: "#f43f5e", gradient: "linear-gradient(135deg, #9f1239 0%, #e11d48 50%, #db2777 100%)" },
-  amber: { primary: "#92400e", ring: "#f59e0b", gradient: "linear-gradient(135deg, #92400e 0%, #d97706 50%, #ca8a04 100%)" },
-  slate: { primary: "#334155", ring: "#64748b", gradient: "linear-gradient(135deg, #334155 0%, #475569 50%, #1e293b 100%)" },
+export const ACCENT_PALETTES: Record<AccentColor, { primary: string; ring: string }> = {
+  ocean: { primary: "#5f4a8b", ring: "#7560a0" },
+  violet: { primary: "#5f4a8b", ring: "#7560a0" },
+  emerald: { primary: "#3d7a62", ring: "#4a8f75" },
+  rose: { primary: "#8b5a6b", ring: "#a06b7d" },
+  amber: { primary: "#9a7b2e", ring: "#b8943a" },
+  slate: { primary: "#5a5570", ring: "#6b6580" },
 };
 
 export const ACHIEVEMENT_DEFINITIONS = [

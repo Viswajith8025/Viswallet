@@ -78,16 +78,16 @@ export function reportToPrintHtml(report: FinancialReport): string {
   <meta charset="utf-8" />
   <title>${report.title}</title>
   <style>
-    body { font-family: system-ui, sans-serif; padding: 40px; color: #0a0f1a; }
-    h1 { font-size: 24px; margin-bottom: 4px; }
-    .meta { color: #64748b; font-size: 13px; margin-bottom: 32px; }
+    body { font-family: system-ui, sans-serif; padding: 40px; color: #2d2540; background: #fefacd; }
+    h1 { font-size: 24px; margin-bottom: 4px; color: #5f4a8b; }
+    .meta { color: #6b6080; font-size: 13px; margin-bottom: 32px; }
     .grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-bottom: 32px; }
-    .card { border: 1px solid #e2e8f0; border-radius: 12px; padding: 16px; }
-    .label { font-size: 11px; text-transform: uppercase; letter-spacing: 0.08em; color: #64748b; }
+    .card { border: 1px solid rgba(95, 74, 139, 0.14); border-radius: 10px; padding: 16px; background: #fffef2; }
+    .label { font-size: 11px; text-transform: uppercase; letter-spacing: 0.08em; color: #6b6080; }
     .value { font-size: 20px; font-weight: 600; margin-top: 4px; }
     table { width: 100%; border-collapse: collapse; }
-    th, td { padding: 10px 8px; border-bottom: 1px solid #e2e8f0; font-size: 13px; }
-    th { text-align: left; font-size: 11px; text-transform: uppercase; color: #64748b; }
+    th, td { padding: 10px 8px; border-bottom: 1px solid rgba(95, 74, 139, 0.14); font-size: 13px; }
+    th { text-align: left; font-size: 11px; text-transform: uppercase; color: #6b6080; }
     @media print { body { padding: 20px; } }
   </style>
 </head>

@@ -36,7 +36,7 @@ export default function AccountsPage() {
         name: name.trim(),
         type,
         balancePaise: parseRupeeInput(balance),
-        color: "#0c4a6e",
+        color: "#5f4a8b",
         iconName: "Wallet",
         isDefault: accounts.length === 0,
         isActive: true,

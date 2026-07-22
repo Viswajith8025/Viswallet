@@ -19,11 +19,11 @@ export function TopBar() {
   });
 
   return (
-    <header className="glass-panel sticky top-0 z-30 flex h-14 items-center justify-between gap-3 border-b border-border/60 px-4 md:h-16 md:px-6">
+    <header className="glass-panel sticky top-0 z-30 flex h-14 items-center justify-between gap-2 border-b border-border/60 px-3 pt-[env(safe-area-inset-top)] md:h-16 md:gap-3 md:px-6">
       <button
         type="button"
         onClick={() => setCommandOpen(true)}
-        className="group flex h-10 min-w-0 flex-1 items-center gap-2.5 rounded-xl border border-border/80 bg-card/60 px-3.5 text-sm text-muted-foreground shadow-xs transition-all duration-200 hover:border-ring/30 hover:bg-card hover:shadow-soft md:max-w-md"
+        className="group flex h-10 min-w-0 flex-1 items-center gap-2 rounded-lg border border-border-light bg-elevated/80 px-3 text-sm text-muted-foreground shadow-xs transition-all duration-200 hover:border-primary/25 hover:bg-elevated md:max-w-md"
         aria-label="Open command palette"
       >
         <Search size={16} className="shrink-0 text-muted-foreground/70 transition-colors group-hover:text-primary" />
@@ -43,10 +43,19 @@ export function TopBar() {
         >
           <Bell size={17} />
           {unread > 0 && (
-            <span className="absolute -right-0.5 -top-0.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-destructive px-1 text-[9px] font-bold text-white ring-2 ring-background">
+            <span className="absolute -right-0.5 -top-0.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-destructive px-1 text-[9px] font-bold text-destructive-foreground ring-2 ring-background">
               {unread > 9 ? "9+" : unread}
             </span>
           )}
+        </Button>
+        <Button
+          variant="outline"
+          size="icon"
+          onClick={() => setQuickAddOpen(true, "expense")}
+          className="sm:hidden"
+          aria-label="Quick add transaction"
+        >
+          <Plus size={17} />
         </Button>
         <Button onClick={() => setQuickAddOpen(true, "expense")} className="hidden sm:inline-flex">
           <Plus size={16} />
