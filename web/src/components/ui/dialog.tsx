@@ -1,0 +1,120 @@
+"use client";
+
+import { motion, AnimatePresence } from "framer-motion";
+import { cn } from "@/lib/design/cn";
+import { dialogVariants } from "@/lib/design/variants";
+
+const overlayVariants = {
+  hidden: { opacity: 0 },
+  visible: { opacity: 1 },
+};
+
+const panelTransition = { duration: 0.25, ease: [0.16, 1, 0.3, 1] as const };
+
+export function Dialog({
+  open,
+  onClose,
+  children,
+  className,
+  labelledBy,
+  size = "md",
+}: {
+  open: boolean;
+  onClose: () => void;
+  children: React.ReactNode;
+  className?: string;
+  labelledBy?: string;
+  size?: "sm" | "md" | "lg";
+}) {
+  const maxWidth = size === "sm" ? "max-w-md" : size === "lg" ? "max-w-2xl" : "max-w-lg";
+
+  return (
+    <AnimatePresence>
+      {open && (
+        <div className="fixed inset-0 z-[100] flex items-end justify-center p-4 sm:items-center sm:p-6">
+          <motion.button
+            type="button"
+            aria-label="Close dialog"
+            className={dialogVariants.overlay}
+            variants={overlayVariants}
+            initial="hidden"
+            animate="visible"
+            exit="hidden"
+            transition={{ duration: 0.2 }}
+            onClick={onClose}
+          />
+          <motion.div
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby={labelledBy}
+            className={cn(dialogVariants.panel, dialogVariants.panelCentered, maxWidth, className)}
+            initial={{ opacity: 0, scale: 0.96, y: 8 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            exit={{ opacity: 0, scale: 0.98, y: 4 }}
+            transition={panelTransition}
+          >
+            {children}
+          </motion.div>
+        </div>
+      )}
+    </AnimatePresence>
+  );
+}
+
+export function Sheet({
+  open,
+  onClose,
+  children,
+  className,
+  labelledBy,
+}: {
+  open: boolean;
+  onClose: () => void;
+  children: React.ReactNode;
+  className?: string;
+  labelledBy?: string;
+}) {
+  return (
+    <AnimatePresence>
+      {open && (
+        <div className="fixed inset-0 z-[100] flex items-end justify-center">
+          <motion.button
+            type="button"
+            aria-label="Close"
+            className={dialogVariants.overlay}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            onClick={onClose}
+          />
+          <motion.div
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby={labelledBy}
+            className={cn(dialogVariants.panel, dialogVariants.panelSheet, "w-full", className)}
+            initial={{ y: "100%" }}
+            animate={{ y: 0 }}
+            exit={{ y: "100%" }}
+            transition={{ type: "spring", damping: 28, stiffness: 320 }}
+          >
+            <div className="mx-auto mt-3 h-1 w-10 rounded-full bg-border sm:hidden" />
+            {children}
+          </motion.div>
+        </div>
+      )}
+    </AnimatePresence>
+  );
+}
+
+export function DialogBody({ className, ...props }: React.HTMLAttributes<HTMLDivElement>) {
+  return <div className={cn(dialogVariants.body, className)} {...props} />;
+}
+
+export function DialogFooter({ className, ...props }: React.HTMLAttributes<HTMLDivElement>) {
+  return (
+    <div
+      className={cn("flex justify-end gap-2 border-t border-border px-6 py-4", className)}
+      {...props}
+    />
+  );
+}

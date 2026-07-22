@@ -1,41 +1,39 @@
 # Viswallet Privacy Policy
 
-**Last updated:** June 2026
+**Last updated:** July 2026
 
-Viswallet ("we", "the app") is a personal finance tracker. This policy explains what data the app handles and how.
+Viswallet is a personal finance tracker delivered as a progressive web app. This policy explains what data the app handles and how.
 
 ## Data stored on your device
 
-- Expenses, income, budgets, goals, subscriptions, and loans
+- Expenses, income, budgets, goals, subscriptions, loans, and notes
 - App settings (theme, salary cycle, optional PIN lock)
-- Optional search history
+- Local security audit log
 
-Financial data is stored locally in an on-device database unless you use optional cloud sign-in.
+Financial data is stored in your browser's IndexedDB unless you enable optional cloud sign-in.
 
 ## Account data (optional)
 
-If you create an account, we use Supabase to store your email and profile. Authentication tokens are stored on your device.
+If you configure Supabase, authentication may store your email and session tokens on your device. Financial records remain local-first.
 
-## AI assistant (AI Jithu)
+## Insights and analysis
 
-When you chat with AI Jithu, a summary of your finances (not your full transaction list) may be sent to our AI provider (Groq) to generate answers. You can use offline fallback responses when the network is unavailable.
+Spending insights and forecasts are computed on your device. No transaction data is sent to third parties by default.
 
-## Microphone
+## Error reporting and analytics (optional)
 
-Voice quick-add uses the microphone only when you tap the mic button. Audio is processed for speech recognition on your device; we do not store raw audio in the app database.
+Your operator may enable anonymous error reporting or page-view analytics via environment configuration. These are disabled in the default build and never include financial amounts or transaction details.
 
 ## Backups and exports
 
-If you export data, the file is created on your device and shared via the system share sheet. Exports do not include your PIN hash.
-
-## Home screen widgets
-
-Widgets may show balances and recent activity on your home screen. Anyone who can see your home screen can see this information.
+Exports are created on your device. Encrypted backups use a passphrase you choose. Exports do not include your PIN hash.
 
 ## Contact
 
-For privacy questions, open an issue at the Viswallet GitHub repository or contact the developer listed on the Play Store listing.
+For privacy questions, contact the operator listed on the Viswallet website or open an issue in the project repository.
 
 ## Changes
 
-We may update this policy. Continued use of the app after changes means you accept the updated policy.
+We may update this policy. Continued use after changes constitutes acceptance.
+
+See also the in-app policy at `/privacy`.

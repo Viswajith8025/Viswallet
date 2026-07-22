@@ -1,8 +1,0 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" fill="none" role="img" aria-label="Viswallet icon monochrome black">
-  <rect x="32" y="32" width="448" height="448" rx="112" fill="#0F172A"/>
-  <rect x="88" y="108" width="56" height="44" rx="10" fill="#FFFFFF" fill-opacity="0.12"/>
-  <line x1="96" y1="168" x2="416" y2="168" stroke="#FFFFFF" stroke-opacity="0.18" stroke-width="10" stroke-linecap="round"/>
-  <path d="M156 196 L256 348 L356 196" stroke="#FFFFFF" stroke-width="44" stroke-linecap="round" stroke-linejoin="round"/>
-  <path d="M356 196 C356 196 372 156 392 132" stroke="#FFFFFF" stroke-width="28" stroke-linecap="round" stroke-opacity="0.55"/>
-  <circle cx="392" cy="132" r="18" fill="#FFFFFF"/>
-</svg>

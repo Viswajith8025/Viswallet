@@ -1,0 +1,77 @@
+import type { Metadata, Viewport } from "next";
+import { Plus_Jakarta_Sans, Inter } from "next/font/google";
+import "./globals.css";
+import { AppProviders } from "@/components/providers/app-providers";
+import { AppShell } from "@/components/shell/app-shell";
+import { RegisterSW } from "@/components/pwa/register-sw";
+
+const display = Plus_Jakarta_Sans({
+  variable: "--font-display",
+  subsets: ["latin"],
+  display: "swap",
+});
+
+const body = Inter({
+  variable: "--font-body",
+  subsets: ["latin"],
+  display: "swap",
+});
+
+const APP_NAME = "Viswallet";
+const APP_DESCRIPTION =
+  "Premium personal finance tracker. Track expenses, budgets, loans, and net worth — private, offline-first.";
+
+export const metadata: Metadata = {
+  metadataBase: new URL(process.env.NEXT_PUBLIC_APP_URL ?? "https://viswallet.app"),
+  title: { default: `${APP_NAME} — Personal Finance`, template: `%s · ${APP_NAME}` },
+  description: APP_DESCRIPTION,
+  applicationName: APP_NAME,
+  manifest: "/manifest.json",
+  appleWebApp: { capable: true, title: APP_NAME, statusBarStyle: "default" },
+  keywords: ["personal finance", "budget tracker", "expense tracker", "India", "offline", "PWA"],
+  authors: [{ name: "Viswallet" }],
+  creator: "Viswallet",
+  openGraph: {
+    type: "website",
+    locale: "en_IN",
+    siteName: APP_NAME,
+    title: APP_NAME,
+    description: APP_DESCRIPTION,
+  },
+  twitter: {
+    card: "summary",
+    title: APP_NAME,
+    description: APP_DESCRIPTION,
+  },
+  robots: { index: true, follow: true },
+  formatDetection: { telephone: false },
+};
+
+export const viewport: Viewport = {
+  themeColor: [
+    { media: "(prefers-color-scheme: light)", color: "#0c4a6e" },
+    { media: "(prefers-color-scheme: dark)", color: "#07090d" },
+  ],
+  width: "device-width",
+  initialScale: 1,
+  colorScheme: "light dark",
+};
+
+export default function RootLayout({ children }: { children: React.ReactNode }) {
+  return (
+    <html lang="en" className={`${display.variable} ${body.variable} h-full`} suppressHydrationWarning>
+      <body className="min-h-full font-[family-name:var(--font-body)] antialiased">
+        <a
+          href="#main-content"
+          className="sr-only focus:not-sr-only focus:absolute focus:left-4 focus:top-4 focus:z-[300] focus:rounded-lg focus:bg-primary focus:px-4 focus:py-2 focus:text-primary-foreground"
+        >
+          Skip to main content
+        </a>
+        <AppProviders>
+          <RegisterSW />
+          <AppShell>{children}</AppShell>
+        </AppProviders>
+      </body>
+    </html>
+  );
+}

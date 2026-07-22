@@ -1,7 +1,0 @@
-<?xml version="1.0" encoding="utf-8"?>
-<resources>
-    <string name="widget_compact_desc">Money left &amp; quick add — compact glance</string>
-    <string name="widget_standard_desc">Today\'s spending, safe daily &amp; budget</string>
-    <string name="widget_wide_desc">Subscriptions, bills &amp; budget progress</string>
-    <string name="widget_full_desc">Full mini dashboard with health &amp; recent activity</string>
-</resources>

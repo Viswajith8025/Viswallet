@@ -1,45 +1,58 @@
-# Viswallet
+# Viswallet Web
 
-Premium personal finance tracker — understand where every rupee goes.
+Premium personal finance platform — calm, luxurious, production-grade.
 
-**Tagline:** Your money, clearly understood.
+## Run
 
-> **Package name:** The Dart/Flutter package is `rupee_track` (historical internal name).
-> User-facing branding, store listing, and deep links use **Viswallet**. Do not rename
-> the package without a coordinated migration — imports, Android applicationId, and CI
-> all reference `rupee_track` today.
-
-## Prerequisites
-
-- [Flutter SDK](https://docs.flutter.dev/get-started/install) 3.24+
-- Android Studio (for Android) or Visual Studio with C++ (for Windows desktop)
-
-## Platforms
-
-| Platform | Status |
-|----------|--------|
-| **Android** | Primary release target (Play Store) |
-| **Windows** | Dev/desktop builds supported |
-| **Web** | Removed — not shipped |
-| **iOS** | Not in v1.0 scope (no `ios/` folder); add when App Store signing is ready |
-
-## Setup
-
-```powershell
-cd viswallet
-flutter pub get
-dart run build_runner build --delete-conflicting-outputs
-flutter run
+```bash
+cd web
+npm install
+npm run dev
 ```
 
-## Brand
+Open [http://localhost:3000](http://localhost:3000)
 
-- **Colors:** Deep navy primary (#0F3D5E), teal secondary, mint accent
-- **Fonts:** Plus Jakarta Sans (headlines) + Inter (body)
-- **Logo:** Geometric wallet with stylized "V"
+## Stack
 
-## Architecture
+| Layer | Technology |
+|-------|------------|
+| Framework | Next.js 16 (App Router) |
+| Language | TypeScript |
+| Styling | Tailwind CSS 4 |
+| State | Zustand (UI) + TanStack React Query (data) |
+| Database | Dexie / IndexedDB (offline-first, persists on refresh) |
+| Cloud (optional) | Supabase client stub in `.env.example` |
+| Charts | Recharts |
+| Search | Fuse.js |
+| Command palette | cmdk (Ctrl+K) |
+| Motion | Framer Motion |
+| PWA | manifest + service worker |
 
-Feature-first Clean Architecture · Riverpod · GoRouter · Drift (SQLite)
+## Features
 
-See [RELEASE.md](RELEASE.md) for signing, Groq/Jithu keys, and `flutter build appbundle`.
+- **Dashboard** — cycle overview, health score, smart insights
+- **Transactions** — unified income & expenses
+- **Analytics** — charts and category breakdown
+- **Budgets** — salary-cycle bucket planner
+- **Bills, Subscriptions, EMI** — recurring money management
+- **Loans & Borrowed** — track lent/borrowed with payments
+- **Goals, Wishlist, Investments** — wealth building
+- **Net Worth** — consolidated position
+- **Calendar** — upcoming dues and renewals
+- **Insights** — rule-based financial suggestions
+- **Search** — fuzzy search across transactions
+- **Command palette** — Raycast-style navigation (Ctrl+K)
+- **Quick Add** — modal for fast expense/income entry
+- **Notifications, Profile, Settings** — themes, export/import backup
+
+## Data
+
+All finance data lives in **IndexedDB** in the browser. Use Settings → Export backup regularly.
+
+Optional Supabase: set `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_ANON_KEY` in `web/.env.local` for future cloud sync.
+
+## Production
+
+See [DEPLOYMENT.md](./DEPLOYMENT.md) for environment variables, CI/CD, monitoring, and launch checklist.
+
+Legal pages: `/privacy`, `/terms`, `/licenses`

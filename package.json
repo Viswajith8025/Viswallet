@@ -1,20 +1,14 @@
 {
-  "name": "Viswallet",
+  "name": "viswallet",
+  "version": "1.0.0",
   "private": true,
-  "description": "Supabase CLI tooling for Viswallet (Flutter app)",
+  "description": "Viswallet — Next.js PWA personal finance tracker",
   "scripts": {
-    "supabase": "supabase",
-    "db:push": "supabase db push",
-    "db:pull": "supabase db pull",
-    "db:reset": "supabase db reset",
-    "db:migrations": "supabase migration list --linked",
-    "db:query": "supabase db query --linked",
-    "db:fresh-start": "supabase db query --linked --file supabase/fresh_start.sql",
-    "icons": "python tool/make_icons.py && dart run flutter_launcher_icons",
-    "link": "supabase link --project-ref fuoczdljmzvcmkimlant",
-    "login": "supabase login"
-  },
-  "devDependencies": {
-    "supabase": "^2.109.0"
+    "dev": "npm run dev --prefix web",
+    "build": "npm run build --prefix web",
+    "start": "npm run start --prefix web",
+    "lint": "npm run lint --prefix web",
+    "test": "npm run test --prefix web",
+    "security:check": "npm run security:check --prefix web"
   }
 }
