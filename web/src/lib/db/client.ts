@@ -43,8 +43,10 @@ import {
   logAudit,
   registerAuditDb,
   sanitizeName,
+  sanitizeNotes,
   sanitizeTitle,
   SecureError,
+  stripSensitiveSettings,
   validateBackupPayload,
 } from "@/lib/security";
 
@@ -458,7 +460,7 @@ export async function exportAllData(): Promise<string> {
     version: BACKUP_VERSION,
     exportedAt: new Date().toISOString(),
     profiles: await db.profiles.toArray(),
-    settings: await db.settings.toArray(),
+    settings: stripSensitiveSettings(await db.settings.toArray()),
     categories: await db.categories.toArray(),
     transactions: await db.transactions.toArray(),
     monthlySalaries: await db.monthlySalaries.toArray(),
@@ -491,11 +493,13 @@ export async function importAllData(json: string): Promise<void> {
       ? validated.transactions.map((t) => ({
           ...t,
           title: sanitizeTitle(t.title),
+          notes: sanitizeNotes(t.notes as string | undefined),
         }))
       : (validated.expenses ?? []).map((t) => ({
           ...t,
           kind: t.kind ?? ("expense" as const),
           title: sanitizeTitle(t.title),
+          notes: sanitizeNotes(t.notes as string | undefined),
         }));
 
   try {
@@ -507,12 +511,14 @@ export async function importAllData(json: string): Promise<void> {
       if (validated.profiles.length) await db.profiles.bulkAdd(validated.profiles);
       if (validated.settings.length)
         await db.settings.bulkAdd(
-          validated.settings.map((s) => ({
-            ...s,
-            accentColor: s.accentColor ?? "violet",
-            biometricEnabled: s.biometricEnabled ?? false,
-            dashboardWidgets: (s.dashboardWidgets ?? DEFAULT_DASHBOARD_WIDGETS) as AppSettings["dashboardWidgets"],
-          })) as AppSettings[],
+          stripSensitiveSettings(
+            validated.settings.map((s) => ({
+              ...s,
+              accentColor: s.accentColor ?? "violet",
+              biometricEnabled: s.biometricEnabled ?? false,
+              dashboardWidgets: (s.dashboardWidgets ?? DEFAULT_DASHBOARD_WIDGETS) as AppSettings["dashboardWidgets"],
+            })),
+          ) as AppSettings[],
         );
       if (validated.categories.length) await db.categories.bulkAdd(validated.categories);
       if (transactions.length) await db.transactions.bulkAdd(transactions);

@@ -13,6 +13,7 @@ import { completeOnboarding } from "@/lib/db";
 import { parseRupeeInput } from "@/lib/money";
 import { SALARY_PRESETS } from "@/lib/ux/defaults";
 import { successFeedback, tapFeedback } from "@/lib/ux/feedback";
+import { showToast } from "@/lib/store/toast-store";
 
 export default function OnboardingPage() {
   const router = useRouter();
@@ -22,23 +23,36 @@ export default function OnboardingPage() {
   const [salary, setSalary] = useState("");
   const [loading, setLoading] = useState(false);
   const [done, setDone] = useState(false);
+  const [formError, setFormError] = useState<string | null>(null);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
+    setFormError(null);
     setLoading(true);
     const day = Math.min(28, Math.max(1, parseInt(salaryDay, 10) || 1));
     const paise = parseRupeeInput(salary);
-    if (paise <= 0 || !displayName.trim()) {
+    if (!displayName.trim()) {
+      setFormError("Enter your name to continue.");
       setLoading(false);
       return;
     }
-    await completeOnboarding(displayName.trim(), day, paise);
-    successFeedback();
-    setDone(true);
-    setTimeout(() => {
-      router.replace("/");
-      router.refresh();
-    }, 1400);
+    if (paise <= 0) {
+      setFormError("Enter a valid monthly salary greater than zero.");
+      setLoading(false);
+      return;
+    }
+    try {
+      await completeOnboarding(displayName.trim(), day, paise);
+      successFeedback();
+      setDone(true);
+      setTimeout(() => {
+        router.replace("/");
+        router.refresh();
+      }, 1400);
+    } catch {
+      showToast("Setup failed. Please try again.", { tone: "error" });
+      setLoading(false);
+    }
   }
 
   return (
@@ -75,7 +89,14 @@ export default function OnboardingPage() {
           </p>
         </div>
 
-        <div className="mb-8 flex justify-center gap-2">
+        <div
+          className="mb-8 flex justify-center gap-2"
+          role="progressbar"
+          aria-valuemin={0}
+          aria-valuemax={1}
+          aria-valuenow={step}
+          aria-label={`Onboarding step ${step + 1} of 2`}
+        >
           {[0, 1].map((i) => (
             <motion.div
               key={i}
@@ -198,6 +219,11 @@ export default function OnboardingPage() {
                         {loading ? "Setting up..." : "Get started"}
                       </Button>
                     </div>
+                    {formError && (
+                      <p className="text-sm text-destructive" role="alert">
+                        {formError}
+                      </p>
+                    )}
                   </>
                 )}
               </motion.form>

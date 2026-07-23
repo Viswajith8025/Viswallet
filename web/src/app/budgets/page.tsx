@@ -1,8 +1,8 @@
 "use client";
 
-import { useEffect, useState } from "react";
 import Link from "next/link";
-import { PageHeader, StatCard, EmptyState, PageContainer } from "@/components/ui/page";
+import { useQuery } from "@tanstack/react-query";
+import { PageHeader, StatCard, EmptyState, PageContainer, LoadingState } from "@/components/ui/page";
 import { FinanceGate } from "@/components/layout/finance-gate";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -10,7 +10,6 @@ import { Progress } from "@/components/ui/progress";
 import { Hint } from "@/components/ui/hint";
 import { useInvalidateFinance } from "@/hooks/use-invalidate-finance";
 import { createBudgetPlanForCycle, db } from "@/lib/db";
-import type { BudgetBucket } from "@/lib/db/types";
 import type { FinanceSnapshot } from "@/lib/engines/finance-snapshot";
 import { formatINR } from "@/lib/money";
 import { formatCycleLabel } from "@/lib/salary-cycle";
@@ -18,26 +17,21 @@ import { categoryMap } from "@/lib/engines/finance-snapshot";
 
 function BudgetsContent({ data }: { data: FinanceSnapshot }) {
   const invalidate = useInvalidateFinance();
-  const [buckets, setBuckets] = useState<BudgetBucket[]>([]);
 
-  useEffect(() => {
-    let cancelled = false;
-    (async () => {
+  const { data: buckets = [], isPending: bucketsLoading } = useQuery({
+    queryKey: ["budget-buckets", data.monthKey, data.salaryPaise],
+    queryFn: async () => {
       let plan = await db.budgetPlans.where("monthKey").equals(data.monthKey).first();
       if (!plan && data.salaryPaise > 0) {
         const id = await createBudgetPlanForCycle(data.monthKey, data.salaryPaise);
         plan = await db.budgetPlans.get(id);
         await invalidate();
       }
-      if (!cancelled && plan?.id) {
-        const b = await db.budgetBuckets.where("planId").equals(plan.id).sortBy("sortOrder");
-        setBuckets(b);
-      }
-    })();
-    return () => {
-      cancelled = true;
-    };
-  }, [data.monthKey, data.salaryPaise, invalidate]);
+      if (!plan?.id) return [];
+      return db.budgetBuckets.where("planId").equals(plan.id).sortBy("sortOrder");
+    },
+    enabled: data.salaryPaise > 0,
+  });
 
   if (data.salaryPaise <= 0) {
     return (
@@ -93,8 +87,10 @@ function BudgetsContent({ data }: { data: FinanceSnapshot }) {
         Your budget plan is created automatically from your salary. Spending is matched to categories — update salary to rebalance buckets.
       </Hint>
 
-      {buckets.length === 0 ? (
-        <EmptyState title="No budget plan" description="Your budget plan will appear here shortly." />
+      {bucketsLoading ? (
+        <LoadingState label="Generating budget plan…" />
+      ) : buckets.length === 0 ? (
+        <EmptyState title="No budget plan" description="Set your salary to generate a budget plan for this cycle." />
       ) : (
         <div className="space-y-4">
           {buckets.map((b) => {

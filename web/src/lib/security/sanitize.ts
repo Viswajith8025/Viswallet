@@ -73,3 +73,19 @@ export function clampSalaryDay(day: number): number {
   if (!Number.isFinite(day)) return 1;
   return Math.min(28, Math.max(1, Math.floor(day)));
 }
+
+/** Escape dynamic strings before inserting into HTML documents (print/export). */
+export function escapeHtml(value: string): string {
+  return value
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+}
+
+/** Prefix cells that could be interpreted as spreadsheet formulas. */
+export function escapeCsvFormula(value: string): string {
+  if (/^[=+\-@\t\r]/.test(value)) return `'${value}`;
+  return value;
+}

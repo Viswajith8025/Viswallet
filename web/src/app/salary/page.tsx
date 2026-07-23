@@ -19,6 +19,7 @@ function SalaryContent({ data }: { data: FinanceSnapshot }) {
   const [amount, setAmount] = useState("");
   const [salaryDay, setSalaryDay] = useState("1");
   const [saving, setSaving] = useState(false);
+  const [formError, setFormError] = useState<string | null>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -39,8 +40,13 @@ function SalaryContent({ data }: { data: FinanceSnapshot }) {
 
   async function handleSave(e: React.FormEvent) {
     e.preventDefault();
-    setSaving(true);
+    setFormError(null);
     const paise = parseRupeeInput(amount);
+    if (paise <= 0) {
+      setFormError("Enter a monthly salary greater than zero.");
+      return;
+    }
+    setSaving(true);
     const day = Math.min(28, Math.max(1, parseInt(salaryDay, 10) || 1));
     const now = new Date();
     await updateSettings({ salaryDay: day });
@@ -94,6 +100,7 @@ function SalaryContent({ data }: { data: FinanceSnapshot }) {
               onChange={(e) => setSalaryDay(e.target.value)}
               hint="Your salary cycle starts on this day each month."
             />
+            {formError && <p className="text-sm text-destructive" role="alert">{formError}</p>}
             <Button type="submit" className="w-full" disabled={saving}>
               {saving ? "Saving..." : "Save salary"}
             </Button>

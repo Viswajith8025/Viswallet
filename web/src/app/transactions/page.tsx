@@ -140,7 +140,10 @@ function TransactionsContent({
     e.preventDefault();
     if (saving) return;
     const paise = parseRupeeInput(amount);
-    if (!title.trim() || paise <= 0) return;
+    if (!title.trim() || paise <= 0) {
+      setFormError("Enter a title and amount greater than zero.");
+      return;
+    }
     setFormError("");
     setSaving(true);
     try {

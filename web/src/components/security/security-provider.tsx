@@ -22,10 +22,9 @@ export function SecurityProvider({ children }: { children: React.ReactNode }) {
 
   if (!initialized) return null;
 
-  return (
-    <>
-      {children}
-      {appLockEnabled && !unlocked && <AppLockScreen />}
-    </>
-  );
+  if (appLockEnabled && !unlocked) {
+    return <AppLockScreen />;
+  }
+
+  return <>{children}</>;
 }

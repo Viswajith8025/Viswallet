@@ -1,10 +1,10 @@
 import { create } from "zustand";
-import { successFeedback } from "@/lib/ux/feedback";
+import { successFeedback, errorFeedback } from "@/lib/ux/feedback";
 
 export type ToastItem = {
   id: string;
   message: string;
-  tone?: "default" | "success" | "warning";
+  tone?: "default" | "success" | "warning" | "error";
   undo?: () => void | Promise<void>;
 };
 
@@ -19,6 +19,7 @@ export const useToastStore = create<ToastState>((set, get) => ({
   push: (toast) => {
     const id = crypto.randomUUID();
     if (toast.tone === "success") successFeedback();
+    if (toast.tone === "error") errorFeedback();
     set({ toasts: [...get().toasts, { ...toast, id }] });
     setTimeout(() => get().dismiss(id), toast.undo ? 8000 : 4000);
   },

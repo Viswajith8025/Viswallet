@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Plus, Wallet, Star } from "lucide-react";
-import { PageHeader, PageContainer, EmptyState } from "@/components/ui/page";
+import { PageHeader, PageContainer, EmptyState, LoadingState } from "@/components/ui/page";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input, Select } from "@/components/ui/input";
@@ -11,6 +11,7 @@ import { db } from "@/lib/db";
 import type { Account, AccountType } from "@/lib/db/types";
 import { formatINR, parseRupeeInput } from "@/lib/money";
 import { useAsyncAction } from "@/hooks";
+import { sanitizeName } from "@/lib/security";
 
 const ACCOUNT_TYPES: AccountType[] = ["cash", "bank", "wallet", "credit", "investment", "other"];
 
@@ -21,19 +22,24 @@ export default function AccountsPage() {
   const [name, setName] = useState("");
   const [type, setType] = useState<AccountType>("bank");
   const [balance, setBalance] = useState("");
+  const [formError, setFormError] = useState<string | null>(null);
 
-  const { data: accounts = [] } = useQuery({
+  const { data: accounts = [], isPending } = useQuery({
     queryKey: ["accounts"],
     queryFn: () => db.accounts.filter((a) => a.isActive).toArray(),
   });
 
   async function handleAdd(e: React.FormEvent) {
     e.preventDefault();
-    if (!name.trim()) return;
+    setFormError(null);
+    if (!name.trim()) {
+      setFormError("Enter an account name.");
+      return;
+    }
     await run(async () => {
       const now = new Date();
       await db.accounts.add({
-        name: name.trim(),
+        name: sanitizeName(name),
         type,
         balancePaise: parseRupeeInput(balance),
         color: "#5f4a8b",
@@ -76,6 +82,10 @@ export default function AccountsPage() {
         }
       />
 
+      {isPending ? (
+        <LoadingState label="Loading accounts…" />
+      ) : (
+      <>
       <Card>
         <CardContent className="flex items-center justify-between p-6">
           <div>
@@ -90,18 +100,20 @@ export default function AccountsPage() {
         <Card>
           <CardContent className="p-5">
             <form onSubmit={handleAdd} className="grid gap-3 sm:grid-cols-2">
-              <Input placeholder="Account name" value={name} onChange={(e) => setName(e.target.value)} required />
-              <Select value={type} onChange={(e) => setType(e.target.value as AccountType)}>
+              <Input label="Account name" placeholder="Account name" value={name} onChange={(e) => setName(e.target.value)} required />
+              <Select label="Account type" value={type} onChange={(e) => setType(e.target.value as AccountType)}>
                 {ACCOUNT_TYPES.map((t) => (
                   <option key={t} value={t}>{t}</option>
                 ))}
               </Select>
               <Input
+                label="Opening balance (₹)"
                 type="number"
                 placeholder="Opening balance (₹)"
                 value={balance}
                 onChange={(e) => setBalance(e.target.value)}
               />
+              {formError && <p className="sm:col-span-2 text-sm text-destructive" role="alert">{formError}</p>}
               <Button type="submit" disabled={saving}>{saving ? "Saving…" : "Save account"}</Button>
             </form>
           </CardContent>
@@ -109,7 +121,11 @@ export default function AccountsPage() {
       )}
 
       {accounts.length === 0 ? (
-        <EmptyState title="No accounts yet" description="Add your first wallet or bank account." />
+        <EmptyState
+          title="No accounts yet"
+          description="Add your first wallet or bank account."
+          action={<Button onClick={() => setShowForm(true)}>Add account</Button>}
+        />
       ) : (
         <div className="space-y-2">
           {accounts.map((a) => (
@@ -138,6 +154,8 @@ export default function AccountsPage() {
             </Card>
           ))}
         </div>
+      )}
+      </>
       )}
     </PageContainer>
   );

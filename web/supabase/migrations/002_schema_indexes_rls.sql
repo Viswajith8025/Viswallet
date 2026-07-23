@@ -1,3 +1,4 @@
+-- DEPRECATED — use supabase/setup.sql instead (canonical, complete RLS for all 22 tables).
 -- Viswallet Postgres schema (Supabase) — migration 002
 -- Apply after enabling Auth. All user data scoped to auth.uid().
 

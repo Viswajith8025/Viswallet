@@ -67,7 +67,7 @@ export const TransactionRow = memo(function TransactionRow({
             <Button
               size="icon"
               variant="ghost"
-              className="opacity-0 transition-opacity group-hover:opacity-100"
+              className="opacity-100 sm:opacity-0 sm:transition-opacity sm:group-hover:opacity-100"
               onClick={() => onEdit?.(t)}
               aria-label={`Edit ${t.title}`}
             >
@@ -76,7 +76,7 @@ export const TransactionRow = memo(function TransactionRow({
             <Button
               size="icon"
               variant="ghost"
-              className="opacity-0 transition-opacity group-hover:opacity-100"
+              className="opacity-100 sm:opacity-0 sm:transition-opacity sm:group-hover:opacity-100"
               onClick={() => t.id && onDelete?.(t.id)}
               aria-label={`Delete ${t.title}`}
             >

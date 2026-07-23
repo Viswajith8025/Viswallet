@@ -87,8 +87,16 @@ export default function PrivacyPage() {
       <section className="space-y-3">
         <h2 className="text-lg font-semibold">Contact</h2>
         <p>
-          For privacy questions, contact the operator listed on the Viswallet website or open an
-          issue in the project repository.
+          For privacy questions, open an issue at{" "}
+          <a
+            href="https://github.com/Viswajith8025/Viswallet/issues"
+            className="font-medium text-primary underline-offset-2 hover:underline"
+            rel="noopener noreferrer"
+            target="_blank"
+          >
+            github.com/Viswajith8025/Viswallet
+          </a>
+          .
         </p>
       </section>
 

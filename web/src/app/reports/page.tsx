@@ -1,7 +1,7 @@
 "use client";
 
 import { FileText, Download, Printer } from "lucide-react";
-import { PageHeader, PageContainer, StatCard } from "@/components/ui/page";
+import { PageHeader, PageContainer, StatCard, EmptyState } from "@/components/ui/page";
 import { FinanceGate } from "@/components/layout/finance-gate";
 import { GlobalFilterBar } from "@/components/filters/global-filter-bar";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -16,6 +16,24 @@ export default function ReportsPage() {
       {(data) => {
         const monthly = buildFinancialReport(data, "monthly");
         const yearly = buildFinancialReport(data, "yearly");
+        const hasData = data.transactions.length > 0;
+
+        if (!hasData) {
+          return (
+            <PageContainer className="max-w-5xl">
+              <PageHeader
+                eyebrow="Reports"
+                title="Financial Reports"
+                description="Monthly and yearly summaries — export as PDF via print."
+              />
+              <GlobalFilterBar />
+              <EmptyState
+                title="No transactions to report"
+                description="Add income and expenses to generate monthly and yearly financial reports."
+              />
+            </PageContainer>
+          );
+        }
 
         return (
           <PageContainer className="max-w-5xl">

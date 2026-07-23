@@ -1,13 +1,13 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { format } from "date-fns";
 import { Pencil, Trash2 } from "lucide-react";
-import { PageHeader, StatCard, EmptyState } from "@/components/ui/page";
+import { PageHeader, StatCard, EmptyState, PageContainer } from "@/components/ui/page";
+import { DexiePageGate } from "@/components/layout/dexie-page-gate";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input, Select } from "@/components/ui/input";
-import { useDb } from "@/components/providers/db-provider";
 import { db } from "@/lib/db";
 import { getActiveTransactionsByKind } from "@/lib/db/repositories/transactions";
 import type { Subscription } from "@/lib/db/types";
@@ -20,13 +20,28 @@ import {
 } from "@/lib/engines/premium/subscription-detector";
 import { confirmAction } from "@/lib/store/confirm-store";
 import { Hint } from "@/components/ui/hint";
-import { useInvalidateFinance, useAsyncAction } from "@/hooks";
+import { useInvalidateFinance, useAsyncAction, useDexieTable } from "@/hooks";
 
 export default function SubscriptionsPage() {
-  const { version } = useDb();
   const invalidate = useInvalidateFinance();
   const { loading: saving, run } = useAsyncAction();
-  const [subs, setSubs] = useState<Subscription[]>([]);
+  const { data: subs = [], isPending: subsPending, isError: subsError, refetch: refetchSubs } = useDexieTable(
+    "subscriptions",
+    () => db.subscriptions.filter((s) => s.isActive).toArray(),
+  );
+  const { data: detected = [], isPending: detectedPending, isError: detectedError, refetch: refetchDetected } = useDexieTable(
+    "subscription-detected",
+    async () => {
+      const tx = await getActiveTransactionsByKind("expense");
+      return detectSubscriptionsFromTransactions(tx).slice(0, 5);
+    },
+  );
+  const isPending = subsPending || detectedPending;
+  const isError = subsError || detectedError;
+  const refetch = () => {
+    void refetchSubs();
+    void refetchDetected();
+  };
   const [showForm, setShowForm] = useState(false);
   const [edit, setEdit] = useState<Subscription | null>(null);
   const [name, setName] = useState("");
@@ -34,14 +49,6 @@ export default function SubscriptionsPage() {
   const [cycle, setCycle] = useState<Subscription["billingCycle"]>("monthly");
   const [paymentMethod, setPaymentMethod] = useState("Auto Debit");
   const [renewal, setRenewal] = useState("");
-  const [detected, setDetected] = useState<ReturnType<typeof detectSubscriptionsFromTransactions>>([]);
-
-  useEffect(() => {
-    db.subscriptions.filter((s) => s.isActive).toArray().then(setSubs);
-    getActiveTransactionsByKind("expense").then((tx) =>
-      setDetected(detectSubscriptionsFromTransactions(tx).slice(0, 5)),
-    );
-  }, [version]);
 
   const monthlyTotal = subs.reduce((s, sub) => s + subscriptionMonthlyPaise(sub), 0);
 
@@ -104,12 +111,15 @@ export default function SubscriptionsPage() {
   }
 
   return (
-    <div className="mx-auto max-w-5xl space-y-8">
+    <PageContainer className="max-w-5xl">
       <PageHeader
         title="Subscriptions"
         description="Manage recurring services and their monthly impact."
         actions={<Button onClick={() => { resetForm(); setShowForm(true); }}>Add subscription</Button>}
       />
+
+      <DexiePageGate isPending={isPending} isError={isError} onRetry={() => refetch()} label="Loading subscriptions…">
+      <div className="space-y-8">
 
       <div className="grid gap-4 md:grid-cols-2">
         <StatCard label="Active subscriptions" value={subs.length} />
@@ -194,8 +204,8 @@ export default function SubscriptionsPage() {
                       <p className="font-semibold tabular-nums">{formatINR(s.amountPaise)}</p>
                       <p className="text-xs text-muted-foreground">~{formatINR(subscriptionMonthlyPaise(s))}/mo</p>
                     </div>
-                    <Button size="icon" variant="ghost" onClick={() => startEdit(s)}><Pencil size={14} /></Button>
-                    <Button size="icon" variant="ghost" onClick={() => s.id && cancel(s.id)}><Trash2 size={14} className="text-destructive" /></Button>
+                    <Button size="icon" variant="ghost" onClick={() => startEdit(s)} aria-label={`Edit ${s.name}`}><Pencil size={14} /></Button>
+                    <Button size="icon" variant="ghost" onClick={() => s.id && cancel(s.id)} aria-label={`Cancel ${s.name}`}><Trash2 size={14} className="text-destructive" /></Button>
                   </div>
                 </li>
               ))}
@@ -203,6 +213,8 @@ export default function SubscriptionsPage() {
           </CardContent>
         </Card>
       )}
-    </div>
+      </div>
+      </DexiePageGate>
+    </PageContainer>
   );
 }

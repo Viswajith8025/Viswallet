@@ -78,7 +78,18 @@ export default function TermsPage() {
 
       <section className="space-y-3">
         <h2 className="text-lg font-semibold">Contact</h2>
-        <p>See the Viswallet website or project repository for support contact details.</p>
+        <p>
+          For support, open an issue at{" "}
+          <a
+            href="https://github.com/Viswajith8025/Viswallet/issues"
+            className="font-medium text-primary underline-offset-2 hover:underline"
+            rel="noopener noreferrer"
+            target="_blank"
+          >
+            github.com/Viswajith8025/Viswallet
+          </a>
+          .
+        </p>
       </section>
     </LegalPage>
   );

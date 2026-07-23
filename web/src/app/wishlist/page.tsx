@@ -1,24 +1,26 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { Pencil, Trash2 } from "lucide-react";
-import { PageHeader, StatCard, EmptyState } from "@/components/ui/page";
+import { PageHeader, StatCard, EmptyState, PageContainer } from "@/components/ui/page";
+import { DexiePageGate } from "@/components/layout/dexie-page-gate";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input, Select, Textarea } from "@/components/ui/input";
-import { useDb } from "@/components/providers/db-provider";
 import { db } from "@/lib/db";
 import type { WishlistItem } from "@/lib/db/types";
 import { formatINR, parseRupeeInput } from "@/lib/money";
 import { Progress } from "@/components/ui/progress";
-import { useInvalidateFinance, useAsyncAction } from "@/hooks";
+import { useInvalidateFinance, useAsyncAction, useDexieTable } from "@/hooks";
 import { confirmAction } from "@/lib/store/confirm-store";
 
 export default function WishlistPage() {
-  const { version } = useDb();
   const invalidate = useInvalidateFinance();
   const { loading: saving, run } = useAsyncAction();
-  const [items, setItems] = useState<WishlistItem[]>([]);
+  const { data: items = [], isPending, isError, refetch } = useDexieTable(
+    "wishlist",
+    () => db.wishlistItems.filter((w) => !w.isPurchased).toArray(),
+  );
   const [showForm, setShowForm] = useState(false);
   const [edit, setEdit] = useState<WishlistItem | null>(null);
   const [name, setName] = useState("");
@@ -27,10 +29,6 @@ export default function WishlistPage() {
   const [priority, setPriority] = useState<WishlistItem["priority"]>("medium");
   const [url, setUrl] = useState("");
   const [notes, setNotes] = useState("");
-
-  useEffect(() => {
-    db.wishlistItems.filter((w) => !w.isPurchased).toArray().then(setItems);
-  }, [version]);
 
   const totalTarget = items.reduce((s, i) => s + i.targetPaise, 0);
   const totalSaved = items.reduce((s, i) => s + i.savedPaise, 0);
@@ -102,12 +100,15 @@ export default function WishlistPage() {
   }
 
   return (
-    <div className="mx-auto max-w-5xl space-y-8">
+    <PageContainer className="max-w-5xl">
       <PageHeader
         title="Wishlist"
         description="Save up for things you want without impulse buying."
         actions={<Button onClick={() => { resetForm(); setShowForm(true); }}>Add item</Button>}
       />
+
+      <DexiePageGate isPending={isPending} isError={isError} onRetry={() => refetch()} label="Loading wishlist…">
+      <div className="space-y-8">
 
       <div className="grid gap-4 md:grid-cols-3">
         <StatCard label="Items" value={items.length} />
@@ -155,8 +156,8 @@ export default function WishlistPage() {
                       <p className="text-xs capitalize text-muted-foreground">{w.priority} priority</p>
                     </div>
                     <div className="flex gap-1">
-                      <Button size="icon" variant="ghost" onClick={() => startEdit(w)}><Pencil size={14} /></Button>
-                      <Button size="icon" variant="ghost" onClick={() => w.id && remove(w.id)}><Trash2 size={14} className="text-destructive" /></Button>
+                      <Button size="icon" variant="ghost" onClick={() => startEdit(w)} aria-label={`Edit ${w.name}`}><Pencil size={14} /></Button>
+                      <Button size="icon" variant="ghost" onClick={() => w.id && remove(w.id)} aria-label={`Delete ${w.name}`}><Trash2 size={14} className="text-destructive" /></Button>
                     </div>
                   </div>
                   <p className="mt-2 text-sm tabular-nums">{formatINR(w.savedPaise)} / {formatINR(w.targetPaise)}</p>
@@ -175,6 +176,8 @@ export default function WishlistPage() {
           })}
         </div>
       )}
-    </div>
+      </div>
+      </DexiePageGate>
+    </PageContainer>
   );
 }

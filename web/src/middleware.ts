@@ -1,13 +1,29 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 
+function extraConnectOrigins(): string {
+  const origins = new Set<string>();
+  for (const raw of [
+    process.env.NEXT_PUBLIC_ERROR_REPORT_URL,
+    process.env.NEXT_PUBLIC_ANALYTICS_ENDPOINT,
+  ]) {
+    if (!raw?.trim()) continue;
+    try {
+      origins.add(new URL(raw.trim()).origin);
+    } catch {
+      // ignore invalid URLs
+    }
+  }
+  return origins.size ? ` ${[...origins].join(" ")}` : "";
+}
+
 const CSP = [
   "default-src 'self'",
   "script-src 'self' 'unsafe-inline'",
   "style-src 'self' 'unsafe-inline'",
   "img-src 'self' data: blob:",
   "font-src 'self'",
-  "connect-src 'self' https://*.supabase.co wss://*.supabase.co",
+  `connect-src 'self' https://*.supabase.co wss://*.supabase.co${extraConnectOrigins()}`,
   "frame-ancestors 'none'",
   "base-uri 'self'",
   "form-action 'self'",

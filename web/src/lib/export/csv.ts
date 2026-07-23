@@ -1,9 +1,10 @@
 import { format } from "date-fns";
 import type { Category, Transaction } from "@/lib/db/types";
 import { parseRupeeInput } from "@/lib/money";
+import { escapeCsvFormula } from "@/lib/security";
 
 function escapeCsv(value: string | number): string {
-  const s = String(value);
+  const s = escapeCsvFormula(String(value));
   if (s.includes(",") || s.includes('"') || s.includes("\n")) {
     return `"${s.replace(/"/g, '""')}"`;
   }

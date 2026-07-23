@@ -76,7 +76,9 @@ export default function SearchPage() {
         </div>
         <Input
           type="number"
+          label="Minimum amount (₹)"
           placeholder="Min amount (₹)"
+          aria-label="Minimum amount in rupees"
           onChange={(e) => {
             const raw = e.target.value;
             const paise = raw.trim() ? parseRupeeInput(raw) : null;

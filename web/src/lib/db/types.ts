@@ -18,6 +18,18 @@ export type DashboardWidgetId =
   | "achievements"
   | "heatmap";
 
+export const DASHBOARD_WIDGET_LABELS: Record<DashboardWidgetId, string> = {
+  hero: "Hero balance card",
+  stats: "Summary stats",
+  insights: "Smart insights",
+  recent: "Recent activity",
+  obligations: "Fixed obligations",
+  forecast: "Forecast preview",
+  "net-worth": "Net worth snapshot",
+  achievements: "Achievements progress",
+  heatmap: "Spending heatmap",
+};
+
 export interface Profile {
   id: 1;
   displayName: string;
@@ -303,10 +315,6 @@ export const DEFAULT_DASHBOARD_WIDGETS: DashboardWidgetId[] = [
   "insights",
   "recent",
   "obligations",
-  "forecast",
-  "net-worth",
-  "achievements",
-  "heatmap",
 ];
 
 export const ACCENT_PALETTES: Record<AccentColor, { primary: string; ring: string }> = {

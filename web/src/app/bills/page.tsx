@@ -1,25 +1,27 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { format, isPast, startOfDay } from "date-fns";
 import { Check, Pencil, Trash2 } from "lucide-react";
-import { PageHeader, StatCard, EmptyState } from "@/components/ui/page";
+import { PageHeader, StatCard, EmptyState, PageContainer } from "@/components/ui/page";
+import { DexiePageGate } from "@/components/layout/dexie-page-gate";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input, Select, Textarea } from "@/components/ui/input";
-import { useDb } from "@/components/providers/db-provider";
 import { db } from "@/lib/db";
 import type { Bill } from "@/lib/db/types";
 import { formatINR, parseRupeeInput } from "@/lib/money";
 import { computeBillStatus, loadBillsWithSyncedStatus } from "@/lib/bills/status";
-import { useInvalidateFinance, useAsyncAction } from "@/hooks";
+import { useInvalidateFinance, useAsyncAction, useDexieTable } from "@/hooks";
 import { confirmAction } from "@/lib/store/confirm-store";
 
 export default function BillsPage() {
-  const { version } = useDb();
   const invalidate = useInvalidateFinance();
   const { loading: saving, run } = useAsyncAction();
-  const [bills, setBills] = useState<Bill[]>([]);
+  const { data: bills = [], isPending, isError, refetch } = useDexieTable(
+    "bills",
+    () => loadBillsWithSyncedStatus(),
+  );
   const [showForm, setShowForm] = useState(false);
   const [edit, setEdit] = useState<Bill | null>(null);
   const [name, setName] = useState("");
@@ -27,10 +29,6 @@ export default function BillsPage() {
   const [dueAt, setDueAt] = useState(format(new Date(), "yyyy-MM-dd"));
   const [isRecurring, setIsRecurring] = useState(false);
   const [notes, setNotes] = useState("");
-
-  useEffect(() => {
-    loadBillsWithSyncedStatus().then(setBills);
-  }, [version]);
 
   const unpaid = bills.filter((b) => computeBillStatus(b) !== "paid");
   const dueTotal = unpaid.reduce((s, b) => s + b.amountPaise, 0);
@@ -111,12 +109,15 @@ export default function BillsPage() {
   }
 
   return (
-    <div className="mx-auto max-w-5xl space-y-8">
+    <PageContainer className="max-w-5xl">
       <PageHeader
         title="Bills"
         description="Stay ahead of due dates and recurring payments."
         actions={<Button onClick={() => { resetForm(); setShowForm(true); }}>Add bill</Button>}
       />
+
+      <DexiePageGate isPending={isPending} isError={isError} onRetry={() => refetch()} label="Loading bills…">
+      <div className="space-y-8">
 
       <div className="grid gap-4 md:grid-cols-3">
         <StatCard label="Unpaid total" value={formatINR(dueTotal)} tone={dueTotal > 0 ? "negative" : "default"} />
@@ -171,12 +172,12 @@ export default function BillsPage() {
                     <div className="flex items-center gap-2">
                       <span className="tabular-nums font-semibold">{formatINR(b.amountPaise)}</span>
                       {status !== "paid" && (
-                        <Button size="icon" variant="ghost" title="Mark paid" onClick={() => b.id && markPaid(b.id)}>
+                        <Button size="icon" variant="ghost" aria-label={`Mark ${b.name} paid`} onClick={() => b.id && markPaid(b.id)}>
                           <Check size={14} className="text-success" />
                         </Button>
                       )}
-                      <Button size="icon" variant="ghost" onClick={() => startEdit(b)}><Pencil size={14} /></Button>
-                      <Button size="icon" variant="ghost" onClick={() => b.id && remove(b.id)}><Trash2 size={14} className="text-destructive" /></Button>
+                      <Button size="icon" variant="ghost" onClick={() => startEdit(b)} aria-label={`Edit ${b.name}`}><Pencil size={14} /></Button>
+                      <Button size="icon" variant="ghost" onClick={() => b.id && remove(b.id)} aria-label={`Delete ${b.name}`}><Trash2 size={14} className="text-destructive" /></Button>
                     </div>
                   </li>
                 );
@@ -185,6 +186,8 @@ export default function BillsPage() {
           </CardContent>
         </Card>
       )}
-    </div>
+      </div>
+      </DexiePageGate>
+    </PageContainer>
   );
 }

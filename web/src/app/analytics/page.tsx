@@ -1,7 +1,7 @@
 "use client";
 
 import dynamic from "next/dynamic";
-import { PageHeader, StatCard, PageContainer } from "@/components/ui/page";
+import { PageHeader, StatCard, PageContainer, EmptyState } from "@/components/ui/page";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { FinanceGate } from "@/components/layout/finance-gate";
 import { GlobalFilterBar } from "@/components/filters/global-filter-bar";
@@ -30,6 +30,26 @@ export default function AnalyticsPage() {
           : 0;
         const heatmap = buildSpendingHeatmap(data.transactions);
         const recommendations = generateBudgetRecommendations(data);
+        const hasData = data.transactions.length > 0;
+
+        if (!hasData) {
+          return (
+            <PageContainer>
+              <FadeIn>
+                <PageHeader
+                  eyebrow={formatCycleLabel(data.monthKey)}
+                  title="Analytics"
+                  description="Category analytics, spending heatmaps, and budget intelligence."
+                />
+              </FadeIn>
+              <GlobalFilterBar />
+              <EmptyState
+                title="No spending data yet"
+                description="Add transactions to unlock charts, heatmaps, and budget recommendations."
+              />
+            </PageContainer>
+          );
+        }
 
         return (
           <PageContainer>
@@ -74,12 +94,16 @@ export default function AnalyticsPage() {
                   <CardTitle>Category recommendations</CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-2 pt-0">
-                  {recommendations.slice(0, 6).map((r) => (
+                  {recommendations.length === 0 ? (
+                    <p className="text-sm text-muted-foreground">Add more transactions for personalized recommendations.</p>
+                  ) : (
+                  recommendations.slice(0, 6).map((r) => (
                     <div key={r.category} className="flex justify-between rounded-lg bg-muted/40 px-3 py-2 text-sm">
                       <span>{r.category}</span>
                       <span className="tabular-nums font-medium">{formatINR(r.recommendedPaise)}</span>
                     </div>
-                  ))}
+                  ))
+                  )}
                 </CardContent>
               </Card>
             </div>

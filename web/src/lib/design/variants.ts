@@ -128,5 +128,6 @@ export const toastVariants = {
     default: "border-border bg-elevated/95",
     success: "border-success/25 bg-success-muted/95 text-success",
     warning: "border-warning/25 bg-warning-muted/95 text-warning",
+    error: "border-destructive/25 bg-destructive/10 text-destructive",
   },
 } as const;

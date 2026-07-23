@@ -28,7 +28,7 @@ import { categoryMap } from "@/lib/engines/finance-snapshot";
 import { getCurrentCycleKey } from "@/lib/salary-cycle";
 import { applyAccentColor } from "@/lib/theme/accent";
 import type { AccentColor, DashboardWidgetId } from "@/lib/db/types";
-import { DEFAULT_DASHBOARD_WIDGETS } from "@/lib/db/types";
+import { DEFAULT_DASHBOARD_WIDGETS, DASHBOARD_WIDGET_LABELS } from "@/lib/db/types";
 import {
   toSecureMessage,
   wrapEncryptedExport,
@@ -68,17 +68,21 @@ export default function SettingsPage() {
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
   const [auditLogs, setAuditLogs] = useState<AuditLog[]>([]);
+  const [settingsLoaded, setSettingsLoaded] = useState(false);
 
   useEffect(() => {
-    getSettings().then((s) => {
-      setTheme(s.themeMode);
-      setAccent(s.accentColor ?? "violet");
-      setBiometricEnabled(s.biometricEnabled ?? false);
-      setWidgets(s.dashboardWidgets ?? DEFAULT_DASHBOARD_WIDGETS);
-      setAppLockEnabled(s.appLockEnabled);
-      setAutoLockMinutes(String(s.autoLockMinutes ?? 15));
-    });
-    getRecentAuditLogs(20).then(setAuditLogs);
+    Promise.all([getSettings(), getRecentAuditLogs(20)])
+      .then(([s, logs]) => {
+        setTheme(s.themeMode);
+        setAccent(s.accentColor ?? "violet");
+        setBiometricEnabled(s.biometricEnabled ?? false);
+        setWidgets(s.dashboardWidgets ?? DEFAULT_DASHBOARD_WIDGETS);
+        setAppLockEnabled(s.appLockEnabled);
+        setAutoLockMinutes(String(s.autoLockMinutes ?? 15));
+        setAuditLogs(logs);
+      })
+      .catch(() => setError("Could not load settings."))
+      .finally(() => setSettingsLoaded(true));
   }, []);
 
   function flash(msg: string) {
@@ -280,14 +284,24 @@ export default function SettingsPage() {
     });
     if (!ok) return;
     setResetting(true);
-    await logAudit("data.reset", { success: true });
-    await db.delete();
-    window.location.href = "/onboarding";
+    try {
+      await logAudit("data.reset", { success: true });
+      await db.delete();
+      window.location.href = "/onboarding";
+    } catch {
+      setError("Reset failed. Please try again.");
+      setResetting(false);
+    }
   }
 
   return (
     <PageContainer className="max-w-5xl">
       <PageHeader title="Settings" description="Security, appearance, backups, and data management." />
+
+      {!settingsLoaded ? (
+        <p className="text-sm text-muted-foreground">Loading settings…</p>
+      ) : (
+      <>
 
       {success && <SuccessBanner message={success} />}
       {error && (
@@ -382,7 +396,7 @@ export default function SettingsPage() {
             <option value="slate">Slate</option>
           </Select>
           <Checkbox
-            label="Biometric unlock (WebAuthn — future-ready on supported devices)"
+            label="Biometric unlock (WebAuthn on supported devices)"
             checked={biometricEnabled}
             onChange={(e) => handleBiometricToggle(e.target.checked)}
           />
@@ -397,10 +411,10 @@ export default function SettingsPage() {
           {DEFAULT_DASHBOARD_WIDGETS.map((id) => (
             <Checkbox
               key={id}
-              label={id.replace("-", " ")}
+              label={DASHBOARD_WIDGET_LABELS[id]}
               checked={widgets.includes(id)}
               onChange={() => toggleWidget(id)}
-              className="rounded-lg border border-border/60 px-3 py-2 capitalize"
+              className="rounded-lg border border-border/60 px-3 py-2"
             />
           ))}
         </CardContent>
@@ -533,6 +547,8 @@ export default function SettingsPage() {
           </div>
         </CardContent>
       </Card>
+      </>
+      )}
     </PageContainer>
   );
 }

@@ -3,6 +3,7 @@ import type { FinanceSnapshot } from "@/lib/engines/finance-snapshot";
 import { sumByCategory } from "@/lib/engines/finance-snapshot";
 import { formatINR } from "@/lib/money";
 import { formatCycleLabel } from "@/lib/salary-cycle";
+import { escapeHtml } from "@/lib/security";
 
 export type ReportPeriod = "monthly" | "yearly";
 
@@ -65,10 +66,13 @@ export function buildFinancialReport(
 }
 
 export function reportToPrintHtml(report: FinancialReport): string {
+  const title = escapeHtml(report.title);
+  const cycleLabel = escapeHtml(report.cycleLabel);
+  const generatedAt = escapeHtml(format(report.generatedAt, "PPP p"));
   const rows = report.categories
     .map(
       (c) =>
-        `<tr><td>${c.name}</td><td style="text-align:right">${formatINR(c.amount)}</td><td style="text-align:right">${c.pct}%</td></tr>`,
+        `<tr><td>${escapeHtml(c.name)}</td><td style="text-align:right">${formatINR(c.amount)}</td><td style="text-align:right">${c.pct}%</td></tr>`,
     )
     .join("");
 
@@ -76,7 +80,7 @@ export function reportToPrintHtml(report: FinancialReport): string {
 <html>
 <head>
   <meta charset="utf-8" />
-  <title>${report.title}</title>
+  <title>${title}</title>
   <style>
     body { font-family: system-ui, sans-serif; padding: 40px; color: #2d2540; background: #fefacd; }
     h1 { font-size: 24px; margin-bottom: 4px; color: #5f4a8b; }
@@ -92,8 +96,8 @@ export function reportToPrintHtml(report: FinancialReport): string {
   </style>
 </head>
 <body>
-  <h1>${report.title}</h1>
-  <p class="meta">${report.cycleLabel} · Generated ${format(report.generatedAt, "PPP p")}</p>
+  <h1>${title}</h1>
+  <p class="meta">${cycleLabel} · Generated ${generatedAt}</p>
   <div class="grid">
     <div class="card"><div class="label">Income</div><div class="value">${formatINR(report.summary.income)}</div></div>
     <div class="card"><div class="label">Expenses</div><div class="value">${formatINR(report.summary.expenses)}</div></div>

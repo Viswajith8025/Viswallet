@@ -1,25 +1,27 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { Pencil, Trash2, TrendingDown, TrendingUp } from "lucide-react";
-import { PageHeader, StatCard, EmptyState } from "@/components/ui/page";
+import { PageHeader, StatCard, EmptyState, PageContainer } from "@/components/ui/page";
+import { DexiePageGate } from "@/components/layout/dexie-page-gate";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input, Select, Textarea } from "@/components/ui/input";
-import { useDb } from "@/components/providers/db-provider";
 import { db } from "@/lib/db";
 import type { Investment } from "@/lib/db/types";
 import { formatINR, parseRupeeInput } from "@/lib/money";
-import { useInvalidateFinance, useAsyncAction } from "@/hooks";
+import { useInvalidateFinance, useAsyncAction, useDexieTable } from "@/hooks";
 import { confirmAction } from "@/lib/store/confirm-store";
 
 const TYPES: Investment["type"][] = ["mutual_fund", "stock", "fd", "gold", "crypto", "other"];
 
 export default function InvestmentsPage() {
-  const { version } = useDb();
   const invalidate = useInvalidateFinance();
   const { loading: saving, run } = useAsyncAction();
-  const [items, setItems] = useState<Investment[]>([]);
+  const { data: items = [], isPending, isError, refetch } = useDexieTable(
+    "investments",
+    () => db.investments.toArray(),
+  );
   const [showForm, setShowForm] = useState(false);
   const [edit, setEdit] = useState<Investment | null>(null);
   const [name, setName] = useState("");
@@ -28,10 +30,6 @@ export default function InvestmentsPage() {
   const [current, setCurrent] = useState("");
   const [platform, setPlatform] = useState("");
   const [notes, setNotes] = useState("");
-
-  useEffect(() => {
-    db.investments.toArray().then(setItems);
-  }, [version]);
 
   const totalInvested = items.reduce((s, i) => s + i.investedPaise, 0);
   const totalCurrent = items.reduce((s, i) => s + i.currentValuePaise, 0);
@@ -100,12 +98,15 @@ export default function InvestmentsPage() {
   }
 
   return (
-    <div className="mx-auto max-w-5xl space-y-8">
+    <PageContainer className="max-w-5xl">
       <PageHeader
         title="Investments"
         description="Track your portfolio value and gains."
         actions={<Button onClick={() => { resetForm(); setShowForm(true); }}>Add investment</Button>}
       />
+
+      <DexiePageGate isPending={isPending} isError={isError} onRetry={() => refetch()} label="Loading investments…">
+      <div className="space-y-8">
 
       <div className="grid gap-4 md:grid-cols-3">
         <StatCard label="Current value" value={formatINR(totalCurrent)} tone="primary" />
@@ -167,8 +168,8 @@ export default function InvestmentsPage() {
                           {positive ? "+" : ""}{formatINR(gain)} ({pct}%)
                         </p>
                       </div>
-                      <Button size="icon" variant="ghost" onClick={() => startEdit(i)}><Pencil size={14} /></Button>
-                      <Button size="icon" variant="ghost" onClick={() => i.id && remove(i.id)}><Trash2 size={14} className="text-destructive" /></Button>
+                      <Button size="icon" variant="ghost" onClick={() => startEdit(i)} aria-label={`Edit ${i.name}`}><Pencil size={14} /></Button>
+                      <Button size="icon" variant="ghost" onClick={() => i.id && remove(i.id)} aria-label={`Delete ${i.name}`}><Trash2 size={14} className="text-destructive" /></Button>
                     </div>
                   </li>
                 );
@@ -177,6 +178,8 @@ export default function InvestmentsPage() {
           </CardContent>
         </Card>
       )}
-    </div>
+      </div>
+      </DexiePageGate>
+    </PageContainer>
   );
 }

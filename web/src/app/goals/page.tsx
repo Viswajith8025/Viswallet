@@ -1,13 +1,13 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { format } from "date-fns";
 import { Pencil, Plus, Trash2 } from "lucide-react";
-import { PageHeader, StatCard, EmptyState } from "@/components/ui/page";
+import { PageHeader, StatCard, EmptyState, PageContainer } from "@/components/ui/page";
+import { DexiePageGate } from "@/components/layout/dexie-page-gate";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { useDb } from "@/components/providers/db-provider";
 import { db } from "@/lib/db";
 import type { SavingsGoal } from "@/lib/db/types";
 import { formatINR, parseRupeeInput } from "@/lib/money";
@@ -16,13 +16,16 @@ import { confirmAction } from "@/lib/store/confirm-store";
 import { showToast } from "@/lib/store/toast-store";
 import { Progress } from "@/components/ui/progress";
 import { Hint } from "@/components/ui/hint";
-import { useInvalidateFinance, useAsyncAction } from "@/hooks";
+import { useInvalidateFinance, useAsyncAction, useDexieTable } from "@/hooks";
+import { sanitizeName } from "@/lib/security";
 
 export default function GoalsPage() {
-  const { version } = useDb();
   const invalidate = useInvalidateFinance();
   const { loading: saving, run } = useAsyncAction();
-  const [goals, setGoals] = useState<SavingsGoal[]>([]);
+  const { data: goals = [], isPending, isError, refetch } = useDexieTable(
+    "savings-goals",
+    () => db.savingsGoals.filter((g) => g.isActive).toArray(),
+  );
   const [showForm, setShowForm] = useState(false);
   const [edit, setEdit] = useState<SavingsGoal | null>(null);
   const [name, setName] = useState("");
@@ -32,10 +35,7 @@ export default function GoalsPage() {
   const [targetDate, setTargetDate] = useState("");
   const [fundGoalId, setFundGoalId] = useState<number | null>(null);
   const [fundAmount, setFundAmount] = useState("");
-
-  useEffect(() => {
-    db.savingsGoals.filter((g) => g.isActive).toArray().then(setGoals);
-  }, [version]);
+  const [formError, setFormError] = useState<string | null>(null);
 
   const totalSaved = goals.reduce((s, g) => s + g.savedPaise, 0);
   const totalTarget = goals.reduce((s, g) => s + g.targetPaise, 0);
@@ -62,13 +62,21 @@ export default function GoalsPage() {
 
   async function save(e: React.FormEvent) {
     e.preventDefault();
+    setFormError(null);
     const targetPaise = parseRupeeInput(target);
     const savedPaise = parseRupeeInput(saved);
-    if (!name.trim() || targetPaise <= 0) return;
+    if (!name.trim()) {
+      setFormError("Enter a goal name.");
+      return;
+    }
+    if (targetPaise <= 0) {
+      setFormError("Enter a target amount greater than zero.");
+      return;
+    }
     await run(async () => {
       const now = new Date();
       const payload = {
-        name: name.trim(),
+        name: sanitizeName(name),
         targetPaise,
         savedPaise,
         monthlyContributionPaise: parseRupeeInput(monthly),
@@ -124,12 +132,15 @@ export default function GoalsPage() {
   }
 
   return (
-    <div className="mx-auto max-w-5xl space-y-8">
+    <PageContainer className="max-w-5xl">
       <PageHeader
         title="Savings Goals"
         description="Set targets and watch your progress grow."
         actions={<Button onClick={() => { resetForm(); setShowForm(true); }}>Add goal</Button>}
       />
+
+      <DexiePageGate isPending={isPending} isError={isError} onRetry={() => refetch()} label="Loading goals…">
+      <div className="space-y-8">
 
       <div className="grid gap-4 md:grid-cols-3">
         <StatCard label="Total saved" value={formatINR(totalSaved)} tone="positive" />
@@ -151,6 +162,7 @@ export default function GoalsPage() {
               <Input label="Monthly contribution (INR)" type="number" value={monthly} onChange={(e) => setMonthly(e.target.value)} />
               <Input label="Target date" type="date" value={targetDate} onChange={(e) => setTargetDate(e.target.value)} />
               <div className="flex gap-2 md:col-span-2">
+                {formError && <p className="w-full text-sm text-destructive" role="alert">{formError}</p>}
                 <Button type="submit" disabled={saving}>{saving ? "Saving…" : edit ? "Update" : "Save"}</Button>
                 <Button type="button" variant="ghost" onClick={resetForm}>Cancel</Button>
               </div>
@@ -198,8 +210,8 @@ export default function GoalsPage() {
                       <Button size="sm" variant="outline" onClick={() => setFundGoalId(g.id!)}>
                         <Plus size={14} /> Fund
                       </Button>
-                      <Button size="icon" variant="ghost" onClick={() => startEdit(g)}><Pencil size={14} /></Button>
-                      <Button size="icon" variant="ghost" onClick={() => g.id && remove(g.id)}><Trash2 size={14} className="text-destructive" /></Button>
+                      <Button size="icon" variant="ghost" onClick={() => startEdit(g)} aria-label={`Edit ${g.name}`}><Pencil size={14} /></Button>
+                      <Button size="icon" variant="ghost" onClick={() => g.id && remove(g.id)} aria-label={`Delete ${g.name}`}><Trash2 size={14} className="text-destructive" /></Button>
                     </div>
                   </div>
                   <Progress value={pct} max={100} size="lg" color="var(--success)" className="mt-3" />
@@ -218,6 +230,8 @@ export default function GoalsPage() {
           })}
         </div>
       )}
-    </div>
+      </div>
+      </DexiePageGate>
+    </PageContainer>
   );
 }

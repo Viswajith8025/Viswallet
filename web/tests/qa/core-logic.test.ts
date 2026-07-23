@@ -132,3 +132,35 @@ describe("formatCycleLabel", () => {
     expect(formatCycleLabel("2026-03")).toBe("Mar 2026");
   });
 });
+
+describe("security sanitization", () => {
+  it("escapes HTML for print/export", async () => {
+    const { escapeHtml } = await import("@/lib/security");
+    expect(escapeHtml('<script>alert("x")</script>')).toBe(
+      "&lt;script&gt;alert(&quot;x&quot;)&lt;/script&gt;",
+    );
+  });
+
+  it("prefixes spreadsheet formula injection in CSV", async () => {
+    const { escapeCsvFormula } = await import("@/lib/security");
+    expect(escapeCsvFormula("=1+1")).toBe("'=1+1");
+    expect(escapeCsvFormula("normal")).toBe("normal");
+  });
+
+  it("strips PIN material from settings backups", async () => {
+    const { stripSensitiveSettings } = await import("@/lib/security");
+    const result = stripSensitiveSettings([
+      {
+        id: "default",
+        pinHash: "hash",
+        pinSalt: "salt",
+        failedPinAttempts: 3,
+        pinLockedUntil: "2026-01-01",
+        theme: "system",
+      },
+    ]);
+    expect(result[0]).not.toHaveProperty("pinHash");
+    expect(result[0]).not.toHaveProperty("pinSalt");
+    expect(result[0]).toHaveProperty("theme", "system");
+  });
+});

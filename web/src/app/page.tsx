@@ -22,20 +22,28 @@ import { FadeIn, Stagger, StaggerItem } from "@/components/ui/motion";
 import { formatINR } from "@/lib/money";
 import { formatCycleLabel } from "@/lib/salary-cycle";
 import { categoryMap } from "@/lib/engines/finance-snapshot";
-import { getSettings } from "@/lib/db";
+import { getProfile, getSettings } from "@/lib/db";
 import { DEFAULT_DASHBOARD_WIDGETS, type DashboardWidgetId } from "@/lib/db/types";
 import { format } from "date-fns";
+
+function greeting(name?: string): string {
+  const hour = new Date().getHours();
+  const time =
+    hour < 12 ? "Good morning" : hour < 17 ? "Good afternoon" : "Good evening";
+  return name?.trim() ? `${time}, ${name.trim()}` : time;
+}
 
 export default function DashboardPage() {
   const router = useRouter();
   const [widgets, setWidgets] = useState<DashboardWidgetId[]>(DEFAULT_DASHBOARD_WIDGETS);
+  const [displayName, setDisplayName] = useState("");
 
   useEffect(() => {
     getSettings().then((s) => {
-      if (!s.onboardingComplete) router.replace("/onboarding");
       setWidgets(s.dashboardWidgets ?? DEFAULT_DASHBOARD_WIDGETS);
     });
-  }, [router]);
+    getProfile().then((p) => setDisplayName(p.displayName));
+  }, []);
 
   const show = (id: DashboardWidgetId) => widgets.includes(id);
 
@@ -53,7 +61,7 @@ export default function DashboardPage() {
             <FadeIn>
               <PageHeader
                 eyebrow={formatCycleLabel(data.monthKey)}
-                title="Good to see you"
+                title={greeting(displayName)}
                 description="A calm overview of your money this salary cycle."
                 actions={
                   <Button onClick={() => router.push("/transactions?add=expense")}>
@@ -139,6 +147,31 @@ export default function DashboardPage() {
                 />
               </StaggerItem>
             </Stagger>
+            )}
+
+            {show("obligations") && (
+            <Card>
+              <CardHeader>
+                <CardTitle>Fixed obligations</CardTitle>
+              </CardHeader>
+              <CardContent className="grid gap-4 sm:grid-cols-3">
+                <div className="rounded-xl border border-border/60 bg-muted/30 p-4">
+                  <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Subscriptions</p>
+                  <p className="mt-1 text-xl font-semibold tabular-nums">{formatINR(data.subscriptionMonthlyPaise)}</p>
+                  <p className="mt-1 text-xs text-muted-foreground">Monthly run rate</p>
+                </div>
+                <div className="rounded-xl border border-border/60 bg-muted/30 p-4">
+                  <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Bills due</p>
+                  <p className="mt-1 text-xl font-semibold tabular-nums">{formatINR(data.billsDuePaise)}</p>
+                  <p className="mt-1 text-xs text-muted-foreground">Outstanding this cycle</p>
+                </div>
+                <div className="rounded-xl border border-border/60 bg-muted/30 p-4">
+                  <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">EMI outflow</p>
+                  <p className="mt-1 text-xl font-semibold tabular-nums">{formatINR(data.emiMonthlyPaise)}</p>
+                  <p className="mt-1 text-xs text-muted-foreground">Monthly payments</p>
+                </div>
+              </CardContent>
+            </Card>
             )}
 
             {(show("recent") || show("insights")) && (

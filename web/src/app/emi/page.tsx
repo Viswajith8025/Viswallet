@@ -1,24 +1,26 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { format } from "date-fns";
 import { Pencil, Trash2 } from "lucide-react";
-import { PageHeader, StatCard, EmptyState } from "@/components/ui/page";
+import { PageHeader, StatCard, EmptyState, PageContainer } from "@/components/ui/page";
+import { DexiePageGate } from "@/components/layout/dexie-page-gate";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { useDb } from "@/components/providers/db-provider";
 import { db } from "@/lib/db";
 import type { Emi } from "@/lib/db/types";
 import { formatINR, parseRupeeInput, parseInterestRate } from "@/lib/money";
 import { Progress } from "@/components/ui/progress";
-import { useInvalidateFinance } from "@/hooks/use-invalidate-finance";
+import { useInvalidateFinance, useDexieTable } from "@/hooks";
 import { confirmAction } from "@/lib/store/confirm-store";
 
 export default function EmiPage() {
-  const { version } = useDb();
   const invalidate = useInvalidateFinance();
-  const [emis, setEmis] = useState<Emi[]>([]);
+  const { data: emis = [], isPending, isError, refetch } = useDexieTable(
+    "emis",
+    () => db.emis.filter((e) => e.isActive).toArray(),
+  );
   const [showForm, setShowForm] = useState(false);
   const [edit, setEdit] = useState<Emi | null>(null);
   const [name, setName] = useState("");
@@ -30,10 +32,6 @@ export default function EmiPage() {
   const [tenure, setTenure] = useState("");
   const [nextDue, setNextDue] = useState(format(new Date(), "yyyy-MM-dd"));
   const [saving, setSaving] = useState(false);
-
-  useEffect(() => {
-    db.emis.filter((e) => e.isActive).toArray().then(setEmis);
-  }, [version]);
 
   const monthlyTotal = emis.reduce((s, e) => s + e.emiAmountPaise, 0);
   const totalBalance = emis.reduce((s, e) => s + e.balancePaise, 0);
@@ -129,12 +127,15 @@ export default function EmiPage() {
   }
 
   return (
-    <div className="mx-auto max-w-5xl space-y-8">
+    <PageContainer className="max-w-5xl">
       <PageHeader
         title="EMI Tracker"
         description="Monitor loan EMIs, balances, and upcoming due dates."
         actions={<Button onClick={() => { resetForm(); setShowForm(true); }}>Add EMI</Button>}
       />
+
+      <DexiePageGate isPending={isPending} isError={isError} onRetry={() => refetch()} label="Loading EMIs…">
+      <div className="space-y-8">
 
       <div className="grid gap-4 md:grid-cols-3">
         <StatCard label="Monthly outflow" value={formatINR(monthlyTotal)} tone="negative" />
@@ -182,14 +183,16 @@ export default function EmiPage() {
                           {e.lender} · {e.interestRate}% · Due {format(new Date(e.nextDueAt), "dd MMM")}
                         </p>
                       </div>
-                      <div className="flex items-center gap-2">
+                    <div className="flex flex-col items-end gap-2 sm:flex-row sm:items-center">
                         <div className="text-right">
                           <p className="font-semibold tabular-nums">{formatINR(e.emiAmountPaise)}/mo</p>
                           <p className="text-xs text-muted-foreground">{formatINR(e.balancePaise)} left</p>
                         </div>
+                        <div className="flex flex-wrap items-center justify-end gap-1">
                         <Button size="sm" variant="outline" onClick={() => e.id && recordPayment(e.id)}>Pay EMI</Button>
-                        <Button size="icon" variant="ghost" onClick={() => startEdit(e)}><Pencil size={14} /></Button>
-                        <Button size="icon" variant="ghost" onClick={() => e.id && remove(e.id)}><Trash2 size={14} className="text-destructive" /></Button>
+                        <Button size="icon" variant="ghost" onClick={() => startEdit(e)} aria-label={`Edit ${e.name}`}><Pencil size={14} /></Button>
+                        <Button size="icon" variant="ghost" onClick={() => e.id && remove(e.id)} aria-label={`Delete ${e.name}`}><Trash2 size={14} className="text-destructive" /></Button>
+                        </div>
                       </div>
                     </div>
                     <Progress value={progress} max={100} size="lg" className="mt-3" />
@@ -201,6 +204,8 @@ export default function EmiPage() {
           </CardContent>
         </Card>
       )}
-    </div>
+      </div>
+      </DexiePageGate>
+    </PageContainer>
   );
 }

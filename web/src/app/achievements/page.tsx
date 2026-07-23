@@ -4,7 +4,7 @@ import { useQuery } from "@tanstack/react-query";
 import {
   Award, Receipt, Target, PiggyBank, TrendingUp, Shield, HardDrive, Flame, List, LineChart,
 } from "lucide-react";
-import { PageHeader, PageContainer } from "@/components/ui/page";
+import { PageHeader, PageContainer, EmptyState } from "@/components/ui/page";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { db } from "@/lib/db";
@@ -31,6 +31,12 @@ export default function AchievementsPage() {
         description={`${unlocked} of ${achievements.length} milestones unlocked.`}
       />
 
+      {achievements.length === 0 ? (
+        <EmptyState
+          title="No milestones yet"
+          description="Track transactions, hit savings goals, and stay consistent to unlock achievements."
+        />
+      ) : (
       <div className="grid gap-4 sm:grid-cols-2">
         {achievements.map((a) => {
           const Icon = ICONS[a.iconName] ?? Award;
@@ -74,6 +80,7 @@ export default function AchievementsPage() {
           );
         })}
       </div>
+      )}
     </PageContainer>
   );
 }

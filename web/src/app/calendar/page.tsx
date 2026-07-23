@@ -1,13 +1,14 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import { format, isSameDay, startOfDay } from "date-fns";
 import { CreditCard, Receipt, Repeat } from "lucide-react";
-import { PageHeader, EmptyState } from "@/components/ui/page";
+import { PageHeader, EmptyState, PageContainer } from "@/components/ui/page";
+import { DexiePageGate } from "@/components/layout/dexie-page-gate";
 import { Card, CardContent } from "@/components/ui/card";
-import { useDb } from "@/components/providers/db-provider";
 import { db } from "@/lib/db";
 import { formatINR } from "@/lib/money";
+import { useDexieTable } from "@/hooks";
 
 type CalendarEvent = {
   id: string;
@@ -18,12 +19,9 @@ type CalendarEvent = {
 };
 
 export default function CalendarPage() {
-  const { version } = useDb();
-  const [events, setEvents] = useState<CalendarEvent[]>([]);
-  const [selected, setSelected] = useState(format(new Date(), "yyyy-MM-dd"));
-
-  useEffect(() => {
-    (async () => {
+  const { data: events = [], isPending, isError, refetch } = useDexieTable(
+    "calendar-events",
+    async () => {
       const [bills, emis, subs] = await Promise.all([
         db.bills.filter((b) => b.status !== "paid").toArray(),
         db.emis.filter((e) => e.isActive).toArray(),
@@ -53,9 +51,10 @@ export default function CalendarPage() {
         })),
       ];
       all.sort((a, b) => a.date.getTime() - b.date.getTime());
-      setEvents(all);
-    })();
-  }, [version]);
+      return all;
+    },
+  );
+  const [selected, setSelected] = useState(format(new Date(), "yyyy-MM-dd"));
 
   const grouped = useMemo(() => {
     const map = new Map<string, CalendarEvent[]>();
@@ -74,11 +73,14 @@ export default function CalendarPage() {
   const color = { bill: "text-destructive", emi: "text-primary", subscription: "text-muted-foreground" };
 
   return (
-    <div className="mx-auto max-w-5xl space-y-8">
+    <PageContainer className="max-w-5xl">
       <PageHeader
         title="Calendar"
         description="Upcoming bills, EMIs, and subscription renewals."
       />
+
+      <DexiePageGate isPending={isPending} isError={isError} onRetry={() => refetch()} label="Loading calendar…">
+      <div className="space-y-8">
 
       <div className="grid gap-6 lg:grid-cols-3">
         <Card className="lg:col-span-1">
@@ -162,6 +164,8 @@ export default function CalendarPage() {
           </Card>
         </div>
       </div>
-    </div>
+      </div>
+      </DexiePageGate>
+    </PageContainer>
   );
 }

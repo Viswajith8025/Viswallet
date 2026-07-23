@@ -1,3 +1,4 @@
+# DEPRECATED — use supabase/setup.sql instead (canonical, complete RLS for all 22 tables).
 # Viswallet — Supabase RLS Policies
 # Apply when enabling cloud sync. All tables are scoped to auth.uid().
 

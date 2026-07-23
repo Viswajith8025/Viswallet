@@ -8,7 +8,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { db } from "@/lib/db";
-import { sanitizeTitle } from "@/lib/security";
+import { sanitizeTitle, sanitizeNotes } from "@/lib/security";
 import { useAsyncAction } from "@/hooks";
 import { confirmAction } from "@/lib/store/confirm-store";
 
@@ -31,7 +31,7 @@ export default function NotesPage() {
       const now = new Date();
       await db.secureNotes.add({
         title: sanitizeTitle(title),
-        body: body.trim(),
+        body: sanitizeNotes(body) ?? "",
         tags: [],
         isPinned: false,
         createdAt: now,
@@ -82,8 +82,12 @@ export default function NotesPage() {
         <Card>
           <CardContent className="p-5">
             <form onSubmit={handleAdd} className="space-y-3">
-              <Input placeholder="Title" value={title} onChange={(e) => setTitle(e.target.value)} required />
+              <Input label="Title" placeholder="Title" value={title} onChange={(e) => setTitle(e.target.value)} required />
+              <label className="block text-sm font-medium" htmlFor="note-body">
+                Note
+              </label>
               <textarea
+                id="note-body"
                 className="min-h-[120px] w-full rounded-xl border border-input bg-background px-3 py-2 text-sm"
                 placeholder="Note content..."
                 value={body}
@@ -117,10 +121,10 @@ export default function NotesPage() {
                   <div className="flex gap-1">
                     {n.id && (
                       <>
-                        <Button size="icon" variant="ghost" onClick={() => togglePin(n.id!, n.isPinned)}>
+                        <Button size="icon" variant="ghost" onClick={() => togglePin(n.id!, n.isPinned)} aria-label={n.isPinned ? `Unpin ${n.title}` : `Pin ${n.title}`}>
                           <Pin size={16} />
                         </Button>
-                        <Button size="icon" variant="ghost" onClick={() => remove(n.id!)}>
+                        <Button size="icon" variant="ghost" onClick={() => remove(n.id!)} aria-label={`Delete ${n.title}`}>
                           <Trash2 size={16} />
                         </Button>
                       </>

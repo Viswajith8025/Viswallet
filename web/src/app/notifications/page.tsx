@@ -1,35 +1,35 @@
 "use client";
 
-import { useEffect, useState } from "react";
 import Link from "next/link";
 import { formatDistanceToNow } from "date-fns";
-import { Bell, CheckCheck } from "lucide-react";
-import { PageHeader, EmptyState, StatCard } from "@/components/ui/page";
+import { CheckCheck } from "lucide-react";
+import { PageHeader, EmptyState, StatCard, PageContainer } from "@/components/ui/page";
+import { DexiePageGate } from "@/components/layout/dexie-page-gate";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { useDb } from "@/components/providers/db-provider";
 import { db } from "@/lib/db";
 import type { AppNotification } from "@/lib/db/types";
+import { useDexieTable } from "@/hooks";
 
 export default function NotificationsPage() {
-  const { version, refresh } = useDb();
-  const [notifications, setNotifications] = useState<AppNotification[]>([]);
-
-  useEffect(() => {
-    db.notifications.orderBy("createdAt").reverse().toArray().then(setNotifications);
-  }, [version]);
+  const { refresh } = useDb();
+  const { data: notifications = [], isPending, isError, refetch } = useDexieTable(
+    "notifications",
+    () => db.notifications.orderBy("createdAt").reverse().toArray(),
+  );
 
   const unread = notifications.filter((n) => !n.read).length;
 
   async function markRead(id: number) {
     await db.notifications.update(id, { read: true });
-    refresh();
+    await refresh();
   }
 
   async function markAllRead() {
     const unreadIds = notifications.filter((n) => !n.read && n.id).map((n) => n.id!);
     await Promise.all(unreadIds.map((id) => db.notifications.update(id, { read: true })));
-    refresh();
+    await refresh();
   }
 
   const typeColor: Record<AppNotification["type"], string> = {
@@ -45,7 +45,7 @@ export default function NotificationsPage() {
   };
 
   return (
-    <div className="mx-auto max-w-5xl space-y-8">
+    <PageContainer className="max-w-5xl">
       <PageHeader
         title="Notifications"
         description="Reminders and insights from your finances."
@@ -58,13 +58,15 @@ export default function NotificationsPage() {
         }
       />
 
+      <DexiePageGate isPending={isPending} isError={isError} onRetry={() => refetch()} label="Loading notifications…">
+      <div className="space-y-8">
+
       <StatCard label="Unread" value={unread} tone={unread > 0 ? "negative" : "default"} />
 
       {notifications.length === 0 ? (
         <EmptyState
           title="No notifications"
           description="You'll see bill reminders and insights here."
-          action={<Bell size={32} className="mx-auto text-muted-foreground" />}
         />
       ) : (
         <Card>
@@ -102,6 +104,8 @@ export default function NotificationsPage() {
           </CardContent>
         </Card>
       )}
-    </div>
+      </div>
+      </DexiePageGate>
+    </PageContainer>
   );
 }

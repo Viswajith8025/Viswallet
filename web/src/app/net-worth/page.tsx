@@ -1,7 +1,7 @@
 "use client";
 
 import { useQuery } from "@tanstack/react-query";
-import { PageHeader, StatCard, PageContainer } from "@/components/ui/page";
+import { PageHeader, StatCard, PageContainer, EmptyState } from "@/components/ui/page";
 import { FinanceGate } from "@/components/layout/finance-gate";
 import { GlobalFilterBar } from "@/components/filters/global-filter-bar";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -10,7 +10,7 @@ import { formatINR } from "@/lib/money";
 import { formatCycleLabel } from "@/lib/salary-cycle";
 
 export default function NetWorthPage() {
-  const { data: trend = [] } = useQuery({
+  const { data: trend = [], isPending: trendPending } = useQuery({
     queryKey: ["net-worth-trend"],
     queryFn: () => getNetWorthTrend(12),
   });
@@ -40,12 +40,16 @@ export default function NetWorthPage() {
             <Card className="border-primary/15 bg-elevated">
               <CardContent className="p-8 text-center">
                 <p className="text-sm text-muted-foreground">Total net worth</p>
-                <p className="mt-2 text-5xl font-semibold tabular-nums tracking-tight">{formatINR(data.netWorthPaise)}</p>
+                <p className="mt-2 text-3xl font-semibold tabular-nums tracking-tight sm:text-5xl">{formatINR(data.netWorthPaise)}</p>
                 <p className="mt-3 text-sm text-muted-foreground">Health score {data.healthScore}/100</p>
               </CardContent>
             </Card>
 
-            {trend.length > 0 && (
+            {trendPending ? (
+              <Card>
+                <CardContent className="p-8 text-center text-sm text-muted-foreground">Loading trend…</CardContent>
+              </Card>
+            ) : trend.length > 0 ? (
               <Card>
                 <CardHeader>
                   <CardTitle className="text-base">Net worth trend</CardTitle>
@@ -67,6 +71,11 @@ export default function NetWorthPage() {
                   </div>
                 </CardContent>
               </Card>
+            ) : (
+              <EmptyState
+                title="No trend data yet"
+                description="Snapshots are recorded each salary cycle. Check back after your next cycle."
+              />
             )}
 
             <div className="grid gap-4 md:grid-cols-2">

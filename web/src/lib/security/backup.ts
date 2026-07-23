@@ -68,3 +68,20 @@ export async function wrapEncryptedExport(json: string, passphrase: string): Pro
   const encrypted = await encryptBackup(json, passphrase);
   return `${ENCRYPTED_BACKUP_PREFIX}${encrypted}`;
 }
+
+/** Remove app-lock secrets from settings rows before backup export/import. */
+export function stripSensitiveSettings<S extends object>(settings: S[]): S[] {
+  return settings.map((row) => {
+    const copy = { ...row } as S & {
+      pinHash?: unknown;
+      pinSalt?: unknown;
+      failedPinAttempts?: unknown;
+      pinLockedUntil?: unknown;
+    };
+    delete copy.pinHash;
+    delete copy.pinSalt;
+    delete copy.failedPinAttempts;
+    delete copy.pinLockedUntil;
+    return copy as S;
+  });
+}
