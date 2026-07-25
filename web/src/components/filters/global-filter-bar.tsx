@@ -45,12 +45,12 @@ export function GlobalFilterBar() {
     cycleKey !== currentKey || accountId || kind !== "all" || categoryId;
 
   return (
-    <div className="rounded-xl border border-border/60 bg-card/60 p-3 backdrop-blur-sm">
-      <div className="-mx-1 flex items-center gap-2 overflow-x-auto px-1 pb-0.5 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+    <div className="flex flex-wrap items-center gap-2 border-b border-border/60 pb-4">
       <Select
+        tone="filter"
         value={cycleKey ?? currentKey}
         onChange={(e) => setCycleKey(e.target.value)}
-        className="h-10 w-auto min-w-[9.5rem] shrink-0 text-xs"
+        className="w-auto min-w-[9.5rem] shrink-0"
         aria-label="Salary cycle"
       >
         {cycleOptions.map((k) => (
@@ -60,9 +60,10 @@ export function GlobalFilterBar() {
         ))}
       </Select>
       <Select
+        tone="filter"
         value={kind}
         onChange={(e) => setKind(e.target.value as "all" | "expense" | "income")}
-        className="h-10 w-auto min-w-[6.75rem] shrink-0 text-xs"
+        className="w-auto min-w-[6.75rem] shrink-0"
         aria-label="Transaction type"
       >
         <option value="all">All types</option>
@@ -70,9 +71,10 @@ export function GlobalFilterBar() {
         <option value="income">Income</option>
       </Select>
       <Select
+        tone="filter"
         value={categoryId ?? ""}
         onChange={(e) => setCategoryId(e.target.value ? Number(e.target.value) : null)}
-        className="h-10 w-auto min-w-[8rem] shrink-0 text-xs"
+        className="w-auto min-w-[8rem] shrink-0"
         aria-label="Category"
       >
         <option value="">All categories</option>
@@ -88,7 +90,6 @@ export function GlobalFilterBar() {
           Reset
         </Button>
       )}
-      </div>
     </div>
   );
 }

@@ -1,4 +1,3 @@
-import type { IndexableType } from "dexie";
 import { db } from "../client";
 import type { Transaction, TransactionKind } from "../types";
 import { assertCategoryExists, assertAccountExists, transactionFingerprint } from "../integrity";
@@ -15,17 +14,15 @@ export async function getCycleTransactions(monthKey: string): Promise<Transactio
   return rows.reverse();
 }
 
-/** Uses isDeleted index — for search / export. */
+/** Active rows only — filter scan (booleans are not valid IndexedDB keys). */
 export async function getActiveTransactions(limit?: number): Promise<Transaction[]> {
-  const notDeleted = false as unknown as IndexableType;
-  const rows = await db.transactions.where("isDeleted").equals(notDeleted).sortBy("occurredAt");
+  const rows = await db.transactions.filter((t) => !t.isDeleted).sortBy("occurredAt");
   const sorted = rows.reverse();
   return limit ? sorted.slice(0, limit) : sorted;
 }
 
 export async function countActiveTransactions(): Promise<number> {
-  const notDeleted = false as unknown as IndexableType;
-  return db.transactions.where("isDeleted").equals(notDeleted).count();
+  return db.transactions.filter((t) => !t.isDeleted).count();
 }
 
 export async function getActiveTransactionsByKind(kind: TransactionKind, monthKey?: string): Promise<Transaction[]> {
@@ -117,9 +114,7 @@ export async function updateTransactionWithLock(
 export async function pruneDeletedTransactions(olderThanDays = 365): Promise<number> {
   const cutoff = new Date(Date.now() - olderThanDays * 24 * 60 * 60 * 1000);
   const keys = await db.transactions
-    .where("isDeleted")
-    .equals(true as unknown as IndexableType)
-    .filter((t) => Boolean(t.deletedAt && t.deletedAt < cutoff))
+    .filter((t) => t.isDeleted && Boolean(t.deletedAt && t.deletedAt < cutoff))
     .primaryKeys();
   await db.transaction("rw", [db.transactions, db.transactionAttachments], async () => {
     for (const id of keys) {

@@ -24,9 +24,9 @@ const QuickAddModal = dynamic(
 
 export function AppShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
-  const isOnboarding = pathname === "/onboarding";
+  const isFullBleed = pathname === "/onboarding" || pathname === "/auth";
 
-  if (isOnboarding) {
+  if (isFullBleed) {
     return <RouteGuard>{children}</RouteGuard>;
   }
 
@@ -40,7 +40,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             <TopBar />
             <main
               id="main-content"
-              className="flex-1 px-4 py-5 pb-[calc(5.5rem+env(safe-area-inset-bottom))] pt-[max(1.25rem,env(safe-area-inset-top))] md:px-8 md:py-8 md:pb-8"
+              className="scroll-premium flex-1 overflow-y-auto px-4 py-5 pb-[calc(5.5rem+env(safe-area-inset-bottom))] pt-[max(1.25rem,env(safe-area-inset-top))] md:px-8 md:py-8 md:pb-8"
               tabIndex={-1}
             >
               {children}

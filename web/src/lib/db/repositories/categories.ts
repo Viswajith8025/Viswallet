@@ -1,15 +1,7 @@
-import Dexie from "dexie";
 import { db } from "../client";
 import type { Category } from "../types";
 
-/** Indexed: isDeleted + sortOrder via compound range query. */
+/** Active categories sorted by sortOrder. */
 export async function getActiveCategories(): Promise<Category[]> {
-  try {
-    return await db.categories
-      .where("[isDeleted+sortOrder]")
-      .between([false, Dexie.minKey], [false, Dexie.maxKey])
-      .toArray();
-  } catch {
-    return db.categories.filter((c) => !c.isDeleted).sortBy("sortOrder");
-  }
+  return db.categories.filter((c) => !c.isDeleted).sortBy("sortOrder");
 }

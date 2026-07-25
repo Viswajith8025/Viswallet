@@ -24,6 +24,12 @@ export function getSupabaseConfig(): { url: string; anonKey: string } | null {
     throw new Error("Supabase anon key appears invalid.");
   }
 
+  if (!anonKey.startsWith("eyJ") && !anonKey.startsWith("sb_publishable_")) {
+    throw new Error(
+      "Supabase anon key looks wrong. Use the anon/public key from Project Settings → API.",
+    );
+  }
+
   return { url, anonKey };
 }
 

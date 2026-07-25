@@ -3,7 +3,13 @@
 import { useCallback, useEffect, useState } from "react";
 
 const DISMISS_KEY = "viswallet_pwa_dismissed_at";
-const DISMISS_DAYS = 7;
+const DISMISS_DAYS = 14;
+const SHOW_DELAY_MS = 12_000;
+
+function isMobileViewport(): boolean {
+  if (typeof window === "undefined") return false;
+  return window.matchMedia("(max-width: 768px)").matches;
+}
 
 type BeforeInstallPromptEvent = Event & {
   prompt: () => Promise<void>;
@@ -43,18 +49,18 @@ export function usePwaInstall() {
   const standalone = isStandalone();
 
   useEffect(() => {
-    if (standalone || isDismissed()) return;
+    if (standalone || isDismissed() || !isMobileViewport()) return;
 
     function onBeforeInstall(e: Event) {
       e.preventDefault();
       setDeferredPrompt(e as BeforeInstallPromptEvent);
-      window.setTimeout(() => setVisible(true), 2500);
+      window.setTimeout(() => setVisible(true), SHOW_DELAY_MS);
     }
 
     window.addEventListener("beforeinstallprompt", onBeforeInstall);
 
     if (ios && !standalone) {
-      window.setTimeout(() => setVisible(true), 4000);
+      window.setTimeout(() => setVisible(true), SHOW_DELAY_MS + 3000);
     }
 
     return () => window.removeEventListener("beforeinstallprompt", onBeforeInstall);

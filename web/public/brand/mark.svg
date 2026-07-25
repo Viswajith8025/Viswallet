@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" fill="none" role="img" aria-label="Viswallet">
+  <rect width="48" height="48" rx="13" fill="#5f4a8b"/>
+  <path d="M11 12H22.25L24.75 37H11V12Z" fill="#fefacd"/>
+  <path d="M37 12H25.75L23.25 37H37V12Z" fill="#ede6b0"/>
+  <path d="M16.75 14.25H31.25C32.05 14.25 32.75 14.95 32.75 15.75V17C32.75 17.8 32.05 18.5 31.25 18.5H16.75C15.95 18.5 15.25 17.8 15.25 17V15.75C15.25 14.95 15.95 14.25 16.75 14.25Z" fill="#5f4a8b"/>
+</svg>

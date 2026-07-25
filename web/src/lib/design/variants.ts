@@ -8,20 +8,19 @@ export const focusRing =
 
 export const buttonVariants = {
   base: cn(
-    "inline-flex items-center justify-center gap-2 rounded-lg font-medium",
+    "inline-flex items-center justify-center gap-2 rounded-md font-medium",
     interactiveTransition,
     focusRing,
-    "disabled:pointer-events-none disabled:opacity-45",
-    "active:scale-[0.98]",
+    "disabled:pointer-events-none disabled:opacity-40",
   ),
   variant: {
     primary:
-      "bg-primary text-primary-foreground shadow-xs hover:bg-[var(--primary-hover)] hover:shadow-soft",
+      "bg-primary text-primary-foreground hover:bg-[var(--primary-hover)]",
     secondary:
-      "bg-surface-secondary text-secondary-foreground border border-border-light hover:bg-surface-hover hover:border-border",
-    ghost: "text-muted-foreground hover:bg-primary-muted/60 hover:text-primary",
+      "bg-surface-secondary text-secondary-foreground border border-border hover:bg-surface-hover",
+    ghost: "text-muted-foreground hover:bg-foreground/[0.04] hover:text-foreground",
     outline:
-      "border border-primary/35 bg-transparent text-primary hover:bg-primary-muted/50 hover:border-primary/55",
+      "border border-border bg-transparent text-foreground hover:bg-foreground/[0.03]",
     destructive:
       "bg-destructive text-destructive-foreground shadow-xs hover:brightness-[1.03]",
   },
@@ -46,17 +45,44 @@ export const badgeVariants = {
 } as const;
 
 export const fieldVariants = {
-  label: "text-label text-foreground/85",
+  label: "text-label font-medium text-foreground",
   hint: "text-caption text-muted-foreground",
   error: "text-caption font-medium text-destructive",
   input: cn(
-    "flex w-full rounded-lg border border-input bg-elevated px-3.5 text-sm shadow-xs",
+    "flex w-full rounded-lg border border-border bg-background px-3.5 text-sm text-foreground shadow-xs",
     interactiveTransition,
-    "placeholder:text-muted-foreground/55",
+    "placeholder:text-muted-foreground",
     "hover:border-border-strong",
     "focus-visible:border-primary focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-primary/12",
   ),
   inputError: "border-destructive focus-visible:ring-destructive/12",
+} as const;
+
+export const selectVariants = {
+  trigger: cn(
+    "flex h-10 w-full items-center justify-between gap-2 rounded-lg border border-border bg-elevated/90 px-3.5 text-sm text-foreground shadow-xs",
+    interactiveTransition,
+    "hover:border-border-strong hover:bg-elevated",
+    focusRing,
+    "disabled:pointer-events-none disabled:opacity-40",
+  ),
+  triggerFilter: cn(
+    "h-9 min-w-0 rounded-full border-border-light bg-background/80 px-3 text-xs font-medium text-foreground/90",
+    "hover:bg-elevated hover:text-foreground",
+    "shadow-[inset_0_1px_0_rgba(255,255,255,0.45)]",
+  ),
+  triggerOpen: "border-primary/35 ring-[3px] ring-primary/10",
+  menu: cn(
+    "absolute left-0 top-[calc(100%+0.35rem)] z-50 max-h-60 min-w-full overflow-y-auto rounded-xl border border-border bg-elevated/98 p-1 shadow-lg backdrop-blur-md",
+  ),
+  item: cn(
+    "flex w-full items-center justify-between gap-2 rounded-lg px-3 py-2 text-left text-sm text-foreground/90",
+    interactiveTransition,
+    "hover:bg-primary-muted/70 hover:text-foreground",
+    "focus-visible:bg-primary-muted/70 focus-visible:outline-none",
+    "disabled:pointer-events-none disabled:opacity-40",
+  ),
+  itemActive: "bg-primary-muted/55 font-medium text-foreground",
 } as const;
 
 export const cardVariants = {

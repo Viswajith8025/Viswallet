@@ -10,7 +10,7 @@ export function InstallPrompt() {
   const pathname = usePathname();
   const { visible, canInstall, ios, installing, install, dismiss } = usePwaInstall();
 
-  if (pathname === "/onboarding") return null;
+  if (pathname === "/onboarding" || pathname === "/auth") return null;
 
   return (
     <AnimatePresence>

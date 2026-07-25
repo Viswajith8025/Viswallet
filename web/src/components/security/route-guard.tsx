@@ -3,44 +3,51 @@
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { getSettings } from "@/lib/db";
+import { useAuth } from "@/components/providers/auth-provider";
 import { PageSkeleton } from "@/components/ui/skeleton";
 
-const PUBLIC_ROUTES = ["/onboarding"];
+const ALWAYS_PUBLIC_ROUTES = ["/auth", "/privacy", "/terms", "/licenses"];
 
 export function RouteGuard({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const router = useRouter();
-  const isPublic = PUBLIC_ROUTES.includes(pathname);
-  const [status, setStatus] = useState<"loading" | "allowed" | "redirecting">(
-    isPublic ? "allowed" : "loading",
-  );
+  const { configured, user, loading: authLoading } = useAuth();
+  const isPublic =
+    ALWAYS_PUBLIC_ROUTES.includes(pathname) ||
+    (!configured && pathname === "/onboarding");
+  const [readyForPath, setReadyForPath] = useState<string | null>(isPublic ? pathname : null);
 
   useEffect(() => {
     if (isPublic) return;
+    if (configured && authLoading) return;
+
+    if (configured && !user) {
+      router.replace("/auth");
+      return;
+    }
 
     let cancelled = false;
     getSettings()
       .then((s) => {
         if (cancelled) return;
         if (!s.onboardingComplete) {
-          setStatus("redirecting");
           router.replace("/onboarding");
-        } else {
-          setStatus("allowed");
+          return;
         }
+        setReadyForPath(pathname);
       })
       .catch(() => {
-        if (!cancelled) {
-          setStatus("redirecting");
-          router.replace("/onboarding");
-        }
+        if (!cancelled) router.replace("/onboarding");
       });
 
     return () => {
       cancelled = true;
     };
-  }, [pathname, router, isPublic]);
+  }, [pathname, router, isPublic, configured, user, authLoading]);
 
-  if (status !== "allowed") return <PageSkeleton />;
+  if (isPublic) return <>{children}</>;
+  if (configured && (authLoading || !user)) return <PageSkeleton />;
+  if (readyForPath !== pathname) return <PageSkeleton />;
+
   return <>{children}</>;
 }

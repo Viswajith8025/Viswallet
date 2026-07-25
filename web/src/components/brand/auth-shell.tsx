@@ -1,0 +1,74 @@
+import { LogoWordmark } from "@/components/brand/logo-wordmark";
+import { cn } from "@/lib/design/cn";
+
+const DEFAULT_FEATURES = [
+  { n: "01", title: "Offline by default", body: "Your ledger lives on this device. No account required to start." },
+  { n: "02", title: "Salary-aware cycles", body: "Budgets follow when you get paid — not arbitrary calendar months." },
+  { n: "03", title: "Cloud when you want it", body: "Sign in to back up and restore after reinstall." },
+] as const;
+
+type AuthShellProps = {
+  children: React.ReactNode;
+  /** Left panel headline */
+  headline?: string;
+  /** Left panel subcopy */
+  subcopy?: string;
+  features?: readonly { n: string; title: string; body: string }[];
+  className?: string;
+};
+
+export function AuthShell({
+  children,
+  headline = "Finance that stays yours.",
+  subcopy = "A private ledger for everyday spending — built to feel calm, not cluttered.",
+  features = DEFAULT_FEATURES,
+  className,
+}: AuthShellProps) {
+  return (
+    <div className={cn("flex min-h-screen bg-background", className)}>
+      <aside className="brand-panel relative hidden w-[44%] flex-col justify-between overflow-hidden bg-[var(--violet-deep)] p-10 text-[var(--cream)] lg:flex xl:p-14">
+        <div className="brand-panel-grid pointer-events-none absolute inset-0 opacity-100" aria-hidden />
+        <div className="relative">
+          <LogoWordmark inverted showTagline />
+        </div>
+
+        <div className="relative max-w-md space-y-10">
+          <div>
+            <p className="text-[11px] font-medium uppercase tracking-[0.2em] text-[var(--cream)]/40">
+              Viswallet
+            </p>
+            <h1 className="mt-4 font-display text-[2rem] font-semibold leading-[1.15] tracking-[-0.03em] xl:text-[2.35rem]">
+              {headline}
+            </h1>
+            <p className="mt-4 text-[15px] leading-relaxed text-[var(--cream)]/62">{subcopy}</p>
+          </div>
+
+          {features.length > 0 && (
+          <ul className="space-y-6 border-t border-[var(--cream)]/10 pt-8">
+            {features.map((item) => (
+              <li key={item.n} className="flex gap-4">
+                <span className="mt-0.5 font-mono text-[11px] tabular-nums text-[var(--cream)]/35">
+                  {item.n}
+                </span>
+                <div>
+                  <p className="text-sm font-medium text-[var(--cream)]/92">{item.title}</p>
+                  <p className="mt-1 text-sm leading-relaxed text-[var(--cream)]/50">{item.body}</p>
+                </div>
+              </li>
+            ))}
+          </ul>
+          )}
+        </div>
+      </aside>
+
+      <main className="flex flex-1 flex-col justify-center px-6 py-10 sm:px-10 lg:px-14 xl:px-20">
+        <div className="mx-auto w-full max-w-[420px]">
+          <div className="mb-10 lg:hidden">
+            <LogoWordmark showTagline />
+          </div>
+          {children}
+        </div>
+      </main>
+    </div>
+  );
+}

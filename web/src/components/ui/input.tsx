@@ -1,7 +1,8 @@
-import { ChevronDown } from "lucide-react";
+"use client";
+
 import { cn } from "@/lib/design/cn";
 import { fieldVariants } from "@/lib/design/variants";
-import { Icon } from "@/components/ui/icon";
+import { SelectMenu } from "@/components/ui/select-menu";
 
 export function FieldLabel({ children, className }: { children: React.ReactNode; className?: string }) {
   return <span className={cn(fieldVariants.label, "text-foreground/80", className)}>{children}</span>;
@@ -43,21 +44,38 @@ export function Select({
   className,
   label,
   children,
-  ...props
-}: React.SelectHTMLAttributes<HTMLSelectElement> & { label?: string }) {
+  tone = "default",
+  value,
+  defaultValue,
+  onChange,
+  onBlur,
+  name,
+  id,
+  disabled,
+  required,
+  "aria-label": ariaLabel,
+}: React.SelectHTMLAttributes<HTMLSelectElement> & {
+  label?: string;
+  tone?: "default" | "filter";
+}) {
   return (
-    <label className="block space-y-2">
+    <label className={cn("block space-y-2", tone === "filter" && "inline-block space-y-0")}>
       {label && <FieldLabel>{label}</FieldLabel>}
-      <div className="relative">
-        <select className={cn(fieldVariants.input, "h-10 appearance-none pr-10", className)} {...props}>
-          {children}
-        </select>
-        <Icon
-          icon={ChevronDown}
-          size="sm"
-          className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground"
-        />
-      </div>
+      <SelectMenu
+        className={className}
+        tone={tone}
+        value={Array.isArray(value) ? value[0] : value}
+        defaultValue={Array.isArray(defaultValue) ? defaultValue[0] : defaultValue}
+        onChange={onChange}
+        onBlur={onBlur}
+        name={name}
+        id={id}
+        disabled={disabled}
+        required={required}
+        aria-label={ariaLabel}
+      >
+        {children}
+      </SelectMenu>
     </label>
   );
 }
@@ -77,7 +95,7 @@ export function Textarea({
     <label className="block space-y-2">
       {label && <FieldLabel>{label}</FieldLabel>}
       <textarea
-        className={cn(fieldVariants.input, "min-h-24 resize-y py-2.5", error && fieldVariants.inputError, className)}
+        className={cn(fieldVariants.input, "scroll-premium min-h-24 resize-y py-2.5", error && fieldVariants.inputError, className)}
         {...props}
       />
       {hint && !error && <FieldHint>{hint}</FieldHint>}

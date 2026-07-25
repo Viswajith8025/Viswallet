@@ -31,12 +31,6 @@ import {
   DEFAULT_DASHBOARD_WIDGETS,
 } from "./types";
 import {
-  getCycleTransactions as repoGetCycleTransactions,
-  getActiveTransactions,
-  countActiveTransactions,
-} from "./repositories/transactions";
-import { getActiveCategories as repoGetActiveCategories } from "./repositories/categories";
-import {
   assertExportRateLimit,
   assertImportRateLimit,
   BACKUP_VERSION,
@@ -49,6 +43,13 @@ import {
   stripSensitiveSettings,
   validateBackupPayload,
 } from "@/lib/security";
+import {
+  getCycleTransactions as repoGetCycleTransactions,
+  getActiveTransactions,
+  countActiveTransactions,
+} from "./repositories/transactions";
+import { getActiveCategories as repoGetActiveCategories } from "./repositories/categories";
+import { emitNotificationsChanged, emitDbDataChanged } from "@/lib/notifications/bus";
 
 class ViswalletDB extends Dexie {
   profiles!: EntityTable<Profile, "id">;
@@ -286,72 +287,99 @@ let seedPromise: Promise<void> | null = null;
 export async function ensureDbSeeded(): Promise<void> {
   if (seedPromise) return seedPromise;
   seedPromise = (async () => {
-    const existing = await db.settings.get(1);
-    if (existing) return;
-
     const now = new Date();
-    await db.profiles.put({
-      id: 1,
-      displayName: "You",
-      currencyCode: "INR",
-      createdAt: now,
-      updatedAt: now,
-    });
 
-    await db.settings.put({
-      id: 1,
-      themeMode: "system",
-      accentColor: "violet",
-      salaryDay: 1,
-      majorExpenseThresholdPaise: 50000,
-      onboardingComplete: false,
-      compactMode: false,
-      appLockEnabled: false,
-      biometricEnabled: false,
-      failedPinAttempts: 0,
-      autoLockMinutes: 15,
-      dashboardWidgets: DEFAULT_DASHBOARD_WIDGETS,
-      createdAt: now,
-      updatedAt: now,
-    });
+    const profile = await db.profiles.get(1);
+    if (!profile) {
+      await db.profiles.put({
+        id: 1,
+        displayName: "You",
+        currencyCode: "INR",
+        createdAt: now,
+        updatedAt: now,
+      });
+    }
 
-    await db.accounts.add({
-      name: "Primary Wallet",
-      type: "wallet",
-      balancePaise: 0,
-      color: "#5f4a8b",
-      iconName: "Wallet",
-      isDefault: true,
-      isActive: true,
-      createdAt: now,
-      updatedAt: now,
-    });
+    const settings = await db.settings.get(1);
+    if (!settings) {
+      await db.settings.put({
+        id: 1,
+        themeMode: "system",
+        accentColor: "violet",
+        salaryDay: 1,
+        majorExpenseThresholdPaise: 50000,
+        onboardingComplete: false,
+        compactMode: false,
+        appLockEnabled: false,
+        biometricEnabled: false,
+        failedPinAttempts: 0,
+        autoLockMinutes: 15,
+        dashboardWidgets: DEFAULT_DASHBOARD_WIDGETS,
+        createdAt: now,
+        updatedAt: now,
+      });
+    }
 
-    await db.achievements.bulkAdd(
-      ACHIEVEMENT_DEFINITIONS.map((a) => ({
-        achievementKey: a.key,
-        title: a.title,
-        description: a.description,
-        iconName: a.iconName,
-        progress: 0,
-        target: a.target,
-      })),
-    );
+    const accountCount = await db.accounts.count();
+    if (accountCount === 0) {
+      await db.accounts.add({
+        name: "Primary Wallet",
+        type: "wallet",
+        balancePaise: 0,
+        color: "#5f4a8b",
+        iconName: "Wallet",
+        isDefault: true,
+        isActive: true,
+        createdAt: now,
+        updatedAt: now,
+      });
+    }
 
-    await db.categories.bulkAdd(
-      DEFAULT_CATEGORIES.map((c) => ({
-        name: c.name,
-        slug: c.slug,
-        iconName: c.iconName,
-        color: c.color,
-        isSystem: true,
-        countsTowardSpending: c.countsTowardSpending,
-        sortOrder: c.sortOrder,
-        isDeleted: false,
-      })),
-    );
+    const achievementCount = await db.achievements.count();
+    if (achievementCount === 0) {
+      await db.achievements.bulkAdd(
+        ACHIEVEMENT_DEFINITIONS.map((a) => ({
+          achievementKey: a.key,
+          title: a.title,
+          description: a.description,
+          iconName: a.iconName,
+          progress: 0,
+          target: a.target,
+        })),
+      );
+    }
+
+    const categoryCount = await db.categories.count();
+    if (categoryCount === 0) {
+      await db.categories.bulkAdd(
+        DEFAULT_CATEGORIES.map((c) => ({
+          name: c.name,
+          slug: c.slug,
+          iconName: c.iconName,
+          color: c.color,
+          isSystem: true,
+          countsTowardSpending: c.countsTowardSpending,
+          sortOrder: c.sortOrder,
+          isDeleted: false,
+        })),
+      );
+    }
   })();
   return seedPromise;
+}
+
+/** Wipe local finance data and re-seed defaults (e.g. on sign-out or account switch). */
+export async function resetLocalDatabase(): Promise<void> {
+  await db.transaction("rw", db.tables, async () => {
+    for (const table of db.tables) {
+      if (table.name === "auditLogs") continue;
+      await table.clear();
+    }
+  });
+  seedPromise = null;
+  await ensureDbSeeded();
+  emitNotificationsChanged();
+  emitDbDataChanged();
 }
 
 export async function getSettings(): Promise<AppSettings> {
@@ -385,16 +413,26 @@ export async function completeOnboarding(
   const monthKey = getCurrentCycleKey(salaryDay);
   await updateProfile({ displayName: sanitizeName(displayName) });
   await updateSettings({ salaryDay, onboardingComplete: true });
-  const existing = await db.monthlySalaries.where("monthKey").equals(monthKey).first();
-  if (!existing) {
-    await db.monthlySalaries.add({
-      monthKey,
-      amountPaise: salaryPaise,
-      receivedAt: now,
-      createdAt: now,
-      updatedAt: now,
-    });
+
+  const existingSalary = await db.monthlySalaries.where("monthKey").equals(monthKey).first();
+  const salaryPayload = {
+    monthKey,
+    amountPaise: salaryPaise,
+    receivedAt: now,
+    updatedAt: now,
+  };
+  if (existingSalary?.id) {
+    await db.monthlySalaries.update(existingSalary.id, salaryPayload);
+  } else {
+    try {
+      await db.monthlySalaries.add({ ...salaryPayload, createdAt: now });
+    } catch {
+      const retry = await db.monthlySalaries.where("monthKey").equals(monthKey).first();
+      if (retry?.id) await db.monthlySalaries.update(retry.id, salaryPayload);
+      else throw new Error("Failed to save salary for this cycle.");
+    }
   }
+
   await createBudgetPlanForCycle(monthKey, salaryPaise);
   await logAudit("onboarding.complete", { success: true });
 }
@@ -404,14 +442,21 @@ export async function createBudgetPlanForCycle(monthKey: string, salaryPaise: nu
   if (existing?.id) return existing.id;
 
   const now = new Date();
-  const planId = (await db.budgetPlans.add({
-    monthKey,
-    salaryPaise,
-    allocationMode: "percentage",
-    rolloverEnabled: true,
-    createdAt: now,
-    updatedAt: now,
-  })) as number;
+  let planId: number;
+  try {
+    planId = (await db.budgetPlans.add({
+      monthKey,
+      salaryPaise,
+      allocationMode: "percentage",
+      rolloverEnabled: true,
+      createdAt: now,
+      updatedAt: now,
+    })) as number;
+  } catch {
+    const retry = await db.budgetPlans.where("monthKey").equals(monthKey).first();
+    if (retry?.id) return retry.id;
+    throw new Error("Failed to create budget plan for this cycle.");
+  }
 
   const categories = await db.categories.toArray();
   const slugToId = Object.fromEntries(categories.map((c) => [c.slug, c.id]));
@@ -450,12 +495,13 @@ export async function getCycleSalary(monthKey: string): Promise<MonthlySalary | 
 
 export async function pushNotification(
   n: Omit<AppNotification, "id" | "read" | "createdAt">,
-): Promise<void> {
-  await db.notifications.add({ ...n, read: false, createdAt: new Date() });
+): Promise<number> {
+  const id = (await db.notifications.add({ ...n, read: false, createdAt: new Date() })) as number;
+  emitNotificationsChanged();
+  return id;
 }
 
-export async function exportAllData(): Promise<string> {
-  assertExportRateLimit();
+export async function exportAllDataForSync(): Promise<string> {
   const data = {
     version: BACKUP_VERSION,
     exportedAt: new Date().toISOString(),
@@ -480,12 +526,18 @@ export async function exportAllData(): Promise<string> {
     secureNotes: await db.secureNotes.toArray(),
     achievements: await db.achievements.toArray(),
   };
-  await logAudit("backup.export", { success: true });
   return JSON.stringify(data);
 }
 
-export async function importAllData(json: string): Promise<void> {
-  assertImportRateLimit();
+export async function exportAllData(): Promise<string> {
+  assertExportRateLimit();
+  const json = await exportAllDataForSync();
+  await logAudit("backup.export", { success: true });
+  return json;
+}
+
+export async function importAllData(json: string, options: { skipRateLimit?: boolean } = {}): Promise<void> {
+  if (!options.skipRateLimit) assertImportRateLimit();
   const validated = validateBackupPayload(json);
 
   const transactions =
@@ -553,7 +605,9 @@ export async function importAllData(json: string): Promise<void> {
         await db.achievements.bulkAdd(validated.achievements as unknown as Achievement[]);
     });
     seedPromise = null;
+    await ensureDbSeeded();
     await logAudit("backup.import", { success: true });
+    emitDbDataChanged();
   } catch {
     await logAudit("backup.import_failed", { success: false });
     throw new SecureError("IMPORT_FAILED");

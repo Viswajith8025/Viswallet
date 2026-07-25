@@ -16,7 +16,7 @@ export function PageContainer({
   children: React.ReactNode;
   className?: string;
 }) {
-  return <div className={cn("mx-auto max-w-7xl space-y-6 md:space-y-8", className)}>{children}</div>;
+  return <div className={cn("mx-auto max-w-6xl space-y-8", className)}>{children}</div>;
 }
 
 export function PageHeader({
@@ -33,26 +33,22 @@ export function PageHeader({
   className?: string;
 }) {
   return (
-    <div className={cn("flex flex-col gap-4 sm:flex-row sm:flex-wrap sm:items-end sm:justify-between sm:gap-6", className)}>
-      <div className="min-w-0 space-y-1.5 sm:space-y-2">
-        {eyebrow && <p className={cn(typography.eyebrow, "text-primary")}>{eyebrow}</p>}
+    <div className={cn("flex flex-col gap-4 border-b border-border/60 pb-6 sm:flex-row sm:items-end sm:justify-between", className)}>
+      <div className="min-w-0 space-y-1">
+        {eyebrow && <p className={cn(typography.eyebrow)}>{eyebrow}</p>}
         <h1 className={cn(typography.display, "text-foreground")}>{title}</h1>
-        {description && <p className={cn(typography.body, "max-w-2xl text-muted-foreground")}>{description}</p>}
+        {description && <p className={cn(typography.body, "max-w-xl text-muted-foreground")}>{description}</p>}
       </div>
-      {actions && (
-        <div className="flex w-full shrink-0 flex-col gap-2 sm:w-auto sm:flex-row sm:items-center">
-          {actions}
-        </div>
-      )}
+      {actions && <div className="flex shrink-0 items-center gap-2">{actions}</div>}
     </div>
   );
 }
 
 const statTones = {
-  default: "",
+  default: "text-foreground",
   positive: "text-success",
   negative: "text-destructive",
-  primary: "text-primary",
+  primary: "text-foreground",
   warning: "text-warning",
 } as const;
 
@@ -61,7 +57,6 @@ export function StatCard({
   value,
   hint,
   tone = "default",
-  icon,
 }: {
   label: string;
   value: React.ReactNode;
@@ -70,22 +65,33 @@ export function StatCard({
   icon?: React.ReactNode;
 }) {
   return (
-    <motion.div
-      className="group surface-card p-5"
-      whileHover={{ y: -2 }}
-      transition={{ type: "spring", stiffness: 400, damping: 28 }}
+    <div className="min-w-0">
+      <p className={cn(typography.caption, "text-muted-foreground")}>{label}</p>
+      <p className={cn("mt-1.5 text-xl font-semibold tabular-nums tracking-tight sm:text-2xl", statTones[tone])}>
+        {value}
+      </p>
+      {hint && <p className={cn(typography.caption, "mt-1 text-muted-foreground/80")}>{hint}</p>}
+    </div>
+  );
+}
+
+export function MetricStrip({
+  children,
+  className,
+}: {
+  children: React.ReactNode;
+  className?: string;
+}) {
+  return (
+    <div
+      className={cn(
+        "surface-card grid gap-6 p-5 sm:grid-cols-2 lg:grid-cols-4 lg:divide-x lg:divide-border/60 lg:gap-0",
+        "[&>*]:lg:px-6 [&>*:first-child]:lg:pl-0 [&>*:last-child]:lg:pr-0",
+        className,
+      )}
     >
-      <div className="flex items-start justify-between gap-3">
-        <p className={cn(typography.label, "text-muted-foreground")}>{label}</p>
-        {icon && (
-          <div className="flex h-8 w-8 items-center justify-center rounded-md bg-primary-muted text-primary transition-colors duration-200 group-hover:bg-primary group-hover:text-primary-foreground">
-            {icon}
-          </div>
-        )}
-      </div>
-      <p className={cn(typography.stat, "mt-3 tabular-nums", statTones[tone])}>{value}</p>
-      {hint && <p className={cn(typography.caption, "mt-1.5 text-muted-foreground")}>{hint}</p>}
-    </motion.div>
+      {children}
+    </div>
   );
 }
 

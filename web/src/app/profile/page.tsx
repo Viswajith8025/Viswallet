@@ -1,21 +1,28 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
+import { format } from "date-fns";
 import { PageHeader, PageContainer } from "@/components/ui/page";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { useAuth } from "@/components/providers/auth-provider";
 import { getProfile, updateProfile } from "@/lib/db";
 import { sanitizeName, sanitizeEmail } from "@/lib/security";
+import { getCloudLastSyncedAt, syncCloudNow } from "@/lib/supabase/cloud-sync";
 import { showToast } from "@/lib/store/toast-store";
 
 export default function ProfilePage() {
+  const router = useRouter();
+  const { configured, user, signOut, syncing } = useAuth();
   const [displayName, setDisplayName] = useState("");
   const [email, setEmail] = useState("");
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
   const [loading, setLoading] = useState(true);
   const [formError, setFormError] = useState<string | null>(null);
+  const [lastSynced, setLastSynced] = useState<Date | null>(() => getCloudLastSyncedAt());
 
   useEffect(() => {
     getProfile()
@@ -75,7 +82,16 @@ export default function ProfilePage() {
                 </div>
                 <div>
                   <p className="font-semibold">{displayName || "You"}</p>
-                  <p className="text-sm text-muted-foreground">Local profile · stored on this device</p>
+                  <p className="text-sm text-muted-foreground">
+                    {configured && user
+                      ? `Cloud account · ${user.email}`
+                      : "Local only — create an account to back up your data"}
+                  </p>
+                  {configured && lastSynced && (
+                    <p className="text-xs text-muted-foreground">
+                      Last synced {format(lastSynced, "d MMM yyyy, h:mm a")}
+                    </p>
+                  )}
                 </div>
               </div>
               <Input
@@ -91,7 +107,11 @@ export default function ProfilePage() {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder="Email address (optional)"
-                hint="Stored locally only — never sent to a server."
+                hint={
+                  configured
+                    ? "Optional — your sign-in email is used for cloud backup."
+                    : "Stored locally only."
+                }
               />
               {formError && (
                 <p className="text-sm text-destructive" role="alert">
@@ -101,6 +121,36 @@ export default function ProfilePage() {
               <Button type="submit" className="w-full" disabled={saving}>
                 {saving ? "Saving..." : saved ? "Saved!" : "Save profile"}
               </Button>
+              {configured && user && (
+                <div className="flex flex-wrap gap-2 border-t border-border pt-4">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    disabled={syncing}
+                    onClick={async () => {
+                      try {
+                        await syncCloudNow();
+                        setLastSynced(getCloudLastSyncedAt());
+                        showToast("Cloud backup updated.", { tone: "success" });
+                      } catch {
+                        showToast("Sync failed. Try again.", { tone: "error" });
+                      }
+                    }}
+                  >
+                    {syncing ? "Syncing…" : "Sync now"}
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={async () => {
+                      await signOut();
+                      router.replace("/auth");
+                    }}
+                  >
+                    Sign out
+                  </Button>
+                </div>
+              )}
             </form>
           )}
         </CardContent>

@@ -3,22 +3,12 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import {
-  ArrowUpRight,
-  Sparkles,
-  TrendingDown,
-  Wallet,
-  Receipt,
-  PiggyBank,
-  CreditCard,
-} from "lucide-react";
-import { PageHeader, StatCard, EmptyState, PageContainer } from "@/components/ui/page";
+import { ArrowUpRight } from "lucide-react";
+import { PageHeader, StatCard, EmptyState, PageContainer, MetricStrip } from "@/components/ui/page";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import { FinanceGate } from "@/components/layout/finance-gate";
 import { GlobalFilterBar } from "@/components/filters/global-filter-bar";
-import { FadeIn, Stagger, StaggerItem } from "@/components/ui/motion";
 import { formatINR } from "@/lib/money";
 import { formatCycleLabel } from "@/lib/salary-cycle";
 import { categoryMap } from "@/lib/engines/finance-snapshot";
@@ -28,8 +18,7 @@ import { format } from "date-fns";
 
 function greeting(name?: string): string {
   const hour = new Date().getHours();
-  const time =
-    hour < 12 ? "Good morning" : hour < 17 ? "Good afternoon" : "Good evening";
+  const time = hour < 12 ? "Good morning" : hour < 17 ? "Good afternoon" : "Good evening";
   return name?.trim() ? `${time}, ${name.trim()}` : time;
 }
 
@@ -42,7 +31,9 @@ export default function DashboardPage() {
     getSettings().then((s) => {
       setWidgets(s.dashboardWidgets ?? DEFAULT_DASHBOARD_WIDGETS);
     });
-    getProfile().then((p) => setDisplayName(p.displayName));
+    getProfile()
+      .then((p) => setDisplayName(p.displayName))
+      .catch(() => setDisplayName(""));
   }, []);
 
   const show = (id: DashboardWidgetId) => widgets.includes(id);
@@ -51,234 +42,171 @@ export default function DashboardPage() {
     <FinanceGate skeleton="dashboard">
       {(data) => {
         const cats = categoryMap(data.categories);
-        const recent = data.transactions.slice(0, 6);
+        const recent = data.transactions.slice(0, 8);
         const savingsRate = data.incomePaise
           ? Math.round(((data.incomePaise - data.expensePaise) / data.incomePaise) * 100)
           : 0;
 
         return (
           <PageContainer>
-            <FadeIn>
-              <PageHeader
-                eyebrow={formatCycleLabel(data.monthKey)}
-                title={greeting(displayName)}
-                description="A calm overview of your money this salary cycle."
-                actions={
-                  <Button onClick={() => router.push("/transactions?add=expense")}>
-                    Add transaction
-                  </Button>
-                }
-              />
-            </FadeIn>
+            <PageHeader
+              eyebrow={formatCycleLabel(data.monthKey)}
+              title={greeting(displayName)}
+              actions={
+                <Button variant="outline" size="sm" onClick={() => router.push("/transactions?add=expense")}>
+                  New transaction
+                </Button>
+              }
+            />
             <GlobalFilterBar />
 
             {show("hero") && (
-            <Stagger className="grid gap-4 lg:grid-cols-4">
-              <StaggerItem className="lg:col-span-2">
-                <Card className="relative overflow-hidden border border-primary/15 bg-primary text-primary-foreground shadow-glow">
-                  <div className="pointer-events-none absolute -right-6 -top-6 h-32 w-32 rounded-full bg-primary-foreground/5 blur-2xl" />
-                  <CardContent className="relative p-6 md:p-7">
-                    <div className="flex items-start justify-between">
-                      <p className="text-sm font-medium text-primary-foreground/75">Available this cycle</p>
-                      <Badge className="border border-primary-foreground/15 bg-primary-foreground/10 text-primary-foreground">
-                        {data.daysLeft}d left
-                      </Badge>
+              <section className="space-y-4">
+                <Card className="hero-balance-card overflow-hidden">
+                  <CardContent className="p-6 md:p-8">
+                    <div className="flex flex-wrap items-start justify-between gap-4">
+                      <div>
+                        <p className="text-sm opacity-75">Available this cycle</p>
+                        <p className="mt-2 font-display text-4xl font-semibold tabular-nums tracking-tight md:text-5xl">
+                          {formatINR(data.remainingPaise)}
+                        </p>
+                      </div>
+                      <p className="rounded-md border border-current/15 px-2.5 py-1 text-xs font-medium tabular-nums">
+                        {data.daysLeft} days left
+                      </p>
                     </div>
-                    <p className="mt-3 text-3xl font-semibold tabular-nums tracking-tight sm:text-4xl md:text-[2.75rem]">
-                      {formatINR(data.remainingPaise)}
-                    </p>
-                    <div className="mt-5 flex flex-wrap gap-4 text-sm text-primary-foreground/80">
+                    <div className="mt-6 flex flex-wrap gap-x-6 gap-y-1 border-t border-current/10 pt-5 text-sm opacity-80">
                       <span>Income {formatINR(data.incomePaise)}</span>
-                      <span className="text-primary-foreground/40">·</span>
                       <span>Spent {formatINR(data.expensePaise)}</span>
-                      <span className="text-primary-foreground/40">·</span>
-                      <span>{savingsRate}% saved</span>
+                      <span>{savingsRate}% unspent</span>
                     </div>
                   </CardContent>
                 </Card>
-              </StaggerItem>
-              <StaggerItem>
-                <StatCard
-                  label="Safe spend / day"
-                  value={formatINR(data.safeSpendDaily)}
-                  hint={`${data.daysLeft} days remaining`}
-                  tone="positive"
-                  icon={<Wallet size={16} />}
-                />
-              </StaggerItem>
-              <StaggerItem>
-                <StatCard
-                  label="Health score"
-                  value={`${data.healthScore}`}
-                  hint="Financial wellness"
-                  tone="primary"
-                  icon={<Sparkles size={16} />}
-                />
-              </StaggerItem>
-            </Stagger>
+
+                <MetricStrip>
+                  <StatCard
+                    label="Daily budget"
+                    value={formatINR(data.safeSpendDaily)}
+                    hint={`${data.daysLeft} days in cycle`}
+                    tone="positive"
+                  />
+                  <StatCard label="Health" value={data.healthScore} hint="Out of 100" />
+                  <StatCard label="Net worth" value={formatINR(data.netWorthPaise)} />
+                  <StatCard
+                    label="Fixed costs"
+                    value={formatINR(
+                      data.subscriptionMonthlyPaise + data.billsDuePaise + data.emiMonthlyPaise,
+                    )}
+                    hint="Subs · bills · EMI"
+                  />
+                </MetricStrip>
+              </section>
             )}
 
-            {show("stats") && (
-            <Stagger className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-              <StaggerItem>
-                <StatCard label="Net worth" value={formatINR(data.netWorthPaise)} icon={<TrendingDown size={16} />} />
-              </StaggerItem>
-              <StaggerItem>
-                <StatCard
-                  label="Subscriptions"
-                  value={formatINR(data.subscriptionMonthlyPaise)}
-                  hint="Monthly run rate"
-                  icon={<Receipt size={16} />}
-                />
-              </StaggerItem>
-              <StaggerItem>
+            {show("stats") && !show("hero") && (
+              <MetricStrip>
+                <StatCard label="Net worth" value={formatINR(data.netWorthPaise)} />
+                <StatCard label="Subscriptions" value={formatINR(data.subscriptionMonthlyPaise)} />
                 <StatCard
                   label="Bills due"
                   value={formatINR(data.billsDuePaise)}
                   tone={data.billsDuePaise > 0 ? "negative" : "default"}
-                  icon={<PiggyBank size={16} />}
                 />
-              </StaggerItem>
-              <StaggerItem>
-                <StatCard
-                  label="EMI outflow"
-                  value={formatINR(data.emiMonthlyPaise)}
-                  icon={<CreditCard size={16} />}
-                />
-              </StaggerItem>
-            </Stagger>
-            )}
-
-            {show("obligations") && (
-            <Card>
-              <CardHeader>
-                <CardTitle>Fixed obligations</CardTitle>
-              </CardHeader>
-              <CardContent className="grid gap-4 sm:grid-cols-3">
-                <div className="rounded-xl border border-border/60 bg-muted/30 p-4">
-                  <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Subscriptions</p>
-                  <p className="mt-1 text-xl font-semibold tabular-nums">{formatINR(data.subscriptionMonthlyPaise)}</p>
-                  <p className="mt-1 text-xs text-muted-foreground">Monthly run rate</p>
-                </div>
-                <div className="rounded-xl border border-border/60 bg-muted/30 p-4">
-                  <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Bills due</p>
-                  <p className="mt-1 text-xl font-semibold tabular-nums">{formatINR(data.billsDuePaise)}</p>
-                  <p className="mt-1 text-xs text-muted-foreground">Outstanding this cycle</p>
-                </div>
-                <div className="rounded-xl border border-border/60 bg-muted/30 p-4">
-                  <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">EMI outflow</p>
-                  <p className="mt-1 text-xl font-semibold tabular-nums">{formatINR(data.emiMonthlyPaise)}</p>
-                  <p className="mt-1 text-xs text-muted-foreground">Monthly payments</p>
-                </div>
-              </CardContent>
-            </Card>
+                <StatCard label="EMI" value={formatINR(data.emiMonthlyPaise)} />
+              </MetricStrip>
             )}
 
             {(show("recent") || show("insights")) && (
-            <div className="grid gap-6 xl:grid-cols-3">
-              {show("recent") && (
-              <Card className="xl:col-span-2">
-                <CardHeader className="flex-row items-center justify-between space-y-0">
-                  <CardTitle>Recent activity</CardTitle>
-                  <Link
-                    href="/transactions"
-                    className="text-sm font-medium text-primary transition-opacity hover:opacity-70"
-                  >
-                    View all
-                  </Link>
-                </CardHeader>
-                <CardContent className="pt-0">
-                  {recent.length === 0 ? (
-                    <EmptyState
-                      title="No transactions yet"
-                      description="Add your first expense or income to see activity here."
-                      action={
-                        <Button onClick={() => router.push("/transactions?add=expense")}>
-                          Add transaction
-                        </Button>
-                      }
-                    />
-                  ) : (
-                    <ul className="divide-y divide-border/60">
-                      {recent.map((t) => {
-                        const cat = cats.get(t.categoryId);
-                        return (
-                          <li
-                            key={t.id}
-                            className="group flex items-center justify-between gap-4 py-3.5 transition-colors hover:bg-muted/30 -mx-2 px-2 rounded-xl"
-                          >
-                            <div className="flex min-w-0 items-center gap-3">
-                              <div
-                                className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl text-xs font-semibold text-primary-foreground shadow-xs"
-                                style={{ background: cat?.color ?? "var(--primary)" }}
+              <div className="grid gap-6 lg:grid-cols-5">
+                {show("recent") && (
+                  <Card className="lg:col-span-3">
+                    <CardHeader className="flex-row items-center justify-between space-y-0 pb-2">
+                      <CardTitle>Recent</CardTitle>
+                      <Link
+                        href="/transactions"
+                        className="inline-flex items-center gap-1 text-xs text-muted-foreground transition-colors hover:text-foreground"
+                      >
+                        All transactions
+                        <ArrowUpRight size={13} />
+                      </Link>
+                    </CardHeader>
+                    <CardContent className="pt-0">
+                      {recent.length === 0 ? (
+                        <EmptyState
+                          title="No activity yet"
+                          description="Record an expense or income to start tracking."
+                          action={
+                            <Button size="sm" onClick={() => router.push("/transactions?add=expense")}>
+                              Add transaction
+                            </Button>
+                          }
+                        />
+                      ) : (
+                        <ul>
+                          {recent.map((t) => {
+                            const cat = cats.get(t.categoryId);
+                            return (
+                              <li
+                                key={t.id}
+                                className="flex items-center justify-between gap-4 border-b border-border/50 py-3.5 last:border-0"
                               >
-                                {cat?.name?.charAt(0) ?? "?"}
-                              </div>
-                              <div className="min-w-0">
-                                <p className="truncate font-medium">{t.title}</p>
-                                <p className="text-xs text-muted-foreground">
-                                  {cat?.name} · {format(new Date(t.occurredAt), "dd MMM")}
-                                </p>
-                              </div>
-                            </div>
-                            <span
-                              className={`shrink-0 tabular-nums text-sm font-semibold ${
-                                t.kind === "income" ? "text-success" : "text-foreground"
-                              }`}
-                            >
-                              {t.kind === "income" ? "+" : "−"}
-                              {formatINR(t.amountPaise)}
-                            </span>
-                          </li>
-                        );
-                      })}
-                    </ul>
-                  )}
-                </CardContent>
-              </Card>
-              )}
+                                <div className="min-w-0">
+                                  <p className="truncate text-sm font-medium">{t.title}</p>
+                                  <p className="text-xs text-muted-foreground">
+                                    {cat?.name ?? "Uncategorized"} · {format(new Date(t.occurredAt), "d MMM")}
+                                  </p>
+                                </div>
+                                <span
+                                  className={`shrink-0 text-sm font-medium tabular-nums ${
+                                    t.kind === "income" ? "text-success" : "text-foreground"
+                                  }`}
+                                >
+                                  {t.kind === "income" ? "+" : "−"}
+                                  {formatINR(t.amountPaise)}
+                                </span>
+                              </li>
+                            );
+                          })}
+                        </ul>
+                      )}
+                    </CardContent>
+                  </Card>
+                )}
 
-              {show("insights") && (
-              <Card>
-                <CardHeader>
-                  <CardTitle>Smart insights</CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-3 pt-0">
-                  <InsightRow icon={Sparkles} text={`You are at ${data.healthScore}/100 financial health.`} />
-                  <InsightRow
-                    icon={TrendingDown}
-                    text={
-                      data.expensePaise > data.salaryPaise * 0.8
-                        ? "Spending is high this cycle. Review subscriptions and dining."
-                        : "Spending pace looks healthy for this cycle."
-                    }
-                  />
-                  <InsightRow
-                    icon={Wallet}
-                    text={`${formatINR(data.safeSpendDaily)} is your recommended daily limit.`}
-                  />
-                  <Button variant="outline" className="mt-2 w-full" onClick={() => router.push("/insights")}>
-                    Open insights <ArrowUpRight size={14} />
-                  </Button>
-                </CardContent>
-              </Card>
-              )}
-            </div>
+                {show("insights") && (
+                  <Card className="lg:col-span-2">
+                    <CardHeader className="pb-2">
+                      <CardTitle>This cycle</CardTitle>
+                    </CardHeader>
+                    <CardContent className="space-y-4 pt-0 text-sm leading-relaxed text-muted-foreground">
+                      <p>
+                        You have{" "}
+                        <span className="font-medium text-foreground">{formatINR(data.remainingPaise)}</span>{" "}
+                        left with {data.daysLeft} days to go — about{" "}
+                        <span className="font-medium text-foreground">{formatINR(data.safeSpendDaily)}</span> per
+                        day.
+                      </p>
+                      <p>
+                        {data.expensePaise > data.salaryPaise * 0.8
+                          ? "Spending is running high. Worth a look at recurring costs."
+                          : "Spending is within a comfortable range for this cycle."}
+                      </p>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="w-full"
+                        onClick={() => router.push("/insights")}
+                      >
+                        View insights
+                      </Button>
+                    </CardContent>
+                  </Card>
+                )}
+              </div>
             )}
           </PageContainer>
         );
       }}
     </FinanceGate>
-  );
-}
-
-function InsightRow({ icon: Icon, text }: { icon: typeof Sparkles; text: string }) {
-  return (
-    <div className="flex gap-3 rounded-xl border border-border/50 bg-muted/40 p-3.5 text-sm leading-relaxed transition-colors hover:bg-muted/60">
-      <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
-        <Icon size={15} />
-      </div>
-      <p className="pt-0.5">{text}</p>
-    </div>
   );
 }

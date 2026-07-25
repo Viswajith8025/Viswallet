@@ -27,6 +27,8 @@ import {
 import { categoryMap } from "@/lib/engines/finance-snapshot";
 import { getCurrentCycleKey } from "@/lib/salary-cycle";
 import { applyAccentColor } from "@/lib/theme/accent";
+import { useAuth } from "@/components/providers/auth-provider";
+import { applyThemeMode } from "@/lib/theme/resolve";
 import type { AccentColor, DashboardWidgetId } from "@/lib/db/types";
 import { DEFAULT_DASHBOARD_WIDGETS, DASHBOARD_WIDGET_LABELS } from "@/lib/db/types";
 import {
@@ -49,6 +51,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 
 export default function SettingsPage() {
   const { refresh } = useDb();
+  const { configured } = useAuth();
   const lock = useSecurityStore((s) => s.lock);
   const fileRef = useRef<HTMLInputElement>(null);
   const csvRef = useRef<HTMLInputElement>(null);
@@ -95,7 +98,8 @@ export default function SettingsPage() {
     const mode = value as "system" | "light" | "dark";
     setTheme(mode);
     await updateSettings({ themeMode: mode });
-    document.documentElement.setAttribute("data-theme", mode === "system" ? "" : mode);
+    applyThemeMode(mode);
+    applyAccentColor(accent);
     await logAudit("settings.update", { success: true, detail: "theme" });
     refresh();
   }
@@ -310,6 +314,21 @@ export default function SettingsPage() {
         </p>
       )}
 
+      {configured && (
+      <Card>
+        <CardHeader>
+          <CardTitle>Cloud account</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-3 pt-0 text-sm text-muted-foreground">
+          <p>
+            Your finances sync automatically while signed in. Reinstall the app and sign in with the
+            same email to restore your data.
+          </p>
+          <p>PIN and app lock never leave this device.</p>
+        </CardContent>
+      </Card>
+      )}
+
       <Card>
         <CardHeader>
           <CardTitle>Security</CardTitle>
@@ -442,10 +461,14 @@ export default function SettingsPage() {
         </CardHeader>
         <CardContent className="space-y-4 pt-0">
           <Hint>
-            Backups are stored on your device until you export them. We recommend monthly encrypted exports to a safe location.
+            {configured
+              ? "Signed-in accounts auto-sync to the cloud. Encrypted JSON exports are still useful for offline archives."
+              : "Backups are stored on your device until you export them. We recommend monthly encrypted exports to a safe location."}
           </Hint>
           <p className="text-sm text-muted-foreground">
-            Data is stored locally in IndexedDB. Never share your passphrase.
+            {configured
+              ? "Local data syncs to your cloud account. PIN and app lock never leave this device."
+              : "Data is stored locally in IndexedDB. Never share your passphrase."}
           </p>
           <Checkbox
             label="Encrypt backup (AES-256-GCM, recommended)"

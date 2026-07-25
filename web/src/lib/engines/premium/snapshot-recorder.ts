@@ -21,7 +21,12 @@ export async function recordMonthlySnapshot(): Promise<void> {
   if (existing?.id) {
     await db.monthlySnapshots.update(existing.id, payload);
   } else {
-    await db.monthlySnapshots.add(payload);
+    try {
+      await db.monthlySnapshots.add(payload);
+    } catch {
+      const retry = await db.monthlySnapshots.where("monthKey").equals(data.monthKey).first();
+      if (retry?.id) await db.monthlySnapshots.update(retry.id, payload);
+    }
   }
 }
 

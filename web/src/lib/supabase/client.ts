@@ -18,7 +18,7 @@ export function getSupabase(): SupabaseClient | null {
       autoRefreshToken: true,
       detectSessionInUrl: true,
       flowType: "pkce",
-      storage: typeof window !== "undefined" ? window.sessionStorage : undefined,
+      storage: typeof window !== "undefined" ? window.localStorage : undefined,
     },
     global: {
       headers: { "X-Client-Info": "viswallet-web" },

@@ -5,9 +5,11 @@ import { useEffect, useState } from "react";
 import { SplashScreen } from "@/components/ui/splash-screen";
 import { ErrorBoundary } from "@/components/error-boundary";
 import { DbProvider } from "@/components/providers/db-provider";
+import { AuthProvider } from "@/components/providers/auth-provider";
 import { PremiumBootstrap } from "@/components/providers/premium-bootstrap";
 import { ensureDbSeeded, getSettings } from "@/lib/db";
 import { applyAccentColor } from "@/lib/theme/accent";
+import { applyThemeMode } from "@/lib/theme/resolve";
 import type { AccentColor } from "@/lib/db/types";
 
 function makeQueryClient() {
@@ -26,14 +28,30 @@ export function AppProviders({ children }: { children: React.ReactNode }) {
   const [queryClient] = useState(makeQueryClient);
 
   useEffect(() => {
+    let mq: MediaQueryList | null = null;
+    let accent: AccentColor = "violet";
+
+    let themeMode: "system" | "light" | "dark" = "system";
+
+    const onThemeChange = () => {
+      applyThemeMode(themeMode);
+      applyAccentColor(accent);
+    };
+
     ensureDbSeeded().then(async () => {
       const settings = await getSettings();
-      if (settings.themeMode !== "system") {
-        document.documentElement.setAttribute("data-theme", settings.themeMode);
-      }
-      applyAccentColor((settings.accentColor ?? "violet") as AccentColor);
+      accent = (settings.accentColor ?? "violet") as AccentColor;
+      themeMode = settings.themeMode;
+      applyThemeMode(themeMode);
+      applyAccentColor(accent);
+      mq = window.matchMedia("(prefers-color-scheme: dark)");
+      mq.addEventListener("change", onThemeChange);
       setReady(true);
     });
+
+    return () => {
+      mq?.removeEventListener("change", onThemeChange);
+    };
   }, []);
 
   if (!ready) {
@@ -42,10 +60,12 @@ export function AppProviders({ children }: { children: React.ReactNode }) {
 
   return (
     <QueryClientProvider client={queryClient}>
-      <DbProvider>
-        <PremiumBootstrap />
-        <ErrorBoundary>{children}</ErrorBoundary>
-      </DbProvider>
+      <AuthProvider>
+        <DbProvider>
+          <PremiumBootstrap />
+          <ErrorBoundary>{children}</ErrorBoundary>
+        </DbProvider>
+      </AuthProvider>
     </QueryClientProvider>
   );
 }

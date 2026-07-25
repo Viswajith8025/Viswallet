@@ -33,6 +33,7 @@ import {
   Calculator,
 } from "lucide-react";
 import { cn } from "@/lib/design/cn";
+import { LogoMark } from "@/components/brand/logo-mark";
 import { LegalFooter } from "@/components/legal/legal-footer";
 import { useUIStore } from "@/lib/store/ui-store";
 import { Button } from "@/components/ui/button";
@@ -82,21 +83,25 @@ export function Sidebar() {
     <aside
       className={cn(
         "glass-panel hidden h-screen shrink-0 flex-col border-r border-border md:flex",
-        collapsed ? "w-[72px]" : "w-[260px]",
+        collapsed ? "w-[68px]" : "w-[248px]",
       )}
     >
-      <div className="flex h-16 items-center justify-between border-b border-border/60 px-4">
-        {!collapsed && (
-          <Link href="/" className="flex items-center gap-3 transition-opacity hover:opacity-80">
-            <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary text-sm font-semibold text-primary-foreground shadow-xs">
-              V
-            </div>
-            <div>
-              <p className="text-sm font-semibold tracking-tight">Viswallet</p>
-              <p className="text-[10px] font-medium uppercase tracking-widest text-muted-foreground">
-                Finance OS
-              </p>
-            </div>
+      <div
+        className={cn(
+          "relative flex border-b border-border/60 px-3",
+          collapsed ? "h-[4.25rem] flex-col items-center justify-center gap-0.5 py-2" : "h-14 items-center justify-between",
+        )}
+      >
+        {collapsed ? (
+          <Link href="/" className="transition-opacity hover:opacity-80" aria-label="Viswallet home">
+            <LogoMark size={28} />
+          </Link>
+        ) : (
+          <Link href="/" className="flex min-w-0 items-center gap-2.5 px-1 transition-opacity hover:opacity-80">
+            <LogoMark size={30} />
+            <p className="truncate font-display text-[15px] font-semibold tracking-[-0.035em]">
+              Viswallet
+            </p>
           </Link>
         )}
         <Button
@@ -106,17 +111,17 @@ export function Sidebar() {
           onClick={() => setCollapsed(!collapsed)}
           aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
         >
-          <PanelLeft size={18} />
+          <PanelLeft size={17} />
         </Button>
       </div>
 
-      <nav className="flex-1 space-y-0.5 overflow-y-auto p-3">
+      <nav className="scroll-premium flex-1 overflow-y-auto p-2">
         {NAV.map((item, i) =>
           "section" in item ? (
             !collapsed && (
               <p
                 key={i}
-                className="px-3 pb-1.5 pt-5 text-[10px] font-semibold uppercase tracking-[0.14em] text-muted-foreground/80 first:pt-2"
+                className="px-3 pb-1 pt-4 text-[11px] font-medium text-muted-foreground/70 first:pt-2"
               >
                 {item.section}
               </p>
@@ -127,23 +132,17 @@ export function Sidebar() {
               href={item.href}
               title={item.label}
               className={cn(
-                "group relative flex items-center gap-3 rounded-lg px-3 py-2 text-[13px] font-medium transition-all duration-200",
+                "flex items-center gap-2.5 rounded-md px-3 py-2 text-[13px] transition-colors duration-150",
                 pathname === item.href
-                  ? "bg-primary-muted text-primary"
-                  : "text-muted-foreground hover:bg-surface-hover hover:text-foreground",
+                  ? "bg-foreground/[0.06] font-medium text-foreground"
+                  : "text-muted-foreground hover:bg-foreground/[0.04] hover:text-foreground",
                 collapsed && "justify-center px-0",
               )}
             >
-              {pathname === item.href && (
-                <span className="absolute left-0 top-1/2 h-4 w-[2px] -translate-y-1/2 rounded-r-full bg-primary" />
-              )}
               <item.icon
-                size={18}
-                strokeWidth={pathname === item.href ? 2.25 : 1.75}
-                className={cn(
-                  "shrink-0 transition-colors",
-                  pathname === item.href ? "text-primary" : "text-muted-foreground group-hover:text-foreground",
-                )}
+                size={17}
+                strokeWidth={pathname === item.href ? 2 : 1.75}
+                className="shrink-0"
               />
               {!collapsed && item.label}
             </Link>
@@ -151,7 +150,7 @@ export function Sidebar() {
         )}
       </nav>
       {!collapsed && (
-        <div className="border-t border-border/60 p-4">
+        <div className="border-t border-border/60 p-3">
           <LegalFooter />
         </div>
       )}

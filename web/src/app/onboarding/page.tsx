@@ -2,18 +2,20 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { motion, AnimatePresence } from "framer-motion";
-import { Shield, Sparkles, ArrowRight } from "lucide-react";
+import { ArrowRight, Check } from "lucide-react";
+import { AuthShell } from "@/components/brand/auth-shell";
+import { StepHeader } from "@/components/brand/step-header";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Hint } from "@/components/ui/hint";
-import { SuccessMark } from "@/components/ui/success-mark";
-import { EASE_OUT } from "@/components/ui/motion";
 import { completeOnboarding } from "@/lib/db";
-import { parseRupeeInput } from "@/lib/money";
+import { parseRupeeInput, formatINR } from "@/lib/money";
 import { SALARY_PRESETS } from "@/lib/ux/defaults";
 import { successFeedback, tapFeedback } from "@/lib/ux/feedback";
 import { showToast } from "@/lib/store/toast-store";
+import { cn } from "@/lib/design/cn";
+
+const MIN_SALARY_PAISE = 1_000_00;
+const STEPS = ["Your name", "Income setup"] as const;
 
 export default function OnboardingPage() {
   const router = useRouter();
@@ -36,8 +38,8 @@ export default function OnboardingPage() {
       setLoading(false);
       return;
     }
-    if (paise <= 0) {
-      setFormError("Enter a valid monthly salary greater than zero.");
+    if (paise < MIN_SALARY_PAISE) {
+      setFormError("Enter a monthly salary of at least ₹1,000.");
       setLoading(false);
       return;
     }
@@ -55,182 +57,153 @@ export default function OnboardingPage() {
     }
   }
 
-  return (
-    <div className="relative flex min-h-screen items-center justify-center overflow-hidden p-4">
-      <motion.div
-        className="pointer-events-none absolute -left-20 top-20 h-56 w-56 rounded-full bg-primary/10 blur-3xl"
-        animate={{ x: [0, 20, 0], y: [0, -10, 0] }}
-        transition={{ duration: 8, repeat: Infinity, ease: "easeInOut" }}
-      />
-      <motion.div
-        className="pointer-events-none absolute -right-16 bottom-24 h-48 w-48 rounded-full bg-success/10 blur-3xl"
-        animate={{ x: [0, -15, 0], y: [0, 12, 0] }}
-        transition={{ duration: 7, repeat: Infinity, ease: "easeInOut", delay: 0.5 }}
-      />
-      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_60%_50%_at_50%_-10%,rgba(95,74,139,0.08),transparent)]" />
+  function goToStep1(e: React.FormEvent) {
+    e.preventDefault();
+    setFormError(null);
+    if (!displayName.trim()) {
+      setFormError("Enter your name to continue.");
+      return;
+    }
+    tapFeedback();
+    setStep(1);
+  }
 
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.55, ease: EASE_OUT }}
-        className="relative w-full max-w-md"
+  if (done) {
+    return (
+      <AuthShell
+        headline="You're in."
+        subcopy="Your ledger is configured. We'll take you to the dashboard."
+        features={[]}
       >
-        <div className="mb-10 text-center">
-          <motion.div
-            className="mx-auto mb-5 flex h-[4.5rem] w-[4.5rem] items-center justify-center rounded-xl bg-primary text-3xl font-semibold text-primary-foreground shadow-glow"
-            animate={{ scale: [1, 1.02, 1] }}
-            transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}
-          >
-            V
-          </motion.div>
-          <h1 className="text-3xl font-semibold tracking-tight">Welcome to Viswallet</h1>
-          <p className="mx-auto mt-3 max-w-xs text-[15px] leading-relaxed text-muted-foreground">
-            Premium personal finance — private, offline-first, and beautifully simple.
+        <div className="flex flex-col items-start py-8">
+          <div className="flex h-12 w-12 items-center justify-center rounded-lg border border-border bg-surface text-success">
+            <Check size={22} strokeWidth={2.25} />
+          </div>
+          <p className="mt-6 font-display text-xl font-semibold tracking-tight">
+            Welcome, {displayName.trim()}
           </p>
+          <p className="mt-2 text-sm text-muted-foreground">Opening your dashboard…</p>
         </div>
+      </AuthShell>
+    );
+  }
 
-        <div
-          className="mb-8 flex justify-center gap-2"
-          role="progressbar"
-          aria-valuemin={0}
-          aria-valuemax={1}
-          aria-valuenow={step}
-          aria-label={`Onboarding step ${step + 1} of 2`}
-        >
-          {[0, 1].map((i) => (
-            <motion.div
-              key={i}
-              className="h-1 rounded-full bg-muted"
-              animate={{
-                width: step >= i ? 48 : 24,
-                backgroundColor: step >= i ? "var(--primary)" : "var(--muted)",
+  return (
+    <AuthShell>
+      <StepHeader
+        step={step}
+        total={STEPS.length}
+        title={step === 0 ? "What should we call you?" : "Set up your salary cycle"}
+        description={
+          step === 0
+            ? "This is how Viswallet greets you — only stored on your device."
+            : displayName.trim()
+              ? `${displayName.trim()}, tell us when and how much you earn each month.`
+              : "Tell us when and how much you earn each month."
+        }
+      />
+
+      <form
+        onSubmit={step === 1 ? handleSubmit : goToStep1}
+        noValidate
+        className="space-y-6"
+      >
+        {step === 0 ? (
+          <Input
+            label="Display name"
+            placeholder="Vishwajit"
+            value={displayName}
+            onChange={(e) => {
+              setDisplayName(e.target.value);
+              if (formError) setFormError(null);
+            }}
+            autoFocus
+            autoComplete="name"
+          />
+        ) : (
+          <>
+            <Input
+              label="Monthly salary (₹)"
+              type="text"
+              inputMode="numeric"
+              placeholder="50,000"
+              value={salary}
+              onChange={(e) => {
+                setSalary(e.target.value.replace(/[^\d.]/g, ""));
+                if (formError) setFormError(null);
               }}
-              transition={{ duration: 0.35, ease: EASE_OUT }}
+              autoFocus
             />
-          ))}
-        </div>
 
-        <div className="surface-card p-6 md:p-8">
-          <AnimatePresence mode="wait">
-            {done ? (
-              <motion.div
-                key="done"
-                initial={{ opacity: 0, scale: 0.96 }}
-                animate={{ opacity: 1, scale: 1 }}
-                className="py-8"
-              >
-                <SuccessMark label={`You're all set, ${displayName}!`} />
-                <p className="mt-3 text-center text-sm text-muted-foreground">Opening your dashboard…</p>
-              </motion.div>
-            ) : (
-              <motion.form
-                key={step}
-                initial={{ opacity: 0, x: step === 0 ? -16 : 16 }}
-                animate={{ opacity: 1, x: 0 }}
-                exit={{ opacity: 0, x: step === 0 ? 16 : -16 }}
-                transition={{ duration: 0.3, ease: EASE_OUT }}
-                onSubmit={
-                  step === 1
-                    ? handleSubmit
-                    : (e) => {
-                        e.preventDefault();
+            <div className="space-y-2.5">
+              <span className="text-xs font-medium text-foreground/80">Quick select</span>
+              <div className="grid grid-cols-4 gap-1.5 sm:grid-cols-4">
+                {SALARY_PRESETS.map((p) => {
+                  const active = salary === String(p.value);
+                  return (
+                    <button
+                      key={p.value}
+                      type="button"
+                      onClick={() => {
                         tapFeedback();
-                        setStep(1);
-                      }
-                }
-                className="space-y-5"
-              >
-                {step === 0 ? (
-                  <>
-                    <div className="flex items-center gap-3 rounded-xl bg-muted/50 p-3 text-sm text-muted-foreground">
-                      <Sparkles size={16} className="shrink-0 text-primary" />
-                      Let&apos;s personalize your experience in under a minute.
-                    </div>
-                    <Input
-                      label="What should we call you?"
-                      required
-                      placeholder="e.g. Rahul"
-                      value={displayName}
-                      onChange={(e) => setDisplayName(e.target.value)}
-                      autoFocus
-                    />
-                    <Button type="submit" className="w-full gap-2" size="lg" disabled={!displayName.trim()}>
-                      Continue
-                      <ArrowRight size={16} />
-                    </Button>
-                  </>
-                ) : (
-                  <>
-                    <p className="text-sm leading-relaxed text-muted-foreground">
-                      Hi <span className="font-medium text-foreground">{displayName}</span>! Set up your
-                      salary cycle so budgets and insights work correctly.
-                    </p>
-                    <Input
-                      label="Monthly salary (INR)"
-                      type="number"
-                      min="1"
-                      required
-                      placeholder="e.g. 50000"
-                      value={salary}
-                      onChange={(e) => setSalary(e.target.value)}
-                    />
-                    <div className="flex flex-wrap gap-2">
-                      {SALARY_PRESETS.map((p) => (
-                        <motion.button
-                          key={p.value}
-                          type="button"
-                          whileTap={{ scale: 0.96 }}
-                          onClick={() => {
-                            tapFeedback();
-                            setSalary(String(p.value));
-                          }}
-                          className={`rounded-lg border px-3 py-1.5 text-xs font-medium transition-colors duration-200 ${
-                            salary === String(p.value)
-                              ? "border-primary bg-primary/10 text-primary shadow-xs"
-                              : "border-border text-muted-foreground hover:border-primary/40"
-                          }`}
-                        >
-                          {p.label}
-                        </motion.button>
-                      ))}
-                    </div>
-                    <Input
-                      label="Salary day of month (1–28)"
-                      type="number"
-                      min="1"
-                      max="28"
-                      required
-                      value={salaryDay}
-                      onChange={(e) => setSalaryDay(e.target.value)}
-                      hint="Your cycle starts on this day each month."
-                    />
-                    <Hint>
-                      Your salary cycle starts on this day each month. Budgets and insights use this window — you can change it later in Settings.
-                    </Hint>
-                    <div className="flex items-center gap-2 rounded-xl bg-success-muted/60 p-3 text-xs text-success">
-                      <Shield size={14} className="shrink-0" />
-                      Your data stays on this device. No account required.
-                    </div>
-                    <div className="flex gap-2 pt-1">
-                      <Button type="button" variant="outline" className="flex-1" onClick={() => setStep(0)}>
-                        Back
-                      </Button>
-                      <Button type="submit" className="flex-1" size="lg" disabled={loading}>
-                        {loading ? "Setting up..." : "Get started"}
-                      </Button>
-                    </div>
-                    {formError && (
-                      <p className="text-sm text-destructive" role="alert">
-                        {formError}
-                      </p>
-                    )}
-                  </>
-                )}
-              </motion.form>
-            )}
-          </AnimatePresence>
+                        setSalary(String(p.value));
+                        if (formError) setFormError(null);
+                      }}
+                      className={cn(
+                        "rounded-md border px-2 py-2 text-center text-[11px] font-medium tabular-nums transition-colors",
+                        active
+                          ? "border-foreground bg-foreground text-background"
+                          : "border-border bg-surface text-muted-foreground hover:border-border-strong hover:text-foreground",
+                      )}
+                    >
+                      {p.label}
+                    </button>
+                  );
+                })}
+              </div>
+              {salary && parseRupeeInput(salary) >= MIN_SALARY_PAISE && (
+                <p className="text-xs text-muted-foreground">
+                  {formatINR(parseRupeeInput(salary))} per month
+                </p>
+              )}
+            </div>
+
+            <Input
+              label="Salary day"
+              type="number"
+              min="1"
+              max="28"
+              value={salaryDay}
+              onChange={(e) => setSalaryDay(e.target.value)}
+              hint="Day 1–28 when your pay cycle starts."
+              inputMode="numeric"
+            />
+          </>
+        )}
+
+        {formError && (
+          <p className="text-sm text-destructive" role="alert">
+            {formError}
+          </p>
+        )}
+
+        <div className={cn("flex gap-2 pt-2", step === 0 && "flex-col")}>
+          {step === 1 && (
+            <Button type="button" variant="outline" className="flex-1" onClick={() => setStep(0)}>
+              Back
+            </Button>
+          )}
+          <Button
+            type="submit"
+            className={cn("gap-2", step === 1 ? "flex-1" : "w-full")}
+            size="lg"
+            disabled={loading}
+          >
+            {loading ? "Saving…" : step === 0 ? "Continue" : "Finish setup"}
+            {!loading && step === 0 && <ArrowRight size={15} />}
+          </Button>
         </div>
-      </motion.div>
-    </div>
+      </form>
+    </AuthShell>
   );
 }

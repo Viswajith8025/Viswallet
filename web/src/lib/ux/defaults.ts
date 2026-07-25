@@ -35,9 +35,12 @@ export function pickDefaultCategoryId(
 }
 
 export const SALARY_PRESETS = [
-  { label: "₹25k", value: 25000 },
+  { label: "₹10k", value: 10000 },
+  { label: "₹20k", value: 20000 },
+  { label: "₹30k", value: 30000 },
+  { label: "₹40k", value: 40000 },
   { label: "₹50k", value: 50000 },
-  { label: "₹75k", value: 75000 },
-  { label: "₹1L", value: 100000 },
-  { label: "₹1.5L", value: 150000 },
+  { label: "₹60k", value: 60000 },
+  { label: "₹70k", value: 70000 },
+  { label: "₹80k", value: 80000 },
 ] as const;
