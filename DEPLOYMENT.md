@@ -10,12 +10,20 @@ Production deployment checklist for Viswallet Web.
 
 ## Recommended: Vercel
 
-1. Import the repository; set **Root Directory** to `web`
-2. Framework preset: **Next.js** (auto-detected)
-3. Set environment variables (see below)
-4. Deploy
+**Option A — Root Directory `web` (recommended)**
+
+1. Import the repository
+2. **Settings → General → Root Directory** → `web`
+3. Framework preset: **Next.js**
+4. Leave Install / Build commands as defaults
+5. Set environment variables (see below)
+6. Deploy
 
 `web/vercel.json` configures Mumbai region (`bom1`) and SW cache headers.
+
+**Option B — Deploy from repo root**
+
+Leave Root Directory empty. Root `vercel.json` runs `npm ci --prefix web` and `npm run build --prefix web` automatically.
 
 ## Environment variables
 
