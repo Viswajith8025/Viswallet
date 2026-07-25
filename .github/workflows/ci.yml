@@ -22,14 +22,11 @@ jobs:
           cache: npm
           cache-dependency-path: web/package-lock.json
 
-      - name: Use npm from packageManager (lockfile requires npm 11+)
-        run: |
-          corepack enable
-          corepack prepare npm@11.6.2 --activate
-          npm --version
-
       - name: Install dependencies
-        run: npm ci
+        run: |
+          npm install -g npm@11.6.2
+          npm --version
+          npm ci
 
       - name: Lint
         run: npm run lint
