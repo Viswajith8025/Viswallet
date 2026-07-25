@@ -9,37 +9,39 @@ on:
 jobs:
   quality:
     runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: web
 
     steps:
       - uses: actions/checkout@v4
 
       - uses: actions/setup-node@v4
         with:
-          node-version: "24"
-          cache: npm
-          cache-dependency-path: web/package-lock.json
+          node-version: "22"
+
+      - name: Upgrade npm to match lockfile
+        run: |
+          npm install -g npm@11.6.2
+          npm --version
 
       - name: Install dependencies
-        run: |
-          node --version
-          npm --version
-          npm ci --no-audit
+        working-directory: web
+        run: npm ci --no-audit
 
       - name: Lint
+        working-directory: web
         run: npm run lint
 
       - name: Unit tests
+        working-directory: web
         run: npm run test
 
       - name: Production build
+        working-directory: web
         run: npm run build
         env:
           NEXT_PUBLIC_APP_URL: https://viswallet.app
           NEXT_PUBLIC_APP_VERSION: ${{ github.sha }}
 
       - name: Dependency audit
+        working-directory: web
         run: npm run audit:deps
         continue-on-error: true
