@@ -26,14 +26,12 @@ export function RouteGuard({ children }: { children: React.ReactNode }) {
   const isPublic =
     ALWAYS_PUBLIC_ROUTES.includes(pathname) ||
     (!configured && isOnboarding);
-  const verifiedRef = useRef(canRenderImmediately(pathname, configured));
-  const [appReady, setAppReady] = useState(() => verifiedRef.current);
+  const initiallyReady = isPublic || canRenderImmediately(pathname, configured);
+  const [appReady, setAppReady] = useState(initiallyReady);
+  const verifiedRef = useRef(initiallyReady);
 
   useEffect(() => {
-    if (isPublic) {
-      setAppReady(true);
-      return;
-    }
+    if (isPublic) return;
 
     if (configured && authLoading) return;
 

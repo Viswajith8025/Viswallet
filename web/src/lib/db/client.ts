@@ -52,7 +52,6 @@ import { getActiveCategories as repoGetActiveCategories } from "./repositories/c
 import { emitNotificationsChanged, emitDbDataChanged } from "@/lib/notifications/bus";
 import {
   clearSettingsCache,
-  peekBootCache,
   readSettingsCache,
   rememberSettings,
   writeBootCache,
