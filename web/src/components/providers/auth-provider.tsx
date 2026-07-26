@@ -18,7 +18,7 @@ import {
   signOut as authSignOut,
   signUpWithEmail,
 } from "@/lib/supabase/auth";
-import { syncCloudOnLogin, clearCloudSyncState } from "@/lib/supabase/cloud-sync";
+import { syncCloudOnLogin, clearCloudSyncState, canSyncCloudVault } from "@/lib/supabase/cloud-sync";
 import { resetLocalDatabase } from "@/lib/db";
 
 type AuthContextValue = {
@@ -28,7 +28,9 @@ type AuthContextValue = {
   loading: boolean;
   syncing: boolean;
   signIn: (email: string, password: string) => Promise<void>;
-  signUp: (email: string, password: string, displayName?: string) => Promise<void>;
+  signUp: (email: string, password: string, displayName?: string) => Promise<
+    { signedIn: true } | { signedIn: false; message: string }
+  >;
   signOut: () => Promise<void>;
 };
 
@@ -44,7 +46,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const loading = configured && !sessionReady;
 
   const runCloudSync = useCallback(async () => {
-    if (!configured) return;
+    if (!configured || !canSyncCloudVault()) return;
     setSyncing(true);
     try {
       await syncCloudOnLogin();
@@ -60,14 +62,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     if (!configured) return;
 
     let mounted = true;
+    const authTimeout = window.setTimeout(() => {
+      if (mounted) setSessionReady(true);
+    }, 2500);
 
     getAuthSession().then((session) => {
       if (!mounted) return;
       setUser(session?.user ?? null);
       setSessionReady(true);
-      if (session?.user) {
-        void runCloudSync();
-      }
     });
 
     const unsubscribe = onAuthStateChange((_event, session) => {
@@ -77,20 +79,25 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     return () => {
       mounted = false;
+      window.clearTimeout(authTimeout);
       unsubscribe();
     };
-  }, [configured, runCloudSync]);
+  }, [configured]);
 
   const signIn = useCallback(async (email: string, password: string) => {
     const signedInUser = await signInWithEmail(email, password);
     setUser(signedInUser);
-    void runCloudSync();
+    window.setTimeout(() => void runCloudSync(), 500);
   }, [runCloudSync]);
 
   const signUp = useCallback(async (email: string, password: string, displayName?: string) => {
-    const newUser = await signUpWithEmail(email, password, displayName);
-    setUser(newUser);
-    void runCloudSync();
+    const outcome = await signUpWithEmail(email, password, displayName);
+    if (outcome.status === "signed_in") {
+      setUser(outcome.user);
+      window.setTimeout(() => void runCloudSync(), 500);
+      return { signedIn: true as const };
+    }
+    return { signedIn: false as const, message: outcome.message };
   }, [runCloudSync]);
 
   const signOut = useCallback(async () => {

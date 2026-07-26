@@ -13,13 +13,27 @@ export function cloudAuthRequired(): boolean {
 }
 
 let signInInFlight: Promise<User> | null = null;
-let signUpInFlight: Promise<User> | null = null;
+
+/** Create account — signs in immediately when Supabase returns a session. */
+export type SignUpOutcome =
+  | { status: "signed_in"; user: User }
+  | { status: "created"; message: string };
+
+let signUpInFlight: Promise<SignUpOutcome> | null = null;
 
 export async function getAuthSession(): Promise<Session | null> {
   const sb = getSupabase();
   if (!sb) return null;
-  const { data } = await sb.auth.getSession();
-  return data.session;
+
+  const sessionPromise = sb.auth.getSession().then(({ data }) => data.session);
+  if (typeof window === "undefined") return sessionPromise;
+
+  return Promise.race([
+    sessionPromise,
+    new Promise<Session | null>((resolve) => {
+      window.setTimeout(() => resolve(null), 2000);
+    }),
+  ]);
 }
 
 export async function getAuthUser(): Promise<User | null> {
@@ -44,7 +58,7 @@ function mapAuthError(error: AuthError): string {
   }
 
   if (code === "email_not_confirmed" || msg.includes("email not confirmed")) {
-    return "Account is not active yet. Turn off email confirmation in Supabase Auth settings.";
+    return "Your account exists but isn't confirmed yet. Check your email, or ask the app owner to confirm you in Supabase.";
   }
 
   if (msg.includes("invalid api key") || msg.includes("invalid jwt") || code === "bad_jwt") {
@@ -68,7 +82,7 @@ function mapAuthError(error: AuthError): string {
   }
 
   if (error.status === 429 || msg.includes("rate limit") || msg.includes("too many")) {
-    return "Supabase temporarily limited requests from this device. Try again in a minute.";
+    return "Too many attempts — wait about a minute. If you already signed up, use Sign in instead of creating another account.";
   }
 
   return error.message || "Authentication failed. Try again.";
@@ -97,15 +111,18 @@ export async function signInWithEmail(email: string, password: string): Promise<
   return signInInFlight;
 }
 
-/** Create account — one request; session returned when email confirmation is off in Supabase. */
+
 export async function signUpWithEmail(
   email: string,
   password: string,
   displayName?: string,
-): Promise<User> {
-  if (signUpInFlight) return signUpInFlight;
+): Promise<SignUpOutcome> {
+  if (signUpInFlight) {
+    const result = await signUpInFlight;
+    return result;
+  }
 
-  signUpInFlight = (async () => {
+  signUpInFlight = (async (): Promise<SignUpOutcome> => {
     const sb = getSupabase();
     if (!sb) throw new Error("Cloud accounts are not configured.");
 
@@ -127,14 +144,38 @@ export async function signUpWithEmail(
       throw new Error("An account with this email already exists. Use Sign in below.");
     }
 
-    if (data.session?.user) return data.session.user;
+    if (data.session?.user) {
+      return { status: "signed_in", user: data.session.user };
+    }
 
     const { data: sessionData } = await sb.auth.getSession();
-    if (sessionData.session?.user) return sessionData.session.user;
+    if (sessionData.session?.user) {
+      return { status: "signed_in", user: sessionData.session.user };
+    }
 
-    throw new Error(
-      "Account created but sign-in failed. Turn off email confirmation in Supabase, then sign in.",
-    );
+    // Sign-up succeeded but no session — try signing in (works when confirm-email is off).
+    const { data: signInData, error: signInError } = await sb.auth.signInWithPassword({
+      email: trimmed,
+      password,
+    });
+    if (!signInError && signInData.user) {
+      return { status: "signed_in", user: signInData.user };
+    }
+
+    if (data.user) {
+      const needsEmailConfirm =
+        !data.user.email_confirmed_at &&
+        (signInError?.message?.toLowerCase().includes("email not confirmed") ?? false);
+
+      return {
+        status: "created",
+        message: needsEmailConfirm
+          ? "Account created! Check your email to confirm it, then tap Sign in."
+          : "Account created! Tap Sign in and use the same email and password.",
+      };
+    }
+
+    throw new Error("Could not create account. Try again in a minute.");
   })().finally(() => {
     signUpInFlight = null;
   });

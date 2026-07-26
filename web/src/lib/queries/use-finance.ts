@@ -23,8 +23,9 @@ export function useFinanceSnapshot() {
       const key = cycleKey ?? getCurrentCycleKey(settings.salaryDay);
       return loadFinanceSnapshot(key);
     },
-    staleTime: 30_000,
-    gcTime: 5 * 60_000,
+    staleTime: 60_000,
+    gcTime: 10 * 60_000,
+    placeholderData: (previousData) => previousData,
   });
 }
 export function useCategories() {

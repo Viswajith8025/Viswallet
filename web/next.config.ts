@@ -16,13 +16,23 @@ const securityHeaders = [
 ];
 
 const nextConfig: NextConfig = {
-  reactStrictMode: true,
+  reactStrictMode: false,
   poweredByHeader: false,
   turbopack: {
     root: turbopackRoot,
   },
   experimental: {
     optimizePackageImports: ["lucide-react", "recharts", "date-fns", "framer-motion"],
+  },
+  webpack: (config, { dev }) => {
+    if (dev) {
+      config.watchOptions = {
+        poll: 2000,
+        aggregateTimeout: 800,
+        ignored: ["**/node_modules/**", "**/.git/**", "**/.next/**"],
+      };
+    }
+    return config;
   },
   async headers() {
     return [

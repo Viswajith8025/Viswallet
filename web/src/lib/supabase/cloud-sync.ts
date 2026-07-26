@@ -6,10 +6,49 @@ import { emitDbDataChanged, emitNotificationsChanged } from "@/lib/notifications
 
 const LAST_SYNC_KEY = "vw_cloud_last_sync_at";
 const USER_ID_KEY = "vw_cloud_user_id";
+const VAULT_UNAVAILABLE_KEY = "vw_vault_unavailable";
 
 let syncInFlight: Promise<void> | null = null;
 let loginSyncInFlight: Promise<"pulled" | "pushed" | "noop"> | null = null;
 let debounceTimer: ReturnType<typeof setTimeout> | null = null;
+let vaultUnavailableMemory =
+  typeof window !== "undefined" && localStorage.getItem(VAULT_UNAVAILABLE_KEY) === "1";
+
+function isCloudVaultEnvEnabled(): boolean {
+  return process.env.NEXT_PUBLIC_CLOUD_VAULT === "true";
+}
+
+function canUseCloudVault(): boolean {
+  return isCloudVaultEnvEnabled() && !isVaultUnavailable();
+}
+
+function isVaultUnavailable(): boolean {
+  if (vaultUnavailableMemory) return true;
+  if (typeof window === "undefined") return false;
+  return localStorage.getItem(VAULT_UNAVAILABLE_KEY) === "1";
+}
+
+function markVaultUnavailable(): void {
+  vaultUnavailableMemory = true;
+  if (typeof window !== "undefined") {
+    localStorage.setItem(VAULT_UNAVAILABLE_KEY, "1");
+  }
+}
+
+function clearVaultUnavailable(): void {
+  vaultUnavailableMemory = false;
+  if (typeof window !== "undefined") {
+    localStorage.removeItem(VAULT_UNAVAILABLE_KEY);
+  }
+}
+
+type SupabaseErrorLike = {
+  message?: string;
+  code?: string;
+  status?: number;
+  details?: string;
+  hint?: string;
+};
 
 function getLastLocalSyncAt(): Date | null {
   if (typeof window === "undefined") return null;
@@ -42,6 +81,19 @@ export function clearCloudSyncState(): void {
   if (typeof window === "undefined") return;
   localStorage.removeItem(LAST_SYNC_KEY);
   localStorage.removeItem(USER_ID_KEY);
+  // Keep vault-unavailable flag — the Supabase table is still missing after sign-out.
+}
+
+export function isCloudVaultConfigured(): boolean {
+  return isCloudVaultEnvEnabled();
+}
+
+export function isCloudVaultBlocked(): boolean {
+  return isVaultUnavailable();
+}
+
+export function canSyncCloudVault(): boolean {
+  return canUseCloudVault();
 }
 
 async function ensureAccountScopedLocalData(userId: string): Promise<void> {
@@ -55,6 +107,8 @@ async function ensureAccountScopedLocalData(userId: string): Promise<void> {
 
 /** Pull cloud vault and merge into local IndexedDB if cloud is newer. */
 export async function pullCloudVault(): Promise<boolean> {
+  if (!canUseCloudVault()) return false;
+
   const sb = getSupabase();
   const user = await getAuthUser();
   if (!sb || !user) return false;
@@ -68,7 +122,10 @@ export async function pullCloudVault(): Promise<boolean> {
     .maybeSingle();
 
   if (error) {
-    if (isMissingVaultTable(error.message)) return false;
+    if (isMissingVaultTable(error)) {
+      markVaultUnavailable();
+      return false;
+    }
     throw new Error(error.message);
   }
   if (!data?.payload) return false;
@@ -85,6 +142,7 @@ export async function pullCloudVault(): Promise<boolean> {
 
   await importAllData(json, { skipRateLimit: true });
   setLastLocalSyncAt(cloudUpdated);
+  clearVaultUnavailable();
   emitNotificationsChanged();
   emitDbDataChanged();
   return true;
@@ -92,6 +150,8 @@ export async function pullCloudVault(): Promise<boolean> {
 
 /** Push local IndexedDB snapshot to cloud vault. */
 export async function pushCloudVault(): Promise<void> {
+  if (!canUseCloudVault()) return;
+
   const sb = getSupabase();
   const user = await getAuthUser();
   if (!sb || !user) return;
@@ -113,25 +173,38 @@ export async function pushCloudVault(): Promise<void> {
   );
 
   if (error) {
-    if (isMissingVaultTable(error.message)) return;
+    if (isMissingVaultTable(error)) {
+      markVaultUnavailable();
+      return;
+    }
     throw new Error(error.message);
   }
+  clearVaultUnavailable();
   setLastLocalSyncAt(new Date(now));
 }
 
-function isMissingVaultTable(message: string): boolean {
-  const m = message.toLowerCase();
+function isMissingVaultTable(error: SupabaseErrorLike | string): boolean {
+  const payload = typeof error === "string" ? { message: error } : error;
+  const m = `${payload.message ?? ""} ${payload.details ?? ""} ${payload.hint ?? ""}`.toLowerCase();
+  const code = (payload.code ?? "").toLowerCase();
+
   return (
+    payload.status === 404 ||
+    code === "42p01" ||
+    code === "pgrst205" ||
+    code === "pgrst116" ||
     m.includes("user_data_vaults") ||
     m.includes("does not exist") ||
     m.includes("could not find the table") ||
-    m.includes("schema cache")
+    m.includes("schema cache") ||
+    m.includes("not found")
   );
 }
 
 /** After login: pull if cloud exists, else push local data. */
 export async function syncCloudOnLogin(): Promise<"pulled" | "pushed" | "noop"> {
   if (loginSyncInFlight) return loginSyncInFlight;
+  if (!canUseCloudVault()) return "noop";
 
   loginSyncInFlight = (async () => {
     const sb = getSupabase();
@@ -147,16 +220,21 @@ export async function syncCloudOnLogin(): Promise<"pulled" | "pushed" | "noop"> 
       .maybeSingle();
 
     if (error) {
-      if (isMissingVaultTable(error.message)) return "noop";
+      if (isMissingVaultTable(error)) {
+        markVaultUnavailable();
+        return "noop";
+      }
       throw new Error(error.message);
     }
 
     if (data?.updated_at) {
       const pulled = await pullCloudVault();
+      if (pulled) clearVaultUnavailable();
       return pulled ? "pulled" : "noop";
     }
 
     await pushCloudVault();
+    clearVaultUnavailable();
     return "pushed";
   })().finally(() => {
     loginSyncInFlight = null;
@@ -167,6 +245,7 @@ export async function syncCloudOnLogin(): Promise<"pulled" | "pushed" | "noop"> 
 
 export async function syncCloudNow(): Promise<void> {
   if (syncInFlight) return syncInFlight;
+  if (!canUseCloudVault()) return;
 
   syncInFlight = (async () => {
     const user = await getAuthUser();
@@ -181,6 +260,7 @@ export async function syncCloudNow(): Promise<void> {
 
 export function scheduleCloudSync(): void {
   if (typeof window === "undefined") return;
+  if (!canUseCloudVault()) return;
   if (debounceTimer) clearTimeout(debounceTimer);
   debounceTimer = setTimeout(() => {
     debounceTimer = null;

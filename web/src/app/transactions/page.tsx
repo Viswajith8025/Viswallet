@@ -36,6 +36,7 @@ import {
 } from "@/lib/ux/defaults";
 import { confirmAction } from "@/lib/store/confirm-store";
 import { showToast } from "@/lib/store/toast-store";
+import { useUIStore } from "@/lib/store/ui-store";
 
 function TransactionsContent({
   data,
@@ -49,6 +50,7 @@ function TransactionsContent({
   editId?: string | null;
 }) {
   const invalidate = useInvalidateFinance();
+  const setStatementImportOpen = useUIStore((s) => s.setStatementImportOpen);
   const categories = useCategories();
   const expenseCats = useMemo(() => categories.filter((c) => c.countsTowardSpending), [categories]);
   const incomeCats = useMemo(
@@ -229,7 +231,10 @@ function TransactionsContent({
           title="Transactions"
           description="Every rupee in and out, beautifully organized."
           actions={
-            <div className="flex gap-2">
+            <div className="flex flex-wrap gap-2">
+              <Button variant="outline" onClick={() => setStatementImportOpen(true)}>
+                Import statement
+              </Button>
               <Button variant="outline" onClick={() => openNew("income")}>
                 Add income
               </Button>

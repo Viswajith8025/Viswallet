@@ -19,12 +19,14 @@ export default function AuthPage() {
   const [displayName, setDisplayName] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [notice, setNotice] = useState<string | null>(null);
   const submittingRef = useRef(false);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (submittingRef.current || loading) return;
     setError(null);
+    setNotice(null);
 
     const trimmedEmail = email.trim();
 
@@ -51,8 +53,13 @@ export default function AuthPage() {
         const settings = await getSettings();
         router.replace(settings.onboardingComplete ? "/" : "/onboarding");
       } else {
-        await signUp(trimmedEmail, password, displayName);
-        router.replace("/onboarding");
+        const outcome = await signUp(trimmedEmail, password, displayName);
+        if (outcome.signedIn) {
+          router.replace("/onboarding");
+        } else {
+          setMode("signin");
+          setNotice(outcome.message);
+        }
       }
     } catch (err) {
       const message = err instanceof Error ? err.message : "Something went wrong.";
@@ -115,6 +122,11 @@ export default function AuthPage() {
           autoComplete={mode === "signin" ? "current-password" : "new-password"}
           required
         />
+        {notice && (
+          <p className="text-sm text-success" role="status">
+            {notice}
+          </p>
+        )}
         {error && (
           <p className="text-sm text-destructive" role="alert">
             {error}
@@ -133,6 +145,7 @@ export default function AuthPage() {
           onClick={() => {
             setMode(mode === "signin" ? "signup" : "signin");
             setError(null);
+            setNotice(null);
           }}
         >
           {mode === "signin" ? "Create account" : "Sign in"}

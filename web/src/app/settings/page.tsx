@@ -28,6 +28,7 @@ import { categoryMap } from "@/lib/engines/finance-snapshot";
 import { getCurrentCycleKey } from "@/lib/salary-cycle";
 import { applyAccentColor } from "@/lib/theme/accent";
 import { useAuth } from "@/components/providers/auth-provider";
+import { useUIStore } from "@/lib/store/ui-store";
 import { applyThemeMode } from "@/lib/theme/resolve";
 import type { AccentColor, DashboardWidgetId } from "@/lib/db/types";
 import { DEFAULT_DASHBOARD_WIDGETS, DASHBOARD_WIDGET_LABELS } from "@/lib/db/types";
@@ -52,6 +53,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 export default function SettingsPage() {
   const { refresh } = useDb();
   const { configured } = useAuth();
+  const setStatementImportOpen = useUIStore((s) => s.setStatementImportOpen);
   const lock = useSecurityStore((s) => s.lock);
   const fileRef = useRef<HTMLInputElement>(null);
   const csvRef = useRef<HTMLInputElement>(null);
@@ -450,6 +452,7 @@ export default function SettingsPage() {
           <div className="flex flex-wrap gap-2">
             <Button variant="outline" onClick={handleCsvExport}>Export CSV / Excel</Button>
             <Button variant="outline" onClick={() => csvRef.current?.click()}>Import CSV</Button>
+            <Button variant="outline" onClick={() => setStatementImportOpen(true)}>Import bank statement</Button>
             <input ref={csvRef} type="file" accept=".csv,text/csv" className="hidden" onChange={handleCsvImport} />
           </div>
         </CardContent>

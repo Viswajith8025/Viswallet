@@ -2,10 +2,10 @@
 
 import dynamic from "next/dynamic";
 import { usePathname } from "next/navigation";
-import { Sidebar } from "./sidebar";
 import { TopBar } from "./top-bar";
 import { OfflineBanner } from "./offline-banner";
 import { MobileNav } from "./mobile-nav";
+import { Sidebar } from "./sidebar";
 import { RouteGuard } from "@/components/security/route-guard";
 import { SecurityProvider } from "@/components/security/security-provider";
 import { ToastHost } from "@/components/ui/toast";
@@ -19,6 +19,11 @@ const CommandPalette = dynamic(
 
 const QuickAddModal = dynamic(
   () => import("@/components/quick-add/quick-add-modal").then((m) => m.QuickAddModal),
+  { ssr: false },
+);
+
+const StatementImportModal = dynamic(
+  () => import("@/components/import/statement-import-modal").then((m) => m.StatementImportModal),
   { ssr: false },
 );
 
@@ -49,6 +54,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           <MobileNav />
           <CommandPalette />
           <QuickAddModal />
+          <StatementImportModal />
           <ToastHost />
           <ConfirmDialog />
           <PageViewTracker />

@@ -5,7 +5,7 @@ import { createContext, useCallback, useContext, useEffect, useMemo, useState } 
 import { financeKeys } from "@/lib/queries/use-finance";
 import { onNotificationsChanged, onDbDataChanged } from "@/lib/notifications/bus";
 import { scheduleNotificationSync } from "@/lib/notifications/sync";
-import { scheduleCloudSync } from "@/lib/supabase/cloud-sync";
+import { scheduleCloudSync, canSyncCloudVault } from "@/lib/supabase/cloud-sync";
 import { getAuthUser } from "@/lib/supabase/auth";
 
 type DbContextValue = {
@@ -24,7 +24,7 @@ export function DbProvider({ children }: { children: React.ReactNode }) {
   const refresh = useCallback(async () => {
     scheduleNotificationSync();
     const user = await getAuthUser();
-    if (user) scheduleCloudSync();
+    if (user && canSyncCloudVault()) scheduleCloudSync();
     await Promise.all([
       queryClient.invalidateQueries({ queryKey: financeKeys.all }),
       queryClient.invalidateQueries({ queryKey: ["dexie"] }),

@@ -4,7 +4,9 @@
   "private": true,
   "packageManager": "npm@11.6.2",
   "scripts": {
-    "dev": "next dev",
+    "dev": "next dev --webpack",
+    "dev:turbo": "next dev",
+    "dev:stable": "next dev --webpack",
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
@@ -24,6 +26,7 @@
     "fuse.js": "^7.5.0",
     "lucide-react": "^1.25.0",
     "next": "16.2.11",
+    "pdfjs-dist": "^6.1.200",
     "react": "19.2.4",
     "react-dom": "19.2.4",
     "recharts": "^3.10.0",

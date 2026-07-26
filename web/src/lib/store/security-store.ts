@@ -2,7 +2,7 @@
 
 import { create } from "zustand";
 import { isSessionValid, extendSession, clearSession } from "@/lib/security/session";
-import { getSettings } from "@/lib/db";
+import { getSettings, readSettingsCache } from "@/lib/db";
 import { lockApp } from "@/lib/security/pin";
 
 interface SecurityState {
@@ -23,7 +23,7 @@ export const useSecurityStore = create<SecurityState>((set, get) => ({
   initialized: false,
 
   init: async () => {
-    const s = await getSettings();
+    const s = readSettingsCache() ?? (await getSettings());
     const enabled = s.appLockEnabled && Boolean(s.pinHash);
     const valid = !enabled || isSessionValid();
     set({

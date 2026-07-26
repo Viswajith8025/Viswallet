@@ -1,24 +1,40 @@
 "use client";
 
 import { usePathname, useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
-import { getSettings } from "@/lib/db";
+import { useEffect, useRef, useState } from "react";
+import { getSettings, peekBootCache } from "@/lib/db";
+import { kickstartDb } from "@/lib/db/boot";
 import { useAuth } from "@/components/providers/auth-provider";
 import { PageSkeleton } from "@/components/ui/skeleton";
 
 const ALWAYS_PUBLIC_ROUTES = ["/auth", "/privacy", "/terms", "/licenses"];
+const ONBOARDING_ROUTE = "/onboarding";
+
+function canRenderImmediately(pathname: string, configured: boolean): boolean {
+  if (ALWAYS_PUBLIC_ROUTES.includes(pathname)) return true;
+  if (!configured && pathname === ONBOARDING_ROUTE) return true;
+  return Boolean(peekBootCache()?.onboardingComplete);
+}
 
 export function RouteGuard({ children }: { children: React.ReactNode }) {
+  kickstartDb();
+
   const pathname = usePathname();
   const router = useRouter();
   const { configured, user, loading: authLoading } = useAuth();
+  const isOnboarding = pathname === ONBOARDING_ROUTE;
   const isPublic =
     ALWAYS_PUBLIC_ROUTES.includes(pathname) ||
-    (!configured && pathname === "/onboarding");
-  const [readyForPath, setReadyForPath] = useState<string | null>(isPublic ? pathname : null);
+    (!configured && isOnboarding);
+  const verifiedRef = useRef(canRenderImmediately(pathname, configured));
+  const [appReady, setAppReady] = useState(() => verifiedRef.current);
 
   useEffect(() => {
-    if (isPublic) return;
+    if (isPublic) {
+      setAppReady(true);
+      return;
+    }
+
     if (configured && authLoading) return;
 
     if (configured && !user) {
@@ -26,28 +42,51 @@ export function RouteGuard({ children }: { children: React.ReactNode }) {
       return;
     }
 
+    if (verifiedRef.current) {
+      if (isOnboarding) {
+        getSettings().then((s) => {
+          if (s.onboardingComplete) router.replace("/");
+        });
+      }
+      return;
+    }
+
     let cancelled = false;
     getSettings()
       .then((s) => {
         if (cancelled) return;
+        verifiedRef.current = true;
         if (!s.onboardingComplete) {
-          router.replace("/onboarding");
+          if (isOnboarding) setAppReady(true);
+          else router.replace(ONBOARDING_ROUTE);
           return;
         }
-        setReadyForPath(pathname);
+        if (isOnboarding) {
+          router.replace("/");
+          return;
+        }
+        setAppReady(true);
       })
       .catch(() => {
-        if (!cancelled) router.replace("/onboarding");
+        if (cancelled) return;
+        if (isOnboarding) {
+          verifiedRef.current = true;
+          setAppReady(true);
+        } else {
+          router.replace(ONBOARDING_ROUTE);
+        }
       });
 
     return () => {
       cancelled = true;
     };
-  }, [pathname, router, isPublic, configured, user, authLoading]);
+  }, [pathname, router, isPublic, configured, user, authLoading, isOnboarding]);
 
   if (isPublic) return <>{children}</>;
-  if (configured && (authLoading || !user)) return <PageSkeleton />;
-  if (readyForPath !== pathname) return <PageSkeleton />;
+  if (!appReady) {
+    if (configured && (authLoading || !user)) return <PageSkeleton />;
+    return <PageSkeleton />;
+  }
 
   return <>{children}</>;
 }

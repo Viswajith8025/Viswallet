@@ -10,7 +10,7 @@ import { Input } from "@/components/ui/input";
 import { useAuth } from "@/components/providers/auth-provider";
 import { getProfile, updateProfile } from "@/lib/db";
 import { sanitizeName, sanitizeEmail } from "@/lib/security";
-import { getCloudLastSyncedAt, syncCloudNow } from "@/lib/supabase/cloud-sync";
+import { getCloudLastSyncedAt, syncCloudNow, isCloudVaultConfigured } from "@/lib/supabase/cloud-sync";
 import { showToast } from "@/lib/store/toast-store";
 
 export default function ProfilePage() {
@@ -87,7 +87,7 @@ export default function ProfilePage() {
                       ? `Cloud account · ${user.email}`
                       : "Local only — create an account to back up your data"}
                   </p>
-                  {configured && lastSynced && (
+                  {configured && isCloudVaultConfigured() && lastSynced && (
                     <p className="text-xs text-muted-foreground">
                       Last synced {format(lastSynced, "d MMM yyyy, h:mm a")}
                     </p>
@@ -121,7 +121,7 @@ export default function ProfilePage() {
               <Button type="submit" className="w-full" disabled={saving}>
                 {saving ? "Saving..." : saved ? "Saved!" : "Save profile"}
               </Button>
-              {configured && user && (
+              {configured && user && isCloudVaultConfigured() && (
                 <div className="flex flex-wrap gap-2 border-t border-border pt-4">
                   <Button
                     type="button"

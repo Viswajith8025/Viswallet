@@ -50,6 +50,13 @@ import {
 } from "./repositories/transactions";
 import { getActiveCategories as repoGetActiveCategories } from "./repositories/categories";
 import { emitNotificationsChanged, emitDbDataChanged } from "@/lib/notifications/bus";
+import {
+  clearSettingsCache,
+  peekBootCache,
+  readSettingsCache,
+  rememberSettings,
+  writeBootCache,
+} from "./settings-cache";
 
 class ViswalletDB extends Dexie {
   profiles!: EntityTable<Profile, "id">;
@@ -364,6 +371,9 @@ export async function ensureDbSeeded(): Promise<void> {
         })),
       );
     }
+
+    const latestSettings = await db.settings.get(1);
+    if (latestSettings) writeBootCache(latestSettings);
   })();
   return seedPromise;
 }
@@ -378,15 +388,19 @@ export async function resetLocalDatabase(): Promise<void> {
   });
   seedPromise = null;
   await ensureDbSeeded();
+  clearSettingsCache();
   emitNotificationsChanged();
   emitDbDataChanged();
 }
 
 export async function getSettings(): Promise<AppSettings> {
+  const cached = readSettingsCache();
+  if (cached) return cached;
+
   await ensureDbSeeded();
   const s = await db.settings.get(1);
   if (!s) throw new Error("Settings not initialized");
-  return s;
+  return rememberSettings(s);
 }
 
 export async function getProfile(): Promise<Profile> {
@@ -397,7 +411,10 @@ export async function getProfile(): Promise<Profile> {
 }
 
 export async function updateSettings(partial: Partial<AppSettings>): Promise<void> {
-  await db.settings.update(1, { ...partial, updatedAt: new Date() });
+  const current = await getSettings();
+  const next = { ...current, ...partial, updatedAt: new Date() };
+  await db.settings.update(1, next);
+  rememberSettings(next);
 }
 
 export async function updateProfile(partial: Partial<Profile>): Promise<void> {
@@ -605,6 +622,7 @@ export async function importAllData(json: string, options: { skipRateLimit?: boo
         await db.achievements.bulkAdd(validated.achievements as unknown as Achievement[]);
     });
     seedPromise = null;
+    clearSettingsCache();
     await ensureDbSeeded();
     await logAudit("backup.import", { success: true });
     emitDbDataChanged();
@@ -614,4 +632,5 @@ export async function importAllData(json: string, options: { skipRateLimit?: boo
   }
 }
 
+export { peekBootCache, writeBootCache, clearSettingsCache, readSettingsCache } from "./settings-cache";
 export * from "./types";
