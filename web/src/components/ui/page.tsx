@@ -16,7 +16,7 @@ export function PageContainer({
   children: React.ReactNode;
   className?: string;
 }) {
-  return <div className={cn("mx-auto max-w-6xl space-y-8", className)}>{children}</div>;
+  return <div className={cn("mx-auto max-w-5xl space-y-8", className)}>{children}</div>;
 }
 
 export function PageHeader({
@@ -33,7 +33,7 @@ export function PageHeader({
   className?: string;
 }) {
   return (
-    <div className={cn("flex flex-col gap-4 border-b border-border/60 pb-6 sm:flex-row sm:items-end sm:justify-between", className)}>
+    <div className={cn("flex flex-col gap-4 border-b border-border/50 pb-6 sm:flex-row sm:items-end sm:justify-between", className)}>
       <div className="min-w-0 space-y-1">
         {eyebrow && <p className={cn(typography.eyebrow)}>{eyebrow}</p>}
         <h1 className={cn(typography.display, "text-foreground")}>{title}</h1>
@@ -65,12 +65,12 @@ export function StatCard({
   icon?: React.ReactNode;
 }) {
   return (
-    <div className="min-w-0">
+    <div className="min-w-0 rounded-xl bg-surface-secondary/40 px-4 py-3.5 sm:px-5">
       <p className={cn(typography.caption, "text-muted-foreground")}>{label}</p>
-      <p className={cn("mt-1.5 text-xl font-semibold tabular-nums tracking-tight sm:text-2xl", statTones[tone])}>
+      <p className={cn("mt-1 text-xl font-semibold tabular-nums tracking-tight sm:text-2xl", statTones[tone])}>
         {value}
       </p>
-      {hint && <p className={cn(typography.caption, "mt-1 text-muted-foreground/80")}>{hint}</p>}
+      {hint && <p className={cn(typography.caption, "mt-1 text-muted-foreground/75")}>{hint}</p>}
     </div>
   );
 }
@@ -85,8 +85,8 @@ export function MetricStrip({
   return (
     <div
       className={cn(
-        "surface-card grid gap-6 p-5 sm:grid-cols-2 lg:grid-cols-4 lg:divide-x lg:divide-border/60 lg:gap-0",
-        "[&>*]:lg:px-6 [&>*:first-child]:lg:pl-0 [&>*:last-child]:lg:pr-0",
+        "surface-card grid gap-4 p-4 sm:grid-cols-2 sm:gap-5 sm:p-5 lg:grid-cols-4 lg:divide-x lg:divide-border/50 lg:gap-0",
+        "[&>*]:lg:px-5 [&>*:first-child]:lg:pl-0 [&>*:last-child]:lg:pr-0",
         className,
       )}
     >

@@ -7,10 +7,10 @@ import { cn } from "@/lib/design/cn";
 import { useUIStore } from "@/lib/store/ui-store";
 
 const TABS = [
-  { href: "/", label: "Home", icon: LayoutDashboard },
-  { href: "/transactions", label: "Activity", icon: ArrowLeftRight },
+  { href: "/", label: "Dashboard", icon: LayoutDashboard },
+  { href: "/transactions", label: "Transactions", icon: ArrowLeftRight },
   { href: "__add__", label: "Add", icon: Plus, fab: true },
-  { href: "/analytics", label: "Charts", icon: BarChart3 },
+  { href: "/analytics", label: "Analytics", icon: BarChart3 },
   { href: "/settings", label: "Settings", icon: Settings },
 ] as const;
 

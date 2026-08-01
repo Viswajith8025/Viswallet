@@ -9,9 +9,7 @@ import { scheduleCloudSync, canSyncCloudVault } from "@/lib/supabase/cloud-sync"
 import { getAuthUser } from "@/lib/supabase/auth";
 
 type DbContextValue = {
-  /** Bumps when local IndexedDB data changes — drives useDexieTable refetch. */
   version: number;
-  /** Invalidate finance queries + all Dexie table caches. */
   refresh: () => Promise<void>;
 };
 
@@ -21,11 +19,8 @@ export function DbProvider({ children }: { children: React.ReactNode }) {
   const queryClient = useQueryClient();
   const [version, setVersion] = useState(0);
 
-  const refresh = useCallback(async () => {
-    scheduleNotificationSync();
-    const user = await getAuthUser();
-    if (user && canSyncCloudVault()) scheduleCloudSync();
-    await Promise.all([
+  const invalidateAll = useCallback(() => {
+    void Promise.all([
       queryClient.invalidateQueries({ queryKey: financeKeys.all }),
       queryClient.invalidateQueries({ queryKey: ["dexie"] }),
       queryClient.invalidateQueries({ queryKey: financeKeys.notificationsUnread }),
@@ -33,27 +28,24 @@ export function DbProvider({ children }: { children: React.ReactNode }) {
     setVersion((v) => v + 1);
   }, [queryClient]);
 
+  const refresh = useCallback(async () => {
+    scheduleNotificationSync();
+    const user = await getAuthUser();
+    if (user && canSyncCloudVault()) scheduleCloudSync();
+    invalidateAll();
+  }, [invalidateAll]);
+
   useEffect(() => {
     const invalidateNotifications = () => {
       void queryClient.invalidateQueries({ queryKey: financeKeys.notificationsUnread });
     };
-    const invalidateAll = () => {
-      void Promise.all([
-        queryClient.invalidateQueries({ queryKey: financeKeys.all }),
-        queryClient.invalidateQueries({ queryKey: ["dexie"] }),
-        queryClient.invalidateQueries({ queryKey: financeKeys.notificationsUnread }),
-      ]);
-      setVersion((v) => v + 1);
-    };
-
     const offNotifications = onNotificationsChanged(invalidateNotifications);
     const offDb = onDbDataChanged(invalidateAll);
-
     return () => {
       offNotifications();
       offDb();
     };
-  }, [queryClient]);
+  }, [invalidateAll, queryClient]);
 
   const value = useMemo(() => ({ version, refresh }), [version, refresh]);
 

@@ -19,6 +19,7 @@ import {
   signUpWithEmail,
 } from "@/lib/supabase/auth";
 import { syncCloudOnLogin, clearCloudSyncState, canSyncCloudVault } from "@/lib/supabase/cloud-sync";
+import { syncProfileFromAuthUser } from "@/lib/supabase/profile-sync";
 import { resetLocalDatabase } from "@/lib/db";
 
 type AuthContextValue = {
@@ -86,6 +87,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const signIn = useCallback(async (email: string, password: string) => {
     const signedInUser = await signInWithEmail(email, password);
+    await syncProfileFromAuthUser(signedInUser);
     setUser(signedInUser);
     window.setTimeout(() => void runCloudSync(), 500);
   }, [runCloudSync]);
@@ -93,6 +95,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const signUp = useCallback(async (email: string, password: string, displayName?: string) => {
     const outcome = await signUpWithEmail(email, password, displayName);
     if (outcome.status === "signed_in") {
+      await syncProfileFromAuthUser(outcome.user);
       setUser(outcome.user);
       window.setTimeout(() => void runCloudSync(), 500);
       return { signedIn: true as const };

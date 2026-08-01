@@ -1,13 +1,14 @@
 "use client";
 
 import { Button } from "@/components/ui/button";
-import { ErrorState, LoadingState } from "@/components/ui/page";
+import { ErrorState } from "@/components/ui/page";
+import { PageEnter } from "@/components/ui/motion";
+import { PageSkeleton } from "@/components/ui/skeleton";
 
 export function DexiePageGate({
   isPending,
   isError,
   onRetry,
-  label = "Loading…",
   children,
 }: {
   isPending: boolean;
@@ -16,20 +17,20 @@ export function DexiePageGate({
   label?: string;
   children: React.ReactNode;
 }) {
-  if (isPending) return <LoadingState label={label} />;
+  if (isPending) return <PageSkeleton />;
   if (isError) {
     return (
       <ErrorState
-        description="We couldn't load your data. Check your connection and try again."
+        description="We couldn't load your data. Try again."
         action={
           onRetry ? (
             <Button variant="outline" onClick={() => onRetry()}>
-              Retry
+              Try again
             </Button>
           ) : undefined
         }
       />
     );
   }
-  return <>{children}</>;
+  return <PageEnter>{children}</PageEnter>;
 }

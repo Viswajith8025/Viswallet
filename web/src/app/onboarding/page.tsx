@@ -1,13 +1,15 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { ArrowRight, Check } from "lucide-react";
 import { AuthShell } from "@/components/brand/auth-shell";
 import { StepHeader } from "@/components/brand/step-header";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { completeOnboarding } from "@/lib/db";
+import { useAuth } from "@/components/providers/auth-provider";
+import { completeOnboarding, getProfile } from "@/lib/db";
+import { syncProfileFromAuthUser } from "@/lib/supabase/profile-sync";
 import { parseRupeeInput, formatINR } from "@/lib/money";
 import { SALARY_PRESETS } from "@/lib/ux/defaults";
 import { successFeedback, tapFeedback } from "@/lib/ux/feedback";
@@ -19,6 +21,7 @@ const STEPS = ["Your name", "Income setup"] as const;
 
 export default function OnboardingPage() {
   const router = useRouter();
+  const { user } = useAuth();
   const [step, setStep] = useState(0);
   const [displayName, setDisplayName] = useState("");
   const [salaryDay, setSalaryDay] = useState("1");
@@ -26,6 +29,33 @@ export default function OnboardingPage() {
   const [loading, setLoading] = useState(false);
   const [done, setDone] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
+  const [bootstrapped, setBootstrapped] = useState(false);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    (async () => {
+      const synced = user ? await syncProfileFromAuthUser(user) : null;
+      const profile = await getProfile();
+      if (cancelled) return;
+
+      const name =
+        synced ??
+        (profile.displayName?.trim() && profile.displayName !== "You"
+          ? profile.displayName.trim()
+          : "");
+
+      if (name) {
+        setDisplayName(name);
+        setStep(1);
+      }
+      setBootstrapped(true);
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [user]);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -66,6 +96,14 @@ export default function OnboardingPage() {
     }
     tapFeedback();
     setStep(1);
+  }
+
+  if (!bootstrapped) {
+    return (
+      <AuthShell features={[]}>
+        <p className="text-sm text-muted-foreground">Loading setup…</p>
+      </AuthShell>
+    );
   }
 
   if (done) {

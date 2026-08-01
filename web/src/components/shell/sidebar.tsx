@@ -82,7 +82,7 @@ export function Sidebar() {
   return (
     <aside
       className={cn(
-        "glass-panel hidden h-screen shrink-0 flex-col border-r border-border md:flex",
+        "glass-panel hidden h-full shrink-0 flex-col border-r border-border md:flex",
         collapsed ? "w-[68px]" : "w-[248px]",
       )}
     >

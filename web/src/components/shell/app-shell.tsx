@@ -38,14 +38,14 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   return (
     <RouteGuard>
       <SecurityProvider>
-        <div className="flex min-h-screen bg-background">
+        <div className="flex h-[100dvh] h-screen overflow-hidden bg-background">
           <Sidebar />
-          <div className="flex min-w-0 flex-1 flex-col">
+          <div className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden">
             <OfflineBanner />
             <TopBar />
             <main
               id="main-content"
-              className="scroll-premium flex-1 overflow-y-auto px-4 py-5 pb-[calc(5.5rem+env(safe-area-inset-bottom))] pt-[max(1.25rem,env(safe-area-inset-top))] md:px-8 md:py-8 md:pb-8"
+              className="scroll-premium min-h-0 flex-1 overflow-y-auto overscroll-y-contain px-4 py-5 pb-[calc(5.5rem+env(safe-area-inset-bottom))] pt-[max(1.25rem,env(safe-area-inset-top))] md:px-8 md:py-8 md:pb-8"
               tabIndex={-1}
             >
               {children}

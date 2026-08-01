@@ -25,8 +25,13 @@ export function AuthShell({
   className,
 }: AuthShellProps) {
   return (
-    <div className={cn("flex min-h-screen bg-background", className)}>
-      <aside className="brand-panel relative hidden w-[44%] flex-col justify-between overflow-hidden bg-[var(--violet-deep)] p-10 text-[var(--cream)] lg:flex xl:p-14">
+    <div
+      className={cn(
+        "min-h-[100dvh] min-h-screen bg-background lg:flex",
+        className,
+      )}
+    >
+      <aside className="brand-panel relative hidden w-[44%] shrink-0 flex-col justify-between overflow-hidden bg-[var(--violet-deep)] p-10 text-[var(--cream)] lg:sticky lg:top-0 lg:flex lg:h-auto lg:min-h-[100dvh] xl:p-14">
         <div className="brand-panel-grid pointer-events-none absolute inset-0 opacity-100" aria-hidden />
         <div className="relative">
           <LogoWordmark inverted showTagline />
@@ -61,7 +66,7 @@ export function AuthShell({
         </div>
       </aside>
 
-      <main className="flex flex-1 flex-col justify-center px-6 py-10 sm:px-10 lg:px-14 xl:px-20">
+      <main className="flex flex-1 flex-col px-6 py-10 sm:px-10 lg:justify-center lg:px-14 xl:px-20">
         <div className="mx-auto w-full max-w-[420px]">
           <div className="mb-10 lg:hidden">
             <LogoWordmark showTagline />

@@ -9,12 +9,13 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { FinanceGate } from "@/components/layout/finance-gate";
 import { GlobalFilterBar } from "@/components/filters/global-filter-bar";
+import { HeroBalanceCard } from "@/components/dashboard/hero-balance-card";
+import { TransactionRow } from "@/components/shared/transaction-row";
 import { formatINR } from "@/lib/money";
 import { formatCycleLabel } from "@/lib/salary-cycle";
 import { categoryMap } from "@/lib/engines/finance-snapshot";
 import { getProfile, getSettings } from "@/lib/db";
 import { DEFAULT_DASHBOARD_WIDGETS, type DashboardWidgetId } from "@/lib/db/types";
-import { format } from "date-fns";
 
 function greeting(name?: string): string {
   const hour = new Date().getHours();
@@ -28,9 +29,7 @@ export default function DashboardPage() {
   const [displayName, setDisplayName] = useState("");
 
   useEffect(() => {
-    getSettings().then((s) => {
-      setWidgets(s.dashboardWidgets ?? DEFAULT_DASHBOARD_WIDGETS);
-    });
+    getSettings().then((s) => setWidgets(s.dashboardWidgets ?? DEFAULT_DASHBOARD_WIDGETS));
     getProfile()
       .then((p) => setDisplayName(p.displayName))
       .catch(() => setDisplayName(""));
@@ -62,26 +61,13 @@ export default function DashboardPage() {
 
             {show("hero") && (
               <section className="space-y-4">
-                <Card className="hero-balance-card overflow-hidden">
-                  <CardContent className="p-6 md:p-8">
-                    <div className="flex flex-wrap items-start justify-between gap-4">
-                      <div>
-                        <p className="text-sm opacity-75">Available this cycle</p>
-                        <p className="mt-2 font-display text-4xl font-semibold tabular-nums tracking-tight md:text-5xl">
-                          {formatINR(data.remainingPaise)}
-                        </p>
-                      </div>
-                      <p className="rounded-md border border-current/15 px-2.5 py-1 text-xs font-medium tabular-nums">
-                        {data.daysLeft} days left
-                      </p>
-                    </div>
-                    <div className="mt-6 flex flex-wrap gap-x-6 gap-y-1 border-t border-current/10 pt-5 text-sm opacity-80">
-                      <span>Income {formatINR(data.incomePaise)}</span>
-                      <span>Spent {formatINR(data.expensePaise)}</span>
-                      <span>{savingsRate}% unspent</span>
-                    </div>
-                  </CardContent>
-                </Card>
+                <HeroBalanceCard
+                  remainingPaise={data.remainingPaise}
+                  daysLeft={data.daysLeft}
+                  incomePaise={data.incomePaise}
+                  expensePaise={data.expensePaise}
+                  savingsRate={savingsRate}
+                />
 
                 <MetricStrip>
                   <StatCard
@@ -135,6 +121,7 @@ export default function DashboardPage() {
                         <EmptyState
                           title="No activity yet"
                           description="Record an expense or income to start tracking."
+                          illustration="transactions"
                           action={
                             <Button size="sm" onClick={() => router.push("/transactions?add=expense")}>
                               Add transaction
@@ -146,25 +133,14 @@ export default function DashboardPage() {
                           {recent.map((t) => {
                             const cat = cats.get(t.categoryId);
                             return (
-                              <li
+                              <TransactionRow
                                 key={t.id}
-                                className="flex items-center justify-between gap-4 border-b border-border/50 py-3.5 last:border-0"
-                              >
-                                <div className="min-w-0">
-                                  <p className="truncate text-sm font-medium">{t.title}</p>
-                                  <p className="text-xs text-muted-foreground">
-                                    {cat?.name ?? "Uncategorized"} · {format(new Date(t.occurredAt), "d MMM")}
-                                  </p>
-                                </div>
-                                <span
-                                  className={`shrink-0 text-sm font-medium tabular-nums ${
-                                    t.kind === "income" ? "text-success" : "text-foreground"
-                                  }`}
-                                >
-                                  {t.kind === "income" ? "+" : "−"}
-                                  {formatINR(t.amountPaise)}
-                                </span>
-                              </li>
+                                transaction={t}
+                                categoryName={cat?.name ?? "Uncategorized"}
+                                categoryColor={cat?.color}
+                                compact
+                                href="/transactions"
+                              />
                             );
                           })}
                         </ul>

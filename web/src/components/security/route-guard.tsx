@@ -3,7 +3,6 @@
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { getSettings, peekBootCache } from "@/lib/db";
-import { kickstartDb } from "@/lib/db/boot";
 import { useAuth } from "@/components/providers/auth-provider";
 import { PageSkeleton } from "@/components/ui/skeleton";
 
@@ -17,8 +16,6 @@ function canRenderImmediately(pathname: string, configured: boolean): boolean {
 }
 
 export function RouteGuard({ children }: { children: React.ReactNode }) {
-  kickstartDb();
-
   const pathname = usePathname();
   const router = useRouter();
   const { configured, user, loading: authLoading } = useAuth();
@@ -81,10 +78,7 @@ export function RouteGuard({ children }: { children: React.ReactNode }) {
   }, [pathname, router, isPublic, configured, user, authLoading, isOnboarding]);
 
   if (isPublic) return <>{children}</>;
-  if (!appReady) {
-    if (configured && (authLoading || !user)) return <PageSkeleton />;
-    return <PageSkeleton />;
-  }
+  if (!appReady || (configured && (authLoading || !user))) return <PageSkeleton />;
 
   return <>{children}</>;
 }

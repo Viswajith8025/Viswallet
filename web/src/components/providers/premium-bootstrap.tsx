@@ -1,35 +1,47 @@
 "use client";
 
 import { useEffect } from "react";
+import { onDbDataChanged } from "@/lib/notifications/bus";
+
+async function runPremiumJobs(): Promise<void> {
+  const [{ recordMonthlySnapshot }, { evaluateAchievements }, { syncDynamicNotifications }] =
+    await Promise.all([
+      import("@/lib/engines/premium/snapshot-recorder"),
+      import("@/lib/engines/premium/achievement-engine"),
+      import("@/lib/notifications/sync"),
+    ]);
+  await recordMonthlySnapshot();
+  await evaluateAchievements();
+  await syncDynamicNotifications();
+}
 
 export function PremiumBootstrap() {
   useEffect(() => {
-    let interval: ReturnType<typeof setInterval> | null = null;
+    let debounce: ReturnType<typeof setTimeout> | null = null;
+    let cancelled = false;
 
-    const run = async () => {
-      const [{ recordMonthlySnapshot }, { evaluateAchievements }, { syncDynamicNotifications }] =
-        await Promise.all([
-          import("@/lib/engines/premium/snapshot-recorder"),
-          import("@/lib/engines/premium/achievement-engine"),
-          import("@/lib/notifications/sync"),
-        ]);
-      await recordMonthlySnapshot();
-      await evaluateAchievements();
-      await syncDynamicNotifications();
+    const schedule = () => {
+      if (debounce) clearTimeout(debounce);
+      debounce = setTimeout(() => {
+        if (!cancelled) void runPremiumJobs();
+      }, 600);
     };
 
-    const start = () => {
-      void run();
-      interval = setInterval(run, 15 * 60 * 1000);
-    };
+    const idle = window.requestIdleCallback?.(() => {
+      if (!cancelled) void runPremiumJobs();
+    }, { timeout: 4000 });
+    const fallback = window.setTimeout(() => {
+      if (!cancelled) void runPremiumJobs();
+    }, 2500);
 
-    const idle = window.requestIdleCallback?.(() => start(), { timeout: 4000 });
-    const fallback = window.setTimeout(start, 2500);
+    const offDb = onDbDataChanged(schedule);
 
     return () => {
+      cancelled = true;
       if (idle != null) window.cancelIdleCallback(idle);
       window.clearTimeout(fallback);
-      if (interval) clearInterval(interval);
+      if (debounce) clearTimeout(debounce);
+      offDb();
     };
   }, []);
 
