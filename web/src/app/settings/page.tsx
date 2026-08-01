@@ -46,7 +46,7 @@ import { useSecurityStore } from "@/lib/store/security-store";
 import { confirmAction } from "@/lib/store/confirm-store";
 import { Hint } from "@/components/ui/hint";
 import { Checkbox } from "@/components/ui/checkbox";
-import { useAiStatus } from "@/hooks/use-ai-status";
+import { useAiFeatures } from "@/hooks/use-ai-features";
 
 export default function SettingsPage() {
   const { refresh } = useDb();
@@ -72,7 +72,7 @@ export default function SettingsPage() {
   const [success, setSuccess] = useState("");
   const [settingsLoaded, setSettingsLoaded] = useState(false);
   const [aiFeaturesEnabled, setAiFeaturesEnabled] = useState(false);
-  const aiStatus = useAiStatus();
+  const aiFeatures = useAiFeatures();
 
   useEffect(() => {
     Promise.all([getSettings()])
@@ -406,14 +406,18 @@ export default function SettingsPage() {
         </CardHeader>
         <CardContent className="space-y-4 pt-0">
           <Checkbox
-            label="Smart suggestions (category hints, insights, natural-language quick add)"
+            label="AI features (natural-language add, smart categories, coach)"
             checked={aiFeaturesEnabled}
             onChange={(e) => void handleAiToggle(e.target.checked)}
-            disabled={!aiStatus?.groq}
+            disabled={!aiFeatures.available}
           />
-          {!aiStatus?.groq && (
+          {aiFeatures.available ? (
             <p className="text-sm text-muted-foreground">
-              Smart suggestions aren&apos;t available on this deployment yet.
+              Powered by Groq on our server — only cycle summaries and your typed phrases are sent, never your full vault.
+            </p>
+          ) : (
+            <p className="text-sm text-muted-foreground">
+              Add <code className="text-xs">GROQ_API_KEY</code> in Vercel (Settings → Environment Variables, server-only) then redeploy.
             </p>
           )}
         </CardContent>

@@ -14,10 +14,8 @@ import { formatCycleLabel } from "@/lib/salary-cycle";
 import { cn } from "@/lib/design/cn";
 import { Progress } from "@/components/ui/progress";
 import { AiInsightCard } from "@/components/ai/ai-insight-card";
-import { useAiStatus } from "@/hooks/use-ai-status";
-import { getSettings } from "@/lib/db";
+import { useAiFeatures } from "@/hooks/use-ai-features";
 import type { FinanceSnapshot } from "@/lib/engines/finance-snapshot";
-import { useEffect, useState } from "react";
 
 const SEVERITY_STYLES = {
   info: "bg-muted/60 border-border/50",
@@ -34,19 +32,12 @@ const SEVERITY_ICONS = {
 };
 
 function InsightsBody({ data }: { data: FinanceSnapshot }) {
-  const aiStatus = useAiStatus();
-  const [aiEnabled, setAiEnabled] = useState(false);
-
-  useEffect(() => {
-    void getSettings().then((s) => setAiEnabled(Boolean(s.aiFeaturesEnabled)));
-  }, []);
-
+  const { active: showAi } = useAiFeatures();
   const breakdown = sumByCategory(data.transactions, data.categories, "expense");
   const totalSpent = data.expensePaise;
   const budgetUsedPct = data.salaryPaise > 0 ? Math.round((totalSpent / data.salaryPaise) * 100) : 0;
   const insights = generatePremiumInsights(data);
   const recommendations = generateBudgetRecommendations(data);
-  const showAi = Boolean(aiEnabled && aiStatus?.available);
   const topCategories = breakdown.slice(0, 5).map((c) => ({ name: c.name, amountPaise: c.amount }));
 
   return (

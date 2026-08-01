@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Sparkles, Wand2 } from "lucide-react";
 import { SuccessMark } from "@/components/ui/success-mark";
 import { successFeedback } from "@/lib/ux/feedback";
 import { useUIStore } from "@/lib/store/ui-store";
@@ -11,6 +10,7 @@ import { CategoryGrid } from "@/components/categories/category-grid";
 import { Input, Select } from "@/components/ui/input";
 import { Dialog, Sheet } from "@/components/ui/dialog";
 import { Checkbox } from "@/components/ui/checkbox";
+import { AiSmartInput } from "@/components/ai/ai-smart-input";
 import { DuplicateTransactionError } from "@/lib/db/errors";
 import { parseRupeeInput, formatINR } from "@/lib/money";
 import { PAYMENT_METHODS } from "@/lib/categories-default";
@@ -19,9 +19,8 @@ import { getLastPaymentMethod, pickDefaultCategoryId } from "@/lib/ux/defaults";
 import { saveQuickTransaction } from "@/lib/transactions/save-quick-transaction";
 import { useInvalidateFinance } from "@/hooks/use-invalidate-finance";
 import { showToast } from "@/lib/store/toast-store";
-import { getSettings } from "@/lib/db";
-import { useAiStatus } from "@/hooks/use-ai-status";
-import { parseTransactionWithAi, suggestCategoryWithAi } from "@/lib/ai/client";
+import { useAiFeatures } from "@/hooks/use-ai-features";
+import { suggestCategoryWithAi, type AiParseResult } from "@/lib/ai/client";
 import { useDebounce } from "@/hooks/use-debounce";
 import { cn } from "@/lib/design/cn";
 
@@ -81,10 +80,7 @@ export function QuickAddModal() {
   const [saving, setSaving] = useState(false);
   const [success, setSuccess] = useState(false);
   const [dupError, setDupError] = useState(false);
-  const [aiLine, setAiLine] = useState("");
-  const [aiParsing, setAiParsing] = useState(false);
-  const [aiEnabled, setAiEnabled] = useState(false);
-  const aiStatus = useAiStatus();
+  const { active: aiActive } = useAiFeatures();
   const wasOpen = useRef(false);
   const debouncedTitle = useDebounce(title, 700);
   const [isMobile, setIsMobile] = useState(false);
@@ -97,11 +93,6 @@ export function QuickAddModal() {
     return () => mq.removeEventListener("change", update);
   }, []);
 
-  useEffect(() => {
-    void getSettings().then((s) => setAiEnabled(Boolean(s.aiFeaturesEnabled)));
-  }, []);
-
-  const aiActive = aiEnabled && aiStatus?.available && !isMobile;
   const categoryOptions = useMemo(
     () => pool.map((c) => ({ slug: c.slug, name: c.name })),
     [pool],
@@ -116,7 +107,6 @@ export function QuickAddModal() {
       setIsRecurring(false);
       setDupError(false);
       setSuccess(false);
-      setAiLine("");
       setPaymentMethod(getLastPaymentMethod());
     }
     wasOpen.current = open;
@@ -137,24 +127,13 @@ export function QuickAddModal() {
     };
   }, [aiActive, debouncedTitle, kind, categoryOptions, pool]);
 
-  async function handleAiParse() {
-    if (!aiActive || !aiLine.trim()) return;
-    setAiParsing(true);
-    try {
-      const parsed = await parseTransactionWithAi(aiLine.trim(), categoryOptions, kind);
-      setTitle(parsed.title);
-      setAmount(String(parsed.amountPaise / 100));
-      useUIStore.setState({ quickAddKind: parsed.kind });
-      const match = (parsed.kind === "income" ? incomeCats : expenseCats).find(
-        (c) => c.slug === parsed.categorySlug,
-      );
-      if (match?.id != null) setCategoryId(String(match.id));
-      showToast("Filled from your description", { tone: "success" });
-    } catch (err) {
-      showToast(err instanceof Error ? err.message : "Could not parse", { tone: "default" });
-    } finally {
-      setAiParsing(false);
-    }
+  function applyAiParse(parsed: AiParseResult) {
+    setTitle(parsed.title);
+    setAmount(String(parsed.amountPaise / 100));
+    useUIStore.setState({ quickAddKind: parsed.kind });
+    const matchPool = parsed.kind === "income" ? incomeCats : expenseCats;
+    const match = matchPool.find((c) => c.slug === parsed.categorySlug);
+    if (match?.id != null) setCategoryId(String(match.id));
   }
 
   function handleKindChange(k: "expense" | "income") {
@@ -214,10 +193,18 @@ export function QuickAddModal() {
     </div>
   ) : (
     <form onSubmit={handleSubmit} className="flex min-h-0 flex-1 flex-col">
-      <div className="px-4 py-3">
+      <div className="px-4 py-3 space-y-3">
         <TypePills kind={kind} onChange={handleKindChange} />
-        <p className="mt-3 text-center text-sm text-muted-foreground">
-          Tap a category, then enter the amount
+        {aiActive && (
+          <AiSmartInput
+            kind={kind}
+            categories={categoryOptions}
+            onParsed={applyAiParse}
+            compact
+          />
+        )}
+        <p className="text-center text-sm text-muted-foreground">
+          {aiActive ? "Or tap a category, then enter the amount" : "Tap a category, then enter the amount"}
         </p>
       </div>
 
@@ -266,28 +253,11 @@ export function QuickAddModal() {
       )}
       <form onSubmit={handleSubmit} className="space-y-4">
         {aiActive && (
-          <div className="rounded-xl bg-muted/40 p-3 space-y-2">
-            <div className="flex items-center gap-2 text-xs font-medium text-primary">
-              <Sparkles size={14} />
-              Describe it (optional)
-            </div>
-            <div className="flex gap-2">
-              <Input
-                value={aiLine}
-                onChange={(e) => setAiLine(e.target.value)}
-                placeholder="e.g. 450 lunch on Swiggy"
-                className="flex-1"
-              />
-              <Button
-                type="button"
-                variant="outline"
-                disabled={aiParsing || !aiLine.trim()}
-                onClick={() => void handleAiParse()}
-              >
-                <Wand2 size={15} />
-              </Button>
-            </div>
-          </div>
+          <AiSmartInput
+            kind={kind}
+            categories={categoryOptions}
+            onParsed={applyAiParse}
+          />
         )}
         <Input
           label="Amount (₹)"

@@ -25,11 +25,18 @@ export async function POST(request: Request) {
       [
         {
           role: "system",
-          content: `Parse Indian personal finance quick-add text. Amounts are INR rupees (not paise). Respond JSON only: {"title":"string","amountPaise":number,"kind":"expense"|"income","categorySlug":"slug"}. amountPaise must be rupees * 100.`,
+          content: `Parse Indian personal finance quick-add text for Viswallet app.
+Rules:
+- Amounts in INR rupees. "5k" or "5K" = 5000 rupees. "1.5k" = 1500.
+- Swiggy/Zomato/food → food. Uber/Ola → transport. Amazon/Flipkart → shopping.
+- "salary", "credited", "payroll" → income kind + salary category.
+- "borrowed", "lent", "paid back" → expense + emi slug if repaying debt.
+Respond JSON only: {"title":"short label","amountPaise":number,"kind":"expense"|"income","categorySlug":"slug"}
+amountPaise must be rupees × 100 (paise). title max 60 chars.`,
         },
         {
           role: "user",
-          content: `Text: ${text}\nDefault kind if unclear: ${defaultKind}\nCategories: ${slugList}`,
+          content: `Text: "${text}"\nDefault kind if unclear: ${defaultKind}\nCategories: ${slugList}`,
         },
       ],
       { json: true, maxTokens: 256 },

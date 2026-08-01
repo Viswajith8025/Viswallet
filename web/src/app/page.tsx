@@ -11,6 +11,7 @@ import { FinanceGate } from "@/components/layout/finance-gate";
 import { GlobalFilterBar } from "@/components/filters/global-filter-bar";
 import { HeroBalanceCard } from "@/components/dashboard/hero-balance-card";
 import { ActionCenter } from "@/components/dashboard/action-center";
+import { AiCoachStrip } from "@/components/ai/ai-coach-strip";
 import { TransactionRow } from "@/components/shared/transaction-row";
 import { formatINR } from "@/lib/money";
 import { formatCycleLabel } from "@/lib/salary-cycle";
@@ -117,8 +118,9 @@ export default function DashboardPage() {
             )}
 
             {show("obligations") && (
-              <section className="animate-fade-in">
+              <section className="animate-fade-in space-y-4">
                 <ActionCenter />
+                <AiCoachStrip data={data} />
               </section>
             )}
 

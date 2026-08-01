@@ -17,6 +17,20 @@ export type AiInsightsResult = {
   tips: string[];
 };
 
+export type AiInsightsContext = {
+  monthLabel: string;
+  salaryPaise: number;
+  expensePaise: number;
+  remainingPaise: number;
+  daysLeft: number;
+  safeSpendDaily?: number;
+  borrowedBalance?: number;
+  billsDuePaise?: number;
+  emiMonthlyPaise?: number;
+  healthScore?: number;
+  topCategories: Array<{ name: string; amountPaise: number }>;
+};
+
 async function postJson<T>(path: string, body: unknown): Promise<T> {
   const res = await fetch(path, {
     method: "POST",
@@ -54,13 +68,6 @@ export async function suggestCategoryWithAi(
   return postJson<{ categorySlug: string }>("/api/ai/categorize", { title, kind, categories });
 }
 
-export async function fetchAiInsights(context: {
-  monthLabel: string;
-  salaryPaise: number;
-  expensePaise: number;
-  remainingPaise: number;
-  daysLeft: number;
-  topCategories: Array<{ name: string; amountPaise: number }>;
-}): Promise<AiInsightsResult> {
+export async function fetchAiInsights(context: AiInsightsContext): Promise<AiInsightsResult> {
   return postJson<AiInsightsResult>("/api/ai/insights", context);
 }

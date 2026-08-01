@@ -355,7 +355,7 @@ export async function ensureDbSeeded(): Promise<void> {
         failedPinAttempts: 0,
         autoLockMinutes: 15,
         dashboardWidgets: DEFAULT_DASHBOARD_WIDGETS,
-        aiFeaturesEnabled: false,
+        aiFeaturesEnabled: true,
         createdAt: now,
         updatedAt: now,
       });
