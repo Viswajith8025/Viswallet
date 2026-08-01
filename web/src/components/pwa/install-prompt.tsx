@@ -36,8 +36,8 @@ export function InstallPrompt() {
                 </p>
                 <p id="pwa-install-desc" className="mt-1 text-xs leading-relaxed text-muted-foreground">
                   {ios
-                    ? "Add to your Home Screen for the full app experience — works offline, opens instantly."
-                    : "Install on your phone for offline access, faster launch, and a native app feel."}
+                    ? "Add Viswallet to your Home Screen for quick access."
+                    : "Install for a faster, full-screen experience on your phone."}
                 </p>
                 {ios && (
                   <p className="mt-2 flex items-center gap-1.5 text-xs text-primary">

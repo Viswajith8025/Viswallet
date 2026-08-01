@@ -2,9 +2,9 @@ import { LogoWordmark } from "@/components/brand/logo-wordmark";
 import { cn } from "@/lib/design/cn";
 
 const DEFAULT_FEATURES = [
-  { n: "01", title: "Offline by default", body: "Your ledger lives on this device. No account required to start." },
-  { n: "02", title: "Salary-aware cycles", body: "Budgets follow when you get paid — not arbitrary calendar months." },
-  { n: "03", title: "Cloud when you want it", body: "Sign in to back up and restore after reinstall." },
+  { n: "01", title: "Start in seconds", body: "Set up your budget and track spending right away." },
+  { n: "02", title: "Salary-aware cycles", body: "Budgets follow when you get paid — not calendar months." },
+  { n: "03", title: "Private by design", body: "Your finances stay yours. Export or delete anytime." },
 ] as const;
 
 type AuthShellProps = {

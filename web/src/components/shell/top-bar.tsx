@@ -3,14 +3,11 @@
 import { Plus, Search } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { NotificationBell } from "@/components/shell/notification-bell";
-import { useOptionalAuth } from "@/components/providers/auth-provider";
 import { useUIStore } from "@/lib/store/ui-store";
 
 export function TopBar() {
   const setCommandOpen = useUIStore((s) => s.setCommandOpen);
   const setQuickAddOpen = useUIStore((s) => s.setQuickAddOpen);
-  const auth = useOptionalAuth();
-  const cloudSyncing = auth?.syncing ?? false;
 
   return (
     <header className="glass-panel sticky top-0 z-30 flex h-14 items-center justify-between gap-3 border-b border-border/60 px-4 pt-[env(safe-area-inset-top)] md:px-6">
@@ -28,14 +25,6 @@ export function TopBar() {
       </button>
 
       <div className="flex items-center gap-2">
-        {cloudSyncing && (
-          <span
-            className="hidden text-xs text-muted-foreground sm:inline"
-            aria-live="polite"
-          >
-            Syncing…
-          </span>
-        )}
         <NotificationBell />
         <Button
           variant="ghost"

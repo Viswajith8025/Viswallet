@@ -18,9 +18,10 @@ import {
   signOut as authSignOut,
   signUpWithEmail,
 } from "@/lib/supabase/auth";
-import { syncCloudOnLogin, clearCloudSyncState, canSyncCloudVault } from "@/lib/supabase/cloud-sync";
+import { syncCloudOnLogin, clearCloudSyncState, shouldAutoCloudSync } from "@/lib/supabase/cloud-sync";
 import { syncProfileFromAuthUser } from "@/lib/supabase/profile-sync";
 import { resetLocalDatabase } from "@/lib/db";
+import { onCloudSyncActive } from "@/lib/notifications/bus";
 
 type AuthContextValue = {
   configured: boolean;
@@ -42,22 +43,28 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const required = cloudAuthRequired();
   const [user, setUser] = useState<User | null>(null);
   const [sessionReady, setSessionReady] = useState(!configured);
-  const [syncing, setSyncing] = useState(false);
+  const [loginSyncing, setLoginSyncing] = useState(false);
+  const [autoSyncing, setAutoSyncing] = useState(false);
+  const syncing = loginSyncing || autoSyncing;
 
   const loading = configured && !sessionReady;
 
   const runCloudSync = useCallback(async () => {
-    if (!configured || !canSyncCloudVault()) return;
-    setSyncing(true);
+    if (!configured || !shouldAutoCloudSync()) return;
+    setLoginSyncing(true);
     try {
       await syncCloudOnLogin();
     } catch (err) {
       // Never block sign-in / sign-up when cloud backup isn't ready yet.
       console.warn("[Viswallet] Cloud sync skipped:", err);
     } finally {
-      setSyncing(false);
+      setLoginSyncing(false);
     }
   }, [configured]);
+
+  useEffect(() => {
+    return onCloudSyncActive(setAutoSyncing);
+  }, []);
 
   useEffect(() => {
     if (!configured) return;
@@ -71,7 +78,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       if (!mounted) return;
       const sessionUser = session?.user ?? null;
       setUser(sessionUser);
-      if (sessionUser && canSyncCloudVault()) {
+      if (sessionUser && shouldAutoCloudSync()) {
         await runCloudSync();
       }
       if (mounted) setSessionReady(true);

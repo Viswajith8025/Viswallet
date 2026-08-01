@@ -2,7 +2,11 @@ import { BACKUP_VERSION } from "@/lib/security/constants";
 import { getSupabase } from "@/lib/supabase/client";
 import { getAuthUser } from "@/lib/supabase/auth";
 import { exportAllDataForSync, importAllData, resetLocalDatabase, getSettings } from "@/lib/db/client";
-import { emitDbDataChanged, emitNotificationsChanged } from "@/lib/notifications/bus";
+import {
+  emitCloudSyncActive,
+  emitDbDataChanged,
+  emitNotificationsChanged,
+} from "@/lib/notifications/bus";
 
 const LAST_SYNC_KEY = "vw_cloud_last_sync_at";
 const USER_ID_KEY = "vw_cloud_user_id";
@@ -96,6 +100,11 @@ export function canSyncCloudVault(): boolean {
   return canUseCloudVault();
 }
 
+/** Whether background auto-push should run (env on; retries even if vault was temporarily missing). */
+export function shouldAutoCloudSync(): boolean {
+  return isCloudVaultEnvEnabled();
+}
+
 async function ensureAccountScopedLocalData(userId: string): Promise<void> {
   const storedUserId = getStoredCloudUserId();
   if (storedUserId && storedUserId !== userId) {
@@ -150,7 +159,7 @@ export async function pullCloudVault(): Promise<boolean> {
 
 /** Push local IndexedDB snapshot to cloud vault. */
 export async function pushCloudVault(): Promise<void> {
-  if (!canUseCloudVault()) return;
+  if (!isCloudVaultEnvEnabled()) return;
 
   const sb = getSupabase();
   const user = await getAuthUser();
@@ -204,7 +213,7 @@ function isMissingVaultTable(error: SupabaseErrorLike | string): boolean {
 /** After login: pull if cloud exists, else push local data. */
 export async function syncCloudOnLogin(): Promise<"pulled" | "pushed" | "noop"> {
   if (loginSyncInFlight) return loginSyncInFlight;
-  if (!canUseCloudVault()) return "noop";
+  if (!isCloudVaultEnvEnabled()) return "noop";
 
   loginSyncInFlight = (async () => {
     const sb = getSupabase();
@@ -250,12 +259,17 @@ export async function syncCloudOnLogin(): Promise<"pulled" | "pushed" | "noop"> 
 
 export async function syncCloudNow(): Promise<void> {
   if (syncInFlight) return syncInFlight;
-  if (!canUseCloudVault()) return;
+  if (!shouldAutoCloudSync()) return;
 
   syncInFlight = (async () => {
-    const user = await getAuthUser();
-    if (!user) return;
-    await pushCloudVault();
+    emitCloudSyncActive(true);
+    try {
+      const user = await getAuthUser();
+      if (!user) return;
+      await pushCloudVault();
+    } finally {
+      emitCloudSyncActive(false);
+    }
   })().finally(() => {
     syncInFlight = null;
   });
@@ -263,12 +277,14 @@ export async function syncCloudNow(): Promise<void> {
   return syncInFlight;
 }
 
+const AUTO_SYNC_DEBOUNCE_MS = 800;
+
 export function scheduleCloudSync(): void {
   if (typeof window === "undefined") return;
-  if (!canUseCloudVault()) return;
+  if (!shouldAutoCloudSync()) return;
   if (debounceTimer) clearTimeout(debounceTimer);
   debounceTimer = setTimeout(() => {
     debounceTimer = null;
     void syncCloudNow();
-  }, 3000);
+  }, AUTO_SYNC_DEBOUNCE_MS);
 }

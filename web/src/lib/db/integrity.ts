@@ -2,6 +2,7 @@ import { format } from "date-fns";
 import { db } from "./client";
 import type { Transaction } from "./types";
 import { ReferentialIntegrityError } from "./errors";
+import { emitDbDataChanged } from "@/lib/notifications/bus";
 
 /** Cascade: soft-delete transaction + remove attachments. */
 export async function softDeleteTransaction(id: number): Promise<void> {
@@ -16,6 +17,7 @@ export async function softDeleteTransaction(id: number): Promise<void> {
       rowVersion: (txn.rowVersion ?? 1) + 1,
     });
   });
+  emitDbDataChanged();
 }
 
 /** Cascade: delete loan payments when loan is hard-deleted. */
@@ -58,6 +60,7 @@ export async function restoreTransaction(id: number): Promise<void> {
     updatedAt: new Date(),
     rowVersion: (txn.rowVersion ?? 1) + 1,
   });
+  emitDbDataChanged();
 }
 
 export function transactionFingerprint(t: Pick<Transaction, "title" | "amountPaise" | "categoryId" | "occurredAt">): string {

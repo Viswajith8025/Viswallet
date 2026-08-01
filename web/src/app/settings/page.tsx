@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { format } from "date-fns";
 import { PageHeader, PageContainer, SuccessBanner } from "@/components/ui/page";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -39,19 +38,15 @@ import {
   checkRateLimit,
   RESET_RATE_LIMIT,
   logAudit,
-  getRecentAuditLogs,
   pinSchema,
   SECURE_ERRORS,
 } from "@/lib/security";
 import { enableAppLock, disableAppLock } from "@/lib/security/pin";
 import { useSecurityStore } from "@/lib/store/security-store";
-import type { AuditLog } from "@/lib/db/types";
 import { confirmAction } from "@/lib/store/confirm-store";
-import { DeploymentStatus } from "@/components/settings/deployment-status";
 import { Hint } from "@/components/ui/hint";
 import { Checkbox } from "@/components/ui/checkbox";
 import { useAiStatus } from "@/hooks/use-ai-status";
-import { isSupabaseConfigured } from "@/lib/supabase/client";
 
 export default function SettingsPage() {
   const { refresh } = useDb();
@@ -75,14 +70,13 @@ export default function SettingsPage() {
   const [encryptedExport, setEncryptedExport] = useState(true);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
-  const [auditLogs, setAuditLogs] = useState<AuditLog[]>([]);
   const [settingsLoaded, setSettingsLoaded] = useState(false);
   const [aiFeaturesEnabled, setAiFeaturesEnabled] = useState(false);
   const aiStatus = useAiStatus();
 
   useEffect(() => {
-    Promise.all([getSettings(), getRecentAuditLogs(20)])
-      .then(([s, logs]) => {
+    Promise.all([getSettings()])
+      .then(([s]) => {
         setTheme(s.themeMode);
         setAccent(s.accentColor ?? "violet");
         setBiometricEnabled(s.biometricEnabled ?? false);
@@ -90,7 +84,6 @@ export default function SettingsPage() {
         setAppLockEnabled(s.appLockEnabled);
         setAutoLockMinutes(String(s.autoLockMinutes ?? 15));
         setAiFeaturesEnabled(s.aiFeaturesEnabled ?? false);
-        setAuditLogs(logs);
       })
       .catch(() => setError("Could not load settings."))
       .finally(() => setSettingsLoaded(true));
@@ -123,7 +116,7 @@ export default function SettingsPage() {
   async function handleBiometricToggle(enabled: boolean) {
     setBiometricEnabled(enabled);
     await updateSettings({ biometricEnabled: enabled });
-    flash(enabled ? "Biometric unlock enabled (WebAuthn-ready)." : "Biometric unlock disabled.");
+    flash(enabled ? "Biometric unlock enabled." : "Biometric unlock disabled.");
   }
 
   async function handleAiToggle(enabled: boolean) {
@@ -314,7 +307,7 @@ export default function SettingsPage() {
 
   return (
     <PageContainer className="max-w-5xl">
-      <PageHeader title="Settings" description="Security, appearance, backups, and data management." />
+      <PageHeader title="Settings" description="Appearance, security, and your data." />
 
       {!settingsLoaded ? (
         <p className="text-sm text-muted-foreground">Loading settings…</p>
@@ -331,12 +324,11 @@ export default function SettingsPage() {
       {configured && (
       <Card>
         <CardHeader>
-          <CardTitle>Cloud account</CardTitle>
+          <CardTitle>Account</CardTitle>
         </CardHeader>
         <CardContent className="space-y-3 pt-0 text-sm text-muted-foreground">
           <p>
-            Your finances sync automatically while signed in. Reinstall the app and sign in with the
-            same email to restore your data.
+            You&apos;re signed in. Your budget and transactions are available on any device with the same login.
           </p>
           <p>PIN and app lock never leave this device.</p>
         </CardContent>
@@ -412,48 +404,20 @@ export default function SettingsPage() {
 
       <Card>
         <CardHeader>
-          <CardTitle>Production status</CardTitle>
-        </CardHeader>
-        <CardContent className="pt-0">
-          <DeploymentStatus />
-        </CardContent>
-      </Card>
-
-      <Card>
-        <CardHeader>
-          <CardTitle>Smart features & cloud</CardTitle>
+          <CardTitle>Smart features</CardTitle>
         </CardHeader>
         <CardContent className="space-y-4 pt-0">
-          <Hint>
-            Finance data stays in IndexedDB on your device. Cloud sync needs Supabase env vars in hosting settings.
-            AI sends only the text you type or cycle totals — never your full vault.
-          </Hint>
-          <div className="grid gap-3 text-sm sm:grid-cols-2">
-            <div className="rounded-xl border border-border/60 px-3 py-2">
-              <p className="font-medium">Groq AI</p>
-              <p className="text-muted-foreground">
-                {aiStatus?.groq ? "Server key detected" : "Add GROQ_API_KEY to .env.local / Vercel"}
-              </p>
-            </div>
-            <div className="rounded-xl border border-border/60 px-3 py-2">
-              <p className="font-medium">Supabase</p>
-              <p className="text-muted-foreground">
-                {configured
-                  ? aiStatus?.cloudVault
-                    ? "Signed in · cloud vault on"
-                    : "Signed in · set NEXT_PUBLIC_CLOUD_VAULT=true for backup"
-                  : isSupabaseConfigured()
-                    ? "Configured · sign in from Profile"
-                    : "Add URL + anon key to enable sign-in & sync"}
-              </p>
-            </div>
-          </div>
           <Checkbox
-            label="Enable AI features (smart categorize, insights, natural-language quick add)"
+            label="Smart suggestions (category hints, insights, natural-language quick add)"
             checked={aiFeaturesEnabled}
             onChange={(e) => void handleAiToggle(e.target.checked)}
             disabled={!aiStatus?.groq}
           />
+          {!aiStatus?.groq && (
+            <p className="text-sm text-muted-foreground">
+              Smart suggestions aren&apos;t available on this deployment yet.
+            </p>
+          )}
         </CardContent>
       </Card>
 
@@ -476,7 +440,7 @@ export default function SettingsPage() {
             <option value="slate">Slate</option>
           </Select>
           <Checkbox
-            label="Biometric unlock (WebAuthn on supported devices)"
+            label="Unlock with Face ID or fingerprint"
             checked={biometricEnabled}
             onChange={(e) => handleBiometricToggle(e.target.checked)}
           />
@@ -505,9 +469,7 @@ export default function SettingsPage() {
           <CardTitle>Export & import</CardTitle>
         </CardHeader>
         <CardContent className="space-y-4 pt-0">
-          <Hint>
-            CSV export includes active transactions only. Full JSON backups capture everything — enable encryption for cloud storage.
-          </Hint>
+          <Hint>Export transactions as a spreadsheet, or import from CSV or a bank statement.</Hint>
           <div className="flex flex-wrap gap-2">
             <Button variant="outline" onClick={handleCsvExport}>Export CSV / Excel</Button>
             <Button variant="outline" onClick={() => csvRef.current?.click()}>Import CSV</Button>
@@ -523,17 +485,10 @@ export default function SettingsPage() {
         </CardHeader>
         <CardContent className="space-y-4 pt-0">
           <Hint>
-            {configured
-              ? "Signed-in accounts auto-sync to the cloud. Encrypted JSON exports are still useful for offline archives."
-              : "Backups are stored on your device until you export them. We recommend monthly encrypted exports to a safe location."}
+            Download a full copy of your data, or restore from a file you exported earlier.
           </Hint>
-          <p className="text-sm text-muted-foreground">
-            {configured
-              ? "Local data syncs to your cloud account. PIN and app lock never leave this device."
-              : "Data is stored locally in IndexedDB. Never share your passphrase."}
-          </p>
           <Checkbox
-            label="Encrypt backup (AES-256-GCM, recommended)"
+            label="Password-protect export file"
             checked={encryptedExport}
             onChange={(e) => setEncryptedExport(e.target.checked)}
           />
@@ -571,31 +526,6 @@ export default function SettingsPage() {
         </CardContent>
       </Card>
 
-      <Card>
-        <CardHeader>
-          <CardTitle>Audit trail</CardTitle>
-        </CardHeader>
-        <CardContent className="pt-0">
-          {auditLogs.length === 0 ? (
-            <p className="text-sm text-muted-foreground">No security events recorded yet.</p>
-          ) : (
-            <ul className="max-h-64 space-y-2 overflow-y-auto text-sm">
-              {auditLogs.map((log) => (
-                <li key={log.id} className="flex justify-between gap-4 rounded-lg bg-muted/40 px-3 py-2">
-                  <span className={log.success ? "text-foreground" : "text-destructive"}>
-                    {log.action}
-                    {log.detail ? ` · ${log.detail}` : ""}
-                  </span>
-                  <span className="shrink-0 text-xs text-muted-foreground">
-                    {format(new Date(log.createdAt), "dd MMM HH:mm")}
-                  </span>
-                </li>
-              ))}
-            </ul>
-          )}
-        </CardContent>
-      </Card>
-
       <Card className="border-destructive/30">
         <CardHeader>
           <CardTitle className="text-destructive">Danger zone</CardTitle>
@@ -616,8 +546,7 @@ export default function SettingsPage() {
         </CardHeader>
         <CardContent className="space-y-3 pt-0 text-sm text-muted-foreground">
           <p>
-            Viswallet v{process.env.NEXT_PUBLIC_APP_VERSION ?? "1.0.0"} — offline-first personal
-            finance. Export backups regularly.
+            Viswallet v{process.env.NEXT_PUBLIC_APP_VERSION ?? "1.0.0"} — personal finance, built to stay private.
           </p>
           <div className="flex flex-wrap gap-3">
             <a href="/privacy" className="text-primary hover:underline">

@@ -81,6 +81,10 @@ function mapAuthError(error: AuthError): string {
     return "Enter a valid email address.";
   }
 
+  if (error.status === 500 || msg.includes("database error") || msg.includes("internal server error")) {
+    return "Couldn't create your account right now. Try again in a minute, or use Sign in if you already registered.";
+  }
+
   if (error.status === 429 || msg.includes("rate limit") || msg.includes("too many")) {
     return "Too many attempts — wait about a minute. If you already signed up, use Sign in instead of creating another account.";
   }

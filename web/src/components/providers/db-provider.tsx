@@ -5,7 +5,7 @@ import { createContext, useCallback, useContext, useEffect, useMemo, useState } 
 import { financeKeys } from "@/lib/queries/use-finance";
 import { onNotificationsChanged, onDbDataChanged } from "@/lib/notifications/bus";
 import { scheduleNotificationSync } from "@/lib/notifications/sync";
-import { scheduleCloudSync, canSyncCloudVault } from "@/lib/supabase/cloud-sync";
+import { scheduleCloudSync, shouldAutoCloudSync } from "@/lib/supabase/cloud-sync";
 import { getAuthUser } from "@/lib/supabase/auth";
 
 type DbContextValue = {
@@ -31,7 +31,7 @@ export function DbProvider({ children }: { children: React.ReactNode }) {
   const refresh = useCallback(async () => {
     scheduleNotificationSync();
     const user = await getAuthUser();
-    if (user && canSyncCloudVault()) scheduleCloudSync();
+    if (user && shouldAutoCloudSync()) scheduleCloudSync();
     invalidateAll();
   }, [invalidateAll]);
 
@@ -42,14 +42,23 @@ export function DbProvider({ children }: { children: React.ReactNode }) {
     const onDataChanged = () => {
       invalidateAll();
       void getAuthUser().then((user) => {
-        if (user && canSyncCloudVault()) scheduleCloudSync();
+        if (user && shouldAutoCloudSync()) scheduleCloudSync();
       });
     };
     const offNotifications = onNotificationsChanged(invalidateNotifications);
     const offDb = onDbDataChanged(onDataChanged);
+    const onVisible = () => {
+      if (document.visibilityState === "visible") {
+        void getAuthUser().then((user) => {
+          if (user && shouldAutoCloudSync()) scheduleCloudSync();
+        });
+      }
+    };
+    document.addEventListener("visibilitychange", onVisible);
     return () => {
       offNotifications();
       offDb();
+      document.removeEventListener("visibilitychange", onVisible);
     };
   }, [invalidateAll, queryClient]);
 

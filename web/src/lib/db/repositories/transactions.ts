@@ -3,6 +3,7 @@ import type { Transaction, TransactionKind } from "../types";
 import { assertCategoryExists, assertAccountExists, transactionFingerprint } from "../integrity";
 import { DuplicateTransactionError, OptimisticLockError } from "../errors";
 import { resolveTransactionTitle } from "@/lib/transactions/resolve-title";
+import { emitDbDataChanged } from "@/lib/notifications/bus";
 
 /** Uses monthKey index + isDeleted filter (indexed via isDeleted on v5 schema). */
 export async function getCycleTransactions(monthKey: string): Promise<Transaction[]> {
@@ -89,6 +90,9 @@ export async function addTransaction(
       createdAt: now,
       updatedAt: now,
     })) as number;
+  }).then((id) => {
+    emitDbDataChanged();
+    return id;
   });
 }
 
@@ -119,6 +123,7 @@ export async function updateTransactionWithLock(
       updatedAt: new Date(),
     });
   });
+  emitDbDataChanged();
 }
 
 export async function pruneDeletedTransactions(olderThanDays = 365): Promise<number> {

@@ -1,5 +1,13 @@
-const CACHE = "viswallet-v4";
-const ASSETS = ["/manifest.json", "/icon", "/apple-icon", "/icon-192", "/icon-512"];
+const CACHE = "viswallet-v6";
+const ASSETS = [
+  "/offline.html",
+  "/brand/mark.svg",
+  "/manifest.json",
+  "/icon",
+  "/apple-icon",
+  "/icon-192",
+  "/icon-512",
+];
 
 self.addEventListener("install", (event) => {
   event.waitUntil(
@@ -16,40 +24,61 @@ self.addEventListener("activate", (event) => {
   );
 });
 
+async function offlinePageResponse() {
+  const cached = await caches.match("/offline.html");
+  if (cached) return cached;
+  return new Response("Viswallet is offline. Reconnect and reload.", {
+    status: 503,
+    headers: { "Content-Type": "text/plain; charset=utf-8" },
+  });
+}
+
+async function networkFirst(request) {
+  try {
+    const response = await fetch(request);
+    if (response) return response;
+  } catch {
+    // network failed
+  }
+  const cached = await caches.match(request);
+  if (cached) return cached;
+  if (request.mode === "navigate") return offlinePageResponse();
+  return new Response("", { status: 408, statusText: "Network unavailable" });
+}
+
+async function cacheFirst(request) {
+  const cached = await caches.match(request);
+  if (cached) return cached;
+  try {
+    const response = await fetch(request);
+    if (response) return response;
+  } catch {
+    // network failed
+  }
+  return new Response("", { status: 408, statusText: "Network unavailable" });
+}
+
 self.addEventListener("fetch", (event) => {
   if (event.request.method !== "GET") return;
 
   const url = new URL(event.request.url);
 
-  // Never cache API, auth, or cross-origin requests
   if (!url.origin.startsWith(self.location.origin)) return;
   if (url.pathname.startsWith("/api")) return;
 
-  // Navigation: network-first (avoid stale app shell with sensitive UI)
   if (event.request.mode === "navigate") {
-    event.respondWith(
-      fetch(event.request).catch(async () => {
-        const cached = await caches.match(event.request);
-        if (cached) return cached;
-        return new Response(
-          "<!DOCTYPE html><html><head><meta charset=utf-8><title>Offline</title></head><body><p>Viswallet is offline. Open the app from a tab you already visited, or reconnect and reload.</p></body></html>",
-          { headers: { "Content-Type": "text/html; charset=utf-8" } },
-        );
-      }),
-    );
+    event.respondWith(networkFirst(event.request));
     return;
   }
 
-  // Static assets: cache-first
-  if (ASSETS.some((a) => url.pathname === a) || url.pathname.match(/\.(png|ico|woff2?)$/)) {
-    event.respondWith(
-      caches.match(event.request).then((cached) => cached || fetch(event.request)),
-    );
+  if (
+    ASSETS.some((a) => url.pathname === a) ||
+    url.pathname === "/offline.html" ||
+    url.pathname.match(/\.(png|ico|woff2?|svg)$/)
+  ) {
+    event.respondWith(cacheFirst(event.request));
     return;
   }
 
-  // Default: network-first for JS/CSS chunks
-  event.respondWith(
-    fetch(event.request).catch(() => caches.match(event.request)),
-  );
+  event.respondWith(networkFirst(event.request));
 });

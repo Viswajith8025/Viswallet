@@ -6,7 +6,7 @@ import Link from "next/link";
 import { AuthShell } from "@/components/brand/auth-shell";
 import { StepHeader } from "@/components/brand/step-header";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
+import { Input, PasswordInput } from "@/components/ui/input";
 import { useAuth } from "@/components/providers/auth-provider";
 import { getSettings } from "@/lib/db";
 
@@ -36,7 +36,7 @@ export default function AuthPage() {
     }
 
     if (!configured) {
-      setError("Cloud accounts are not configured. Add Supabase keys to .env.local and restart the dev server.");
+      setError("Sign-in isn't available right now. You can keep using the app on this device.");
       return;
     }
 
@@ -75,12 +75,12 @@ export default function AuthPage() {
 
   return (
     <AuthShell
-      headline="Sign in once. Keep everything."
-      subcopy="Cloud backup restores your ledger after reinstall — PIN and app lock still stay on this device."
+      headline="Welcome back"
+      subcopy="Sign in to pick up where you left off — on this phone, tablet, or computer."
       features={[
-        { n: "01", title: "One account", body: "Your vault syncs automatically while you're signed in." },
-        { n: "02", title: "Device-first", body: "Works offline. Cloud is the safety net, not the bottleneck." },
-        { n: "03", title: "Private by design", body: "We never sell your data. You control export and deletion." },
+        { n: "01", title: "One account", body: "Use the same login everywhere you track money." },
+        { n: "02", title: "Always ready", body: "Add expenses anytime — even without a connection." },
+        { n: "03", title: "Your data", body: "We never sell your information. You're in control." },
       ]}
     >
       <StepHeader
@@ -98,7 +98,7 @@ export default function AuthPage() {
         {mode === "signup" && (
           <Input
             label="Name"
-            placeholder="Vishwajit"
+            placeholder="Tony Stark"
             value={displayName}
             onChange={(e) => setDisplayName(e.target.value)}
             autoComplete="name"
@@ -107,15 +107,14 @@ export default function AuthPage() {
         <Input
           label="Email"
           type="email"
-          placeholder="you@example.com"
+          placeholder="thor@example.com"
           value={email}
           onChange={(e) => setEmail(e.target.value)}
           autoComplete="email"
           required
         />
-        <Input
+        <PasswordInput
           label="Password"
-          type="password"
           placeholder="At least 6 characters"
           value={password}
           onChange={(e) => setPassword(e.target.value)}

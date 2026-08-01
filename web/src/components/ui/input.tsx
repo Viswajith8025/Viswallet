@@ -1,5 +1,7 @@
 "use client";
 
+import { useState } from "react";
+import { Eye, EyeOff } from "lucide-react";
 import { cn } from "@/lib/design/cn";
 import { fieldVariants } from "@/lib/design/variants";
 import { SelectMenu } from "@/components/ui/select-menu";
@@ -34,6 +36,49 @@ export function Input({
         className={cn(fieldVariants.input, "h-10", error && fieldVariants.inputError, className)}
         {...props}
       />
+      {hint && !error && <FieldHint>{hint}</FieldHint>}
+      {error && <FieldError>{error}</FieldError>}
+    </label>
+  );
+}
+
+export function PasswordInput({
+  className,
+  label,
+  hint,
+  error,
+  ...props
+}: Omit<React.InputHTMLAttributes<HTMLInputElement>, "type"> & {
+  label?: string;
+  hint?: string;
+  error?: string;
+}) {
+  const [show, setShow] = useState(false);
+
+  return (
+    <label className="block space-y-2">
+      {label && <FieldLabel>{label}</FieldLabel>}
+      <div className="relative">
+        <input
+          type={show ? "text" : "password"}
+          className={cn(
+            fieldVariants.input,
+            "h-10 pr-10",
+            error && fieldVariants.inputError,
+            className,
+          )}
+          {...props}
+        />
+        <button
+          type="button"
+          className="absolute right-2 top-1/2 -translate-y-1/2 rounded-md p-1.5 text-muted-foreground transition-colors hover:text-foreground"
+          onClick={() => setShow((v) => !v)}
+          aria-label={show ? "Hide password" : "Show password"}
+          tabIndex={-1}
+        >
+          {show ? <EyeOff size={16} aria-hidden /> : <Eye size={16} aria-hidden />}
+        </button>
+      </div>
       {hint && !error && <FieldHint>{hint}</FieldHint>}
       {error && <FieldError>{error}</FieldError>}
     </label>

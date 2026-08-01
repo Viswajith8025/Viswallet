@@ -1,0 +1,306 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="theme-color" content="#5f4a8b" />
+    <meta name="color-scheme" content="light" />
+    <title>Offline — Viswallet</title>
+    <style>
+      *,
+      *::before,
+      *::after {
+        box-sizing: border-box;
+      }
+
+      html {
+        -webkit-text-size-adjust: 100%;
+      }
+
+      body {
+        margin: 0;
+        min-height: 100dvh;
+        font-family:
+          system-ui,
+          -apple-system,
+          "Segoe UI",
+          Roboto,
+          "Helvetica Neue",
+          Arial,
+          sans-serif;
+        background: #fefacd;
+        color: #2d2540;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        padding: 1.5rem;
+        padding-top: max(1.5rem, env(safe-area-inset-top));
+        padding-bottom: max(1.5rem, env(safe-area-inset-bottom));
+      }
+
+      .card {
+        width: 100%;
+        max-width: 22rem;
+        background: #fffef2;
+        border: 1px solid rgba(95, 74, 139, 0.14);
+        border-radius: 0.75rem;
+        padding: 2rem 1.5rem;
+        text-align: center;
+        box-shadow:
+          0 1px 0 rgba(95, 74, 139, 0.06),
+          0 8px 24px -10px rgba(45, 37, 64, 0.12);
+      }
+
+      .logo {
+        width: 3rem;
+        height: 3rem;
+        margin: 0 auto 1.25rem;
+        border-radius: 0.75rem;
+        overflow: hidden;
+      }
+
+      .logo svg {
+        display: block;
+        width: 100%;
+        height: 100%;
+      }
+
+      .icon-wrap {
+        width: 3.5rem;
+        height: 3.5rem;
+        margin: 0 auto 1rem;
+        border-radius: 9999px;
+        background: #ebe6f4;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: #5f4a8b;
+      }
+
+      .icon-wrap svg {
+        width: 1.5rem;
+        height: 1.5rem;
+      }
+
+      h1 {
+        margin: 0 0 0.5rem;
+        font-size: 1.25rem;
+        font-weight: 600;
+        letter-spacing: -0.02em;
+        color: #2d2540;
+      }
+
+      .lead {
+        margin: 0 0 1.25rem;
+        font-size: 0.9375rem;
+        line-height: 1.55;
+        color: #6b6080;
+      }
+
+      .tips {
+        margin: 0 0 1.5rem;
+        padding: 0.875rem 1rem;
+        background: #fdf9d4;
+        border-radius: 0.5rem;
+        font-size: 0.8125rem;
+        line-height: 1.5;
+        color: #6b6080;
+        text-align: left;
+      }
+
+      .tips strong {
+        display: block;
+        margin-bottom: 0.25rem;
+        color: #2d2540;
+        font-weight: 600;
+      }
+
+      .tips ul {
+        margin: 0;
+        padding-left: 1.125rem;
+      }
+
+      .tips li + li {
+        margin-top: 0.25rem;
+      }
+
+      .actions {
+        display: flex;
+        flex-direction: column;
+        gap: 0.625rem;
+      }
+
+      button {
+        appearance: none;
+        border: none;
+        cursor: pointer;
+        font: inherit;
+        width: 100%;
+        padding: 0.75rem 1rem;
+        border-radius: 0.5rem;
+        font-size: 0.9375rem;
+        font-weight: 600;
+        transition: background 0.15s ease, transform 0.1s ease;
+      }
+
+      button:active {
+        transform: scale(0.98);
+      }
+
+      .btn-primary {
+        background: #5f4a8b;
+        color: #fefacd;
+      }
+
+      .btn-primary:hover {
+        background: #4f3d77;
+      }
+
+      .btn-ghost {
+        background: transparent;
+        color: #5f4a8b;
+        border: 1px solid rgba(95, 74, 139, 0.22);
+      }
+
+      .btn-ghost:hover {
+        background: #f9f5c8;
+      }
+
+      .brand {
+        margin-top: 1.5rem;
+        font-size: 0.75rem;
+        color: #6b6080;
+        letter-spacing: 0.04em;
+      }
+
+      .status {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.375rem;
+        margin-bottom: 1rem;
+        padding: 0.25rem 0.625rem;
+        border-radius: 9999px;
+        background: #f8f2e0;
+        color: #9a7b2e;
+        font-size: 0.75rem;
+        font-weight: 600;
+      }
+
+      .status-dot {
+        width: 0.375rem;
+        height: 0.375rem;
+        border-radius: 9999px;
+        background: #9a7b2e;
+        animation: pulse 2s ease-in-out infinite;
+      }
+
+      @keyframes pulse {
+        0%,
+        100% {
+          opacity: 1;
+        }
+        50% {
+          opacity: 0.4;
+        }
+      }
+
+      .online .status {
+        background: #e8f3ed;
+        color: #3d7a62;
+      }
+
+      .online .status-dot {
+        background: #3d7a62;
+        animation: none;
+      }
+    </style>
+  </head>
+  <body>
+    <main class="card">
+      <div class="logo" aria-hidden="true">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" fill="none">
+          <rect width="48" height="48" rx="13" fill="#5f4a8b" />
+          <path d="M11 12H22.25L24.75 37H11V12Z" fill="#fefacd" />
+          <path d="M37 12H25.75L23.25 37H37V12Z" fill="#ede6b0" />
+          <path
+            d="M16.75 14.25H31.25C32.05 14.25 32.75 14.95 32.75 15.75V17C32.75 17.8 32.05 18.5 31.25 18.5H16.75C15.95 18.5 15.25 17.8 15.25 17V15.75C15.25 14.95 15.95 14.25 16.75 14.25Z"
+            fill="#5f4a8b"
+          />
+        </svg>
+      </div>
+
+      <div class="status" id="status">
+        <span class="status-dot" aria-hidden="true"></span>
+        <span id="status-text">No connection</span>
+      </div>
+
+      <div class="icon-wrap" aria-hidden="true">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <line x1="1" y1="1" x2="23" y2="23" />
+          <path d="M16.72 11.06A10.94 10.94 0 0 1 19 12.55" />
+          <path d="M5 12.55a10.94 10.94 0 0 1 5.17-2.39" />
+          <path d="M10.71 5.05A16 16 0 0 1 22.56 9" />
+          <path d="M1.42 9a15.91 15.91 0 0 1 4.7-2.88" />
+          <path d="M8.53 16.11a6 6 0 0 1 6.95 0" />
+          <line x1="12" y1="20" x2="12.01" y2="20" />
+        </svg>
+      </div>
+
+      <h1>You&apos;re offline</h1>
+      <p class="lead">
+        Viswallet works without the internet once you&apos;ve opened it before. Your data stays on this device.
+      </p>
+
+      <div class="tips">
+        <strong>Try this</strong>
+        <ul>
+          <li>Turn Wi‑Fi or mobile data back on</li>
+          <li>Open a page you visited while online (e.g. Home)</li>
+          <li>Tap <strong>Try again</strong> below when you&apos;re back online</li>
+        </ul>
+      </div>
+
+      <div class="actions">
+        <button type="button" class="btn-primary" id="retry">Try again</button>
+        <button type="button" class="btn-ghost" id="home">Go to home</button>
+      </div>
+    </main>
+
+    <p class="brand">Viswallet · offline-first</p>
+
+    <script>
+      (function () {
+        var statusEl = document.getElementById("status");
+        var statusText = document.getElementById("status-text");
+
+        function setOnline(online) {
+          if (online) {
+            document.body.classList.add("online");
+            statusText.textContent = "Back online";
+          } else {
+            document.body.classList.remove("online");
+            statusText.textContent = "No connection";
+          }
+        }
+
+        setOnline(navigator.onLine);
+
+        window.addEventListener("online", function () {
+          setOnline(true);
+        });
+        window.addEventListener("offline", function () {
+          setOnline(false);
+        });
+
+        document.getElementById("retry").addEventListener("click", function () {
+          window.location.reload();
+        });
+
+        document.getElementById("home").addEventListener("click", function () {
+          window.location.href = "/";
+        });
+      })();
+    </script>
+  </body>
+</html>

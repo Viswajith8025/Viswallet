@@ -451,10 +451,12 @@ export async function updateSettings(partial: Partial<AppSettings>): Promise<voi
   const next = { ...current, ...partial, updatedAt: new Date() };
   await db.settings.update(1, next);
   rememberSettings(next);
+  emitDbDataChanged();
 }
 
 export async function updateProfile(partial: Partial<Profile>): Promise<void> {
   await db.profiles.update(1, { ...partial, updatedAt: new Date() });
+  emitDbDataChanged();
 }
 
 export async function completeOnboarding(
@@ -488,6 +490,7 @@ export async function completeOnboarding(
 
   await createBudgetPlanForCycle(monthKey, salaryPaise);
   await logAudit("onboarding.complete", { success: true });
+  emitDbDataChanged();
 }
 
 export async function createBudgetPlanForCycle(monthKey: string, salaryPaise: number): Promise<number> {

@@ -26,10 +26,10 @@ function buildCsp(): string {
   return [
     "default-src 'self'",
     scriptSrc,
-    "style-src 'self' 'unsafe-inline'",
+    "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
     "img-src 'self' data: blob:",
-    "font-src 'self'",
-    `connect-src 'self' https://*.supabase.co wss://*.supabase.co${extraConnectOrigins()}`,
+    "font-src 'self' data: https://fonts.gstatic.com",
+    `connect-src 'self' https://*.supabase.co wss://*.supabase.co https://api.groq.com${extraConnectOrigins()}`,
     "frame-ancestors 'none'",
     "base-uri 'self'",
     "form-action 'self'",
