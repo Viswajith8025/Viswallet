@@ -2,6 +2,7 @@ import { z } from "zod";
 import {
   BACKUP_VERSION,
   MAX_AMOUNT_PAISE,
+  MAX_AVATAR_DATA_LENGTH,
   MAX_BACKUP_RECORDS,
   MAX_EMAIL_LENGTH,
   MAX_NAME_LENGTH,
@@ -18,7 +19,7 @@ const profileSchema = z.object({
   id: z.literal(1),
   displayName: boundedString(MAX_NAME_LENGTH),
   email: boundedString(MAX_EMAIL_LENGTH).optional(),
-  avatarUrl: boundedString(MAX_URL_LENGTH).optional(),
+  avatarUrl: boundedString(MAX_AVATAR_DATA_LENGTH).optional(),
   currencyCode: z.string().length(3),
   createdAt: dateField,
   updatedAt: dateField,

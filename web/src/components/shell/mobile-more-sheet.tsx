@@ -8,8 +8,10 @@ import { Sheet } from "@/components/ui/dialog";
 import { cn } from "@/lib/design/cn";
 import { APP_NAV } from "@/lib/navigation/app-nav";
 import { useUIStore } from "@/lib/store/ui-store";
+import { useDb } from "@/components/providers/db-provider";
 import { useAuth } from "@/components/providers/auth-provider";
 import { getProfile } from "@/lib/db";
+import { ProfileAvatar } from "@/components/profile/profile-avatar";
 
 export function MobileMoreSheet() {
   const pathname = usePathname();
@@ -17,15 +19,20 @@ export function MobileMoreSheet() {
   const setOpen = useUIStore((s) => s.setMobileMenuOpen);
   const setCommandOpen = useUIStore((s) => s.setCommandOpen);
   const { user } = useAuth();
+  const { version } = useDb();
   const [displayName, setDisplayName] = useState("You");
+  const [avatarUrl, setAvatarUrl] = useState<string | undefined>();
 
   useEffect(() => {
     if (open) {
       getProfile()
-        .then((p) => setDisplayName(p.displayName || "You"))
+        .then((p) => {
+          setDisplayName(p.displayName || "You");
+          setAvatarUrl(p.avatarUrl);
+        })
         .catch(() => setDisplayName("You"));
     }
-  }, [open]);
+  }, [open, version]);
 
   useEffect(() => {
     setOpen(false);
@@ -53,9 +60,7 @@ export function MobileMoreSheet() {
           prefetch={false}
           className="mx-4 mb-3 flex items-center gap-3 rounded-xl bg-muted/30 px-4 py-3 transition-colors hover:bg-muted/50"
         >
-          <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-primary text-lg font-semibold text-primary-foreground">
-            {displayName.charAt(0).toUpperCase()}
-          </div>
+          <ProfileAvatar displayName={displayName} avatarUrl={avatarUrl} size="md" />
           <div className="min-w-0">
             <p className="truncate font-medium">{displayName}</p>
             <p className="truncate text-sm text-muted-foreground">

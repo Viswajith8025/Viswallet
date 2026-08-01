@@ -8,15 +8,19 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useAuth } from "@/components/providers/auth-provider";
 import { getProfile, updateProfile } from "@/lib/db";
-import { sanitizeName, sanitizeEmail } from "@/lib/security";
+import { sanitizeName } from "@/lib/security";
 import { showToast } from "@/lib/store/toast-store";
+import { ProfileAvatar } from "@/components/profile/profile-avatar";
+import { readAvatarFromFile } from "@/lib/profile/avatar";
 
 export default function ProfilePage() {
   const router = useRouter();
   const { configured, user, signOut } = useAuth();
   const [displayName, setDisplayName] = useState("");
-  const [email, setEmail] = useState("");
+  const [avatarUrl, setAvatarUrl] = useState<string | undefined>();
+  const [accountEmail, setAccountEmail] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
+  const [avatarBusy, setAvatarBusy] = useState(false);
   const [saved, setSaved] = useState(false);
   const [loading, setLoading] = useState(true);
   const [formError, setFormError] = useState<string | null>(null);
@@ -25,13 +29,16 @@ export default function ProfilePage() {
     getProfile()
       .then((p) => {
         setDisplayName(p.displayName);
-        setEmail(p.email ?? "");
+        setAvatarUrl(p.avatarUrl);
+        setAccountEmail(p.email ?? null);
       })
       .catch(() => {
         showToast("Could not load profile.", { tone: "error" });
       })
       .finally(() => setLoading(false));
   }, []);
+
+  const signedInEmail = user?.email ?? accountEmail;
 
   async function handleSave(e: React.FormEvent) {
     e.preventDefault();
@@ -40,19 +47,14 @@ export default function ProfilePage() {
       setFormError("Enter a display name.");
       return;
     }
-    const cleanEmail = email.trim() ? sanitizeEmail(email) : undefined;
-    if (email.trim() && !cleanEmail) {
-      setFormError("Enter a valid email address or leave it blank.");
-      return;
-    }
     setSaving(true);
     try {
       await updateProfile({
         displayName: sanitizeName(displayName),
-        email: cleanEmail,
       });
       setSaved(true);
       setTimeout(() => setSaved(false), 2000);
+      showToast("Profile saved", { tone: "success" });
     } catch {
       showToast("Could not save profile.", { tone: "error" });
     } finally {
@@ -60,32 +62,74 @@ export default function ProfilePage() {
     }
   }
 
+  async function handleAvatarPick(file: File) {
+    setAvatarBusy(true);
+    try {
+      const dataUrl = await readAvatarFromFile(file);
+      await updateProfile({ avatarUrl: dataUrl });
+      setAvatarUrl(dataUrl);
+      showToast("Profile photo updated", { tone: "success" });
+    } catch (err) {
+      showToast(err instanceof Error ? err.message : "Could not update photo", { tone: "error" });
+    } finally {
+      setAvatarBusy(false);
+    }
+  }
+
+  async function removeAvatar() {
+    setAvatarBusy(true);
+    try {
+      await updateProfile({ avatarUrl: undefined });
+      setAvatarUrl(undefined);
+      showToast("Photo removed", { tone: "success" });
+    } catch {
+      showToast("Could not remove photo", { tone: "error" });
+    } finally {
+      setAvatarBusy(false);
+    }
+  }
+
   return (
     <PageContainer className="max-w-5xl">
-      <PageHeader
-        title="Profile"
-        description="Your name and account details."
-      />
+      <PageHeader title="Profile" description="Your name and photo — account email comes from sign-in." />
 
       <Card>
         <CardContent className="p-5">
           {loading ? (
             <p className="text-sm text-muted-foreground">Loading profile…</p>
           ) : (
-            <form onSubmit={handleSave} className="mx-auto max-w-md space-y-4">
+            <form onSubmit={handleSave} className="mx-auto max-w-md space-y-5">
               <div className="flex items-center gap-4">
-                <div className="flex h-16 w-16 items-center justify-center rounded-xl bg-primary text-2xl font-semibold text-primary-foreground">
-                  {displayName.charAt(0).toUpperCase() || "V"}
-                </div>
-                <div>
-                  <p className="font-semibold">{displayName || "You"}</p>
-                  <p className="text-sm text-muted-foreground">
-                    {configured && user
-                      ? user.email
-                      : "Sign in to access your account on other devices"}
-                  </p>
+                <ProfileAvatar
+                  displayName={displayName}
+                  avatarUrl={avatarUrl}
+                  size="lg"
+                  editable
+                  uploading={avatarBusy}
+                  onPickFile={(file) => void handleAvatarPick(file)}
+                />
+                <div className="min-w-0">
+                  <p className="font-semibold truncate">{displayName || "You"}</p>
+                  {signedInEmail ? (
+                    <p className="text-sm text-muted-foreground truncate">{signedInEmail}</p>
+                  ) : (
+                    <p className="text-sm text-muted-foreground">Sign in to sync across devices</p>
+                  )}
                 </div>
               </div>
+
+              {avatarUrl && (
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  disabled={avatarBusy}
+                  onClick={() => void removeAvatar()}
+                >
+                  Remove photo
+                </Button>
+              )}
+
               <Input
                 label="Display name"
                 required
@@ -93,21 +137,22 @@ export default function ProfilePage() {
                 onChange={(e) => setDisplayName(e.target.value)}
                 placeholder="Your name"
               />
-              <Input
-                label="Email (optional)"
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                placeholder="Email address (optional)"
-                hint="For your records only — sign-in uses your account email."
-              />
+
+              {configured && signedInEmail && (
+                <div className="rounded-xl border border-border/60 bg-muted/30 px-4 py-3 text-sm">
+                  <p className="font-medium text-foreground">Account email</p>
+                  <p className="mt-0.5 text-muted-foreground">{signedInEmail}</p>
+                  <p className="mt-2 text-xs text-muted-foreground">
+                    From your sign-up — used to sign in, not editable here.
+                  </p>
+                </div>
+              )}
+
               {formError && (
-                <p className="text-sm text-destructive" role="alert">
-                  {formError}
-                </p>
+                <p className="text-sm text-destructive" role="alert">{formError}</p>
               )}
               <Button type="submit" className="w-full" disabled={saving}>
-                {saving ? "Saving..." : saved ? "Saved!" : "Save profile"}
+                {saving ? "Saving…" : saved ? "Saved!" : "Save profile"}
               </Button>
               {configured && user && (
                 <div className="border-t border-border pt-4">

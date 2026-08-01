@@ -10,6 +10,8 @@ export const MAX_NAME_LENGTH = 120;
 export const MAX_NOTES_LENGTH = 2_000;
 export const MAX_EMAIL_LENGTH = 254;
 export const MAX_URL_LENGTH = 2_048;
+/** Profile photo stored as a compressed data URL in IndexedDB. */
+export const MAX_AVATAR_DATA_LENGTH = 400_000;
 export const MAX_TAGS = 20;
 export const MAX_TAG_LENGTH = 40;
 
