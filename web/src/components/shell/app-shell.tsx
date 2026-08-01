@@ -1,6 +1,5 @@
 "use client";
 
-import dynamic from "next/dynamic";
 import { usePathname } from "next/navigation";
 import { TopBar } from "./top-bar";
 import { OfflineBanner } from "./offline-banner";
@@ -13,26 +12,10 @@ import { SecurityProvider } from "@/components/security/security-provider";
 import { ToastHost } from "@/components/ui/toast";
 import { ConfirmDialog } from "@/components/ux/confirm-dialog";
 import { PageViewTracker } from "@/components/monitoring/page-view-tracker";
-
-const CommandPalette = dynamic(
-  () => import("@/components/command/command-palette").then((m) => m.CommandPalette),
-  { ssr: false },
-);
-
-const QuickAddModal = dynamic(
-  () => import("@/components/quick-add/quick-add-modal").then((m) => m.QuickAddModal),
-  { ssr: false },
-);
-
-const StatementImportModal = dynamic(
-  () => import("@/components/import/statement-import-modal").then((m) => m.StatementImportModal),
-  { ssr: false },
-);
-
-const SalaryCreditModal = dynamic(
-  () => import("@/components/salary/salary-credit-modal").then((m) => m.SalaryCreditModal),
-  { ssr: false },
-);
+import { CommandPalette } from "@/components/command/command-palette";
+import { QuickAddModal } from "@/components/quick-add/quick-add-modal";
+import { StatementImportModal } from "@/components/import/statement-import-modal";
+import { SalaryCreditModal } from "@/components/salary/salary-credit-modal";
 
 export function AppShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();

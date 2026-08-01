@@ -50,6 +50,7 @@ export function MobileMoreSheet() {
 
         <Link
           href="/profile"
+          prefetch={false}
           className="mx-4 mb-3 flex items-center gap-3 rounded-xl bg-muted/30 px-4 py-3 transition-colors hover:bg-muted/50"
         >
           <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-primary text-lg font-semibold text-primary-foreground">
@@ -91,6 +92,7 @@ export function MobileMoreSheet() {
               <Link
                 key={item.href}
                 href={item.href}
+                prefetch={false}
                 className={cn(
                   "flex items-center gap-3 rounded-lg px-3 py-2.5 text-[15px] transition-colors",
                   pathname === item.href
