@@ -41,6 +41,10 @@ export async function getAuthUser(): Promise<User | null> {
   return session?.user ?? null;
 }
 
+function normalizeAuthEmail(email: string): string {
+  return email.trim().toLowerCase();
+}
+
 function mapAuthError(error: AuthError): string {
   const msg = error.message.toLowerCase();
   const code = (error.code ?? "").toLowerCase();
@@ -50,15 +54,15 @@ function mapAuthError(error: AuthError): string {
     msg.includes("invalid login credentials") ||
     msg.includes("invalid credentials")
   ) {
-    return "Email or password is incorrect.";
+    return "Email or password is incorrect. Double-check both, or create an account if you haven't yet.";
   }
 
   if (code === "user_not_found" || msg.includes("user not found")) {
-    return "No account found for this email. Create an account first.";
+    return "No account found for this email. Tap Create account below.";
   }
 
   if (code === "email_not_confirmed" || msg.includes("email not confirmed")) {
-    return "Your account exists but isn't confirmed yet. Check your email, or ask the app owner to confirm you in Supabase.";
+    return "Confirm your email first — check your inbox for the Supabase sign-up link, then try Sign in again.";
   }
 
   if (msg.includes("invalid api key") || msg.includes("invalid jwt") || code === "bad_jwt") {
@@ -81,6 +85,10 @@ function mapAuthError(error: AuthError): string {
     return "Enter a valid email address.";
   }
 
+  if (error.status === 400 && !code) {
+    return "Sign-in failed. Check your email and password, or create an account if this is your first time.";
+  }
+
   if (error.status === 500 || msg.includes("database error") || msg.includes("internal server error")) {
     return "Couldn't create your account right now. Try again in a minute, or use Sign in if you already registered.";
   }
@@ -99,7 +107,7 @@ export async function signInWithEmail(email: string, password: string): Promise<
     const sb = getSupabase();
     if (!sb) throw new Error("Cloud accounts are not configured.");
 
-    const trimmed = email.trim();
+    const trimmed = normalizeAuthEmail(email);
     if (!trimmed || !trimmed.includes("@")) {
       throw new Error("Enter a valid email address.");
     }
@@ -130,7 +138,7 @@ export async function signUpWithEmail(
     const sb = getSupabase();
     if (!sb) throw new Error("Cloud accounts are not configured.");
 
-    const trimmed = email.trim();
+    const trimmed = normalizeAuthEmail(email);
     if (!trimmed || !trimmed.includes("@")) {
       throw new Error("Enter a valid email address.");
     }

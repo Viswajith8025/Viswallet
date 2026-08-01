@@ -52,7 +52,12 @@ export default function DashboardPage() {
               eyebrow={formatCycleLabel(data.monthKey)}
               title={greeting(displayName)}
               actions={
-                <Button variant="outline" size="sm" onClick={() => router.push("/transactions?add=expense")}>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="hidden sm:inline-flex"
+                  onClick={() => router.push("/transactions?add=expense")}
+                >
                   New transaction
                 </Button>
               }

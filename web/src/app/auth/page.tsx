@@ -28,7 +28,7 @@ export default function AuthPage() {
     setError(null);
     setNotice(null);
 
-    const trimmedEmail = email.trim();
+    const trimmedEmail = email.trim().toLowerCase();
 
     if (!trimmedEmail.includes("@")) {
       setError("Enter a valid email address.");

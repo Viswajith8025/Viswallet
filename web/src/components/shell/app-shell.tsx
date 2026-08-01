@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation";
 import { TopBar } from "./top-bar";
 import { OfflineBanner } from "./offline-banner";
 import { MobileNav } from "./mobile-nav";
+import { MobileMoreSheet } from "./mobile-more-sheet";
 import { Sidebar } from "./sidebar";
 import { RouteGuard } from "@/components/security/route-guard";
 import { SecurityProvider } from "@/components/security/security-provider";
@@ -57,6 +58,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             </main>
           </div>
           <MobileNav />
+          <MobileMoreSheet />
           <CommandPalette />
           <QuickAddModal />
           <StatementImportModal />

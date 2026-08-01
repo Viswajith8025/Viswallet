@@ -2,77 +2,13 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import {
-  LayoutDashboard,
-  ArrowLeftRight,
-  BarChart3,
-  PiggyBank,
-  Receipt,
-  Repeat,
-  IndianRupee,
-  HandCoins,
-  ArrowDownLeft,
-  CreditCard,
-  Target,
-  Heart,
-  TrendingUp,
-  Wallet,
-  Calendar,
-  Sparkles,
-  Tags,
-  Search,
-  Bell,
-  User,
-  Settings,
-  PanelLeft,
-  FileText,
-  LineChart,
-  Landmark,
-  Award,
-  StickyNote,
-  Calculator,
-} from "lucide-react";
+import { PanelLeft } from "lucide-react";
 import { cn } from "@/lib/design/cn";
 import { LogoMark } from "@/components/brand/logo-mark";
 import { LegalFooter } from "@/components/legal/legal-footer";
 import { useUIStore } from "@/lib/store/ui-store";
 import { Button } from "@/components/ui/button";
-
-const NAV = [
-  { section: "Overview" },
-  { href: "/", label: "Dashboard", icon: LayoutDashboard },
-  { href: "/transactions", label: "Transactions", icon: ArrowLeftRight },
-  { href: "/analytics", label: "Analytics", icon: BarChart3 },
-  { href: "/insights", label: "Insights", icon: Sparkles },
-  { href: "/reports", label: "Reports", icon: FileText },
-  { href: "/forecast", label: "Forecast", icon: LineChart },
-  { href: "/search", label: "Search", icon: Search },
-  { section: "Money" },
-  { href: "/budgets", label: "Budgets", icon: PiggyBank },
-  { href: "/bills", label: "Bills", icon: Receipt },
-  { href: "/subscriptions", label: "Subscriptions", icon: Repeat },
-  { href: "/income", label: "Income", icon: IndianRupee },
-  { href: "/salary", label: "Salary", icon: Wallet },
-  { section: "Credit" },
-  { href: "/loans", label: "Lent", icon: HandCoins },
-  { href: "/borrowed", label: "Borrowed", icon: ArrowDownLeft },
-  { href: "/emi", label: "EMI Tracker", icon: CreditCard },
-  { href: "/debt-planner", label: "Debt Planner", icon: Calculator },
-  { section: "Wealth" },
-  { href: "/accounts", label: "Accounts", icon: Landmark },
-  { href: "/goals", label: "Savings Goals", icon: Target },
-  { href: "/wishlist", label: "Wishlist", icon: Heart },
-  { href: "/investments", label: "Investments", icon: TrendingUp },
-  { href: "/net-worth", label: "Net Worth", icon: Wallet },
-  { href: "/calendar", label: "Calendar", icon: Calendar },
-  { href: "/achievements", label: "Achievements", icon: Award },
-  { href: "/notes", label: "Secure Notes", icon: StickyNote },
-  { section: "System" },
-  { href: "/categories", label: "Categories", icon: Tags },
-  { href: "/notifications", label: "Notifications", icon: Bell },
-  { href: "/profile", label: "Profile", icon: User },
-  { href: "/settings", label: "Settings", icon: Settings },
-];
+import { APP_NAV } from "@/lib/navigation/app-nav";
 
 export function Sidebar() {
   const pathname = usePathname();
@@ -116,7 +52,7 @@ export function Sidebar() {
       </div>
 
       <nav className="scroll-premium flex-1 overflow-y-auto p-2">
-        {NAV.map((item, i) =>
+        {APP_NAV.map((item, i) =>
           "section" in item ? (
             !collapsed && (
               <p

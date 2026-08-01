@@ -2,21 +2,25 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { LayoutDashboard, ArrowLeftRight, BarChart3, Plus, Settings } from "lucide-react";
+import { LayoutDashboard, ArrowLeftRight, PiggyBank, Plus, LayoutGrid } from "lucide-react";
 import { cn } from "@/lib/design/cn";
 import { useUIStore } from "@/lib/store/ui-store";
+import { isMobileMoreRoute } from "@/lib/navigation/app-nav";
 
 const TABS = [
-  { href: "/", label: "Dashboard", icon: LayoutDashboard },
-  { href: "/transactions", label: "Transactions", icon: ArrowLeftRight },
+  { href: "/", label: "Home", icon: LayoutDashboard },
+  { href: "/transactions", label: "Activity", icon: ArrowLeftRight },
   { href: "__add__", label: "Add", icon: Plus, fab: true },
-  { href: "/analytics", label: "Analytics", icon: BarChart3 },
-  { href: "/settings", label: "Settings", icon: Settings },
+  { href: "/budgets", label: "Budgets", icon: PiggyBank },
+  { href: "__more__", label: "More", icon: LayoutGrid },
 ] as const;
 
 export function MobileNav() {
   const pathname = usePathname();
   const setQuickAddOpen = useUIStore((s) => s.setQuickAddOpen);
+  const mobileMenuOpen = useUIStore((s) => s.mobileMenuOpen);
+  const setMobileMenuOpen = useUIStore((s) => s.setMobileMenuOpen);
+  const moreActive = mobileMenuOpen || isMobileMoreRoute(pathname);
 
   return (
     <nav
@@ -32,14 +36,34 @@ export function MobileNav() {
                 type="button"
                 onClick={() => setQuickAddOpen(true, "expense")}
                 className="flex -translate-y-3 flex-col items-center gap-1"
-                aria-label="Quick add transaction"
+                aria-label="Add transaction"
               >
-                <span className="flex h-11 w-11 items-center justify-center rounded-xl bg-primary text-primary-foreground shadow-glow transition-transform active:scale-95">
-                  <Plus size={22} strokeWidth={2.5} />
+                <span className="flex h-12 w-12 items-center justify-center rounded-2xl bg-primary text-primary-foreground shadow-glow transition-transform active:scale-95">
+                  <Plus size={24} strokeWidth={2.5} />
                 </span>
               </button>
             );
           }
+
+          if (tab.href === "__more__") {
+            return (
+              <button
+                key={tab.href}
+                type="button"
+                onClick={() => setMobileMenuOpen(true)}
+                className={cn(
+                  "flex min-w-[3.25rem] flex-col items-center gap-1 rounded-xl px-2 py-2 text-[10px] font-medium transition-colors",
+                  moreActive ? "text-primary" : "text-muted-foreground",
+                )}
+                aria-label="Open menu"
+                aria-expanded={mobileMenuOpen}
+              >
+                <tab.icon size={20} strokeWidth={moreActive ? 2.25 : 1.75} />
+                {tab.label}
+              </button>
+            );
+          }
+
           const active = pathname === tab.href;
           return (
             <Link
