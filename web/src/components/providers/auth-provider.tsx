@@ -87,7 +87,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       window.clearTimeout(authTimeout);
       unsubscribe();
     };
-  }, [configured]);
+  }, [configured, runCloudSync]);
 
   const signIn = useCallback(async (email: string, password: string) => {
     const signedInUser = await signInWithEmail(email, password);
