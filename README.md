@@ -21,7 +21,7 @@ Open [http://localhost:3000](http://localhost:3000)
 | Styling | Tailwind CSS 4 |
 | State | Zustand (UI) + TanStack React Query (data) |
 | Database | Dexie / IndexedDB (offline-first, persists on refresh) |
-| Cloud (optional) | Supabase client stub in `.env.example` |
+| Cloud (optional) | Supabase Auth + per-user cloud vault sync |
 | Charts | Recharts |
 | Search | Fuse.js |
 | Command palette | cmdk (Ctrl+K) |
@@ -49,7 +49,7 @@ Open [http://localhost:3000](http://localhost:3000)
 
 All finance data lives in **IndexedDB** in the browser. Use Settings → Export backup regularly.
 
-Optional Supabase: set `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_ANON_KEY` in `web/.env.local` for future cloud sync.
+**Optional cloud accounts:** set `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, and `NEXT_PUBLIC_CLOUD_VAULT=true` in `web/.env.local` (after running `web/supabase/migrations/003_user_data_vaults.sql`). Without these, the app runs fully local with no sign-in required.
 
 ## Production
 

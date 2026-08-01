@@ -35,6 +35,7 @@ Copy `web/.env.example` to `web/.env.local` for local dev.
 | `NEXT_PUBLIC_APP_VERSION` | Recommended | Semver shown in legal pages; sync with `package.json` |
 | `NEXT_PUBLIC_SUPABASE_URL` | Optional | Cloud auth/sync — both Supabase vars required together |
 | `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Optional | Supabase anon key (RLS-protected) |
+| `NEXT_PUBLIC_CLOUD_VAULT` | Optional | Set `true` after migration `003_user_data_vaults.sql` is applied |
 | `NEXT_PUBLIC_ERROR_REPORT_URL` | Optional | POST endpoint for crash reports (no financial data) |
 | `NEXT_PUBLIC_ANALYTICS_ENABLED` | Optional | Set `true` to enable anonymous page views |
 | `NEXT_PUBLIC_ANALYTICS_ENDPOINT` | Optional | POST endpoint for analytics events |
