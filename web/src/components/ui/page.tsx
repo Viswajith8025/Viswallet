@@ -16,7 +16,7 @@ export function PageContainer({
   children: React.ReactNode;
   className?: string;
 }) {
-  return <div className={cn("mx-auto max-w-5xl space-y-8", className)}>{children}</div>;
+  return <div className={cn("mx-auto max-w-5xl space-y-5 md:space-y-8", className)}>{children}</div>;
 }
 
 export function PageHeader({
@@ -33,13 +33,13 @@ export function PageHeader({
   className?: string;
 }) {
   return (
-    <div className={cn("flex flex-col gap-4 border-b border-border/50 pb-6 sm:flex-row sm:items-end sm:justify-between", className)}>
-      <div className="min-w-0 space-y-1">
-        {eyebrow && <p className={cn(typography.eyebrow)}>{eyebrow}</p>}
-        <h1 className={cn(typography.display, "text-foreground")}>{title}</h1>
-        {description && <p className={cn(typography.body, "max-w-xl text-muted-foreground")}>{description}</p>}
+    <div className={cn("flex flex-col gap-3 border-b border-border/50 pb-4 sm:flex-row sm:items-end sm:justify-between sm:gap-4 sm:pb-6", className)}>
+      <div className="min-w-0 space-y-0.5">
+        {eyebrow && <p className={cn(typography.eyebrow, "hidden sm:block")}>{eyebrow}</p>}
+        <h1 className={cn(typography.display, "text-xl sm:text-2xl text-foreground")}>{title}</h1>
+        {description && <p className={cn(typography.body, "hidden max-w-xl text-muted-foreground sm:block")}>{description}</p>}
       </div>
-      {actions && <div className="flex shrink-0 items-center gap-2">{actions}</div>}
+      {actions && <div className="hidden shrink-0 flex-wrap gap-2 sm:flex">{actions}</div>}
     </div>
   );
 }
@@ -103,13 +103,36 @@ export function EmptyState({
   action,
   icon: IconComponent = Inbox,
   illustration,
+  minimal = false,
 }: {
   title: string;
   description?: string;
   action?: React.ReactNode;
   icon?: LucideIcon;
   illustration?: EmptyVariant;
+  minimal?: boolean;
 }) {
+  if (minimal) {
+    return (
+      <FadeIn>
+        <div className="flex flex-col items-center justify-center px-4 py-16 text-center">
+          <div className="mb-4 text-muted-foreground/40">
+            {illustration ? (
+              <EmptyIllustration variant={illustration} className="opacity-60" />
+            ) : (
+              <Icon icon={IconComponent} size="xl" className="opacity-50" />
+            )}
+          </div>
+          <p className="text-sm text-muted-foreground">{title}</p>
+          {description && (
+            <p className={cn(typography.body, "mt-1 max-w-xs text-muted-foreground/80")}>{description}</p>
+          )}
+          {action && <div className="mt-6">{action}</div>}
+        </div>
+      </FadeIn>
+    );
+  }
+
   return (
     <FadeIn>
       <div className="flex flex-col items-center justify-center rounded-xl border border-dashed border-border bg-surface-secondary/80 px-6 py-20 text-center">

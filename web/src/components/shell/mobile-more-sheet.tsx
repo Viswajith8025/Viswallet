@@ -36,7 +36,7 @@ export function MobileMoreSheet() {
       <div className="flex max-h-[min(88vh,720px)] flex-col pb-[env(safe-area-inset-bottom)]">
         <div className="flex items-center justify-between gap-3 px-5 pb-3 pt-1">
           <h2 id="mobile-more-title" className="font-display text-lg font-semibold tracking-tight">
-            Menu
+            More
           </h2>
           <button
             type="button"
@@ -50,7 +50,7 @@ export function MobileMoreSheet() {
 
         <Link
           href="/profile"
-          className="mx-4 mb-3 flex items-center gap-3 rounded-xl border border-border/60 bg-muted/30 px-4 py-3 transition-colors hover:bg-muted/50"
+          className="mx-4 mb-3 flex items-center gap-3 rounded-xl bg-muted/30 px-4 py-3 transition-colors hover:bg-muted/50"
         >
           <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-primary text-lg font-semibold text-primary-foreground">
             {displayName.charAt(0).toUpperCase()}
@@ -69,10 +69,10 @@ export function MobileMoreSheet() {
             setOpen(false);
             setCommandOpen(true);
           }}
-          className="mx-4 mb-4 flex items-center gap-2 rounded-lg border border-border-light bg-background px-3 py-2.5 text-sm text-muted-foreground transition-colors hover:border-border hover:text-foreground"
+          className="mx-4 mb-4 flex items-center gap-2 rounded-lg bg-muted/40 px-3 py-2.5 text-sm text-muted-foreground transition-colors hover:text-foreground"
         >
           <Search size={16} className="shrink-0 opacity-70" />
-          <span>Search transactions, pages…</span>
+          <span>Search pages</span>
         </button>
 
         <nav

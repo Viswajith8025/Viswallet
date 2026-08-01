@@ -323,13 +323,11 @@ export default function SettingsPage() {
 
       {configured && (
       <Card>
-        <CardHeader>
-          <CardTitle>Account</CardTitle>
+        <CardHeader className="pb-2">
+          <CardTitle className="text-base">Account</CardTitle>
         </CardHeader>
         <CardContent className="space-y-3 pt-0 text-sm text-muted-foreground">
-          <p>
-            You&apos;re signed in. Your budget and transactions are available on any device with the same login.
-          </p>
+          <p>Signed in — your data is available on any device with the same login.</p>
           <p>PIN and app lock never leave this device.</p>
         </CardContent>
       </Card>

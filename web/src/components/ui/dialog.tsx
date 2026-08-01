@@ -67,12 +67,14 @@ export function Sheet({
   children,
   className,
   labelledBy,
+  fullScreen = false,
 }: {
   open: boolean;
   onClose: () => void;
   children: React.ReactNode;
   className?: string;
   labelledBy?: string;
+  fullScreen?: boolean;
 }) {
   return (
     <AnimatePresence>
@@ -91,13 +93,20 @@ export function Sheet({
             role="dialog"
             aria-modal="true"
             aria-labelledby={labelledBy}
-            className={cn(dialogVariants.panel, dialogVariants.panelSheet, "w-full", className)}
+            className={cn(
+              dialogVariants.panel,
+              dialogVariants.panelSheet,
+              fullScreen
+                ? "h-[100dvh] max-h-[100dvh] rounded-none"
+                : "w-full",
+              className,
+            )}
             initial={{ y: "100%" }}
             animate={{ y: 0 }}
             exit={{ y: "100%" }}
             transition={{ type: "spring", damping: 28, stiffness: 320 }}
           >
-            <div className="mx-auto mt-3 h-1 w-10 rounded-full bg-border sm:hidden" />
+            {!fullScreen && <div className="mx-auto mt-3 h-1 w-10 rounded-full bg-border sm:hidden" />}
             {children}
           </motion.div>
         </div>

@@ -6,6 +6,7 @@ import { TopBar } from "./top-bar";
 import { OfflineBanner } from "./offline-banner";
 import { MobileNav } from "./mobile-nav";
 import { MobileMoreSheet } from "./mobile-more-sheet";
+import { MobileFab } from "./mobile-fab";
 import { Sidebar } from "./sidebar";
 import { RouteGuard } from "@/components/security/route-guard";
 import { SecurityProvider } from "@/components/security/security-provider";
@@ -51,12 +52,13 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             <TopBar />
             <main
               id="main-content"
-              className="scroll-premium min-h-0 flex-1 overflow-y-auto overscroll-y-contain px-4 py-5 pb-[calc(5.5rem+env(safe-area-inset-bottom))] pt-[max(1.25rem,env(safe-area-inset-top))] md:px-8 md:py-8 md:pb-8"
+              className="scroll-premium min-h-0 flex-1 overflow-y-auto overscroll-y-contain px-4 py-4 pb-[calc(4.5rem+env(safe-area-inset-bottom))] md:px-8 md:py-8 md:pb-8"
               tabIndex={-1}
             >
               {children}
             </main>
           </div>
+          <MobileFab />
           <MobileNav />
           <MobileMoreSheet />
           <CommandPalette />

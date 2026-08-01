@@ -1,18 +1,16 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import { X, Sparkles, Wand2 } from "lucide-react";
+import { Sparkles, Wand2 } from "lucide-react";
 import { SuccessMark } from "@/components/ui/success-mark";
 import { successFeedback } from "@/lib/ux/feedback";
 import { useUIStore } from "@/lib/store/ui-store";
 import { Button } from "@/components/ui/button";
 import { CategoryPicker } from "@/components/categories/category-picker";
+import { CategoryGrid } from "@/components/categories/category-grid";
 import { Input, Select } from "@/components/ui/input";
-import { Dialog } from "@/components/ui/dialog";
-import { Badge } from "@/components/ui/badge";
+import { Dialog, Sheet } from "@/components/ui/dialog";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Hint } from "@/components/ui/hint";
-import { SegmentedControl } from "@/components/ui/segmented-control";
 import { DuplicateTransactionError } from "@/lib/db/errors";
 import { parseRupeeInput, formatINR } from "@/lib/money";
 import { PAYMENT_METHODS } from "@/lib/categories-default";
@@ -21,11 +19,46 @@ import { getLastPaymentMethod, pickDefaultCategoryId } from "@/lib/ux/defaults";
 import { saveQuickTransaction } from "@/lib/transactions/save-quick-transaction";
 import { useInvalidateFinance } from "@/hooks/use-invalidate-finance";
 import { showToast } from "@/lib/store/toast-store";
-import { format } from "date-fns";
 import { getSettings } from "@/lib/db";
 import { useAiStatus } from "@/hooks/use-ai-status";
 import { parseTransactionWithAi, suggestCategoryWithAi } from "@/lib/ai/client";
 import { useDebounce } from "@/hooks/use-debounce";
+import { cn } from "@/lib/design/cn";
+
+const TYPE_OPTIONS = [
+  { value: "expense" as const, label: "Spent" },
+  { value: "income" as const, label: "Earned" },
+];
+
+function TypePills({
+  kind,
+  onChange,
+  className,
+}: {
+  kind: "expense" | "income";
+  onChange: (k: "expense" | "income") => void;
+  className?: string;
+}) {
+  return (
+    <div className={cn("flex rounded-lg bg-muted/80 p-1", className)}>
+      {TYPE_OPTIONS.map((opt) => (
+        <button
+          key={opt.value}
+          type="button"
+          onClick={() => onChange(opt.value)}
+          className={cn(
+            "flex-1 rounded-md py-2.5 text-sm font-medium transition-colors",
+            kind === opt.value
+              ? "bg-background text-foreground shadow-sm"
+              : "text-muted-foreground hover:text-foreground",
+          )}
+        >
+          {opt.label}
+        </button>
+      ))}
+    </div>
+  );
+}
 
 export function QuickAddModal() {
   const open = useUIStore((s) => s.quickAddOpen);
@@ -54,18 +87,26 @@ export function QuickAddModal() {
   const aiStatus = useAiStatus();
   const wasOpen = useRef(false);
   const debouncedTitle = useDebounce(title, 700);
+  const [isMobile, setIsMobile] = useState(false);
+
+  useEffect(() => {
+    const mq = window.matchMedia("(max-width: 767px)");
+    const update = () => setIsMobile(mq.matches);
+    update();
+    mq.addEventListener("change", update);
+    return () => mq.removeEventListener("change", update);
+  }, []);
 
   useEffect(() => {
     void getSettings().then((s) => setAiEnabled(Boolean(s.aiFeaturesEnabled)));
   }, []);
 
-  const aiActive = aiEnabled && aiStatus?.available;
+  const aiActive = aiEnabled && aiStatus?.available && !isMobile;
   const categoryOptions = useMemo(
     () => pool.map((c) => ({ slug: c.slug, name: c.name })),
     [pool],
   );
 
-  // Reset only when modal opens — not on every parent re-render.
   useEffect(() => {
     if (open && !wasOpen.current) {
       const def = pickDefaultCategoryId(kind, pool.length ? pool : categories);
@@ -149,7 +190,7 @@ export function QuickAddModal() {
       successFeedback();
       setSaving(false);
       setSuccess(true);
-      showToast(`${kind === "income" ? "Income" : "Expense"} saved · ${formatINR(paise)}`, { tone: "success" });
+      showToast(`${kind === "income" ? "Earned" : "Spent"} ${formatINR(paise)}`, { tone: "success" });
       setTimeout(handleClose, 700);
     } catch (err) {
       setSaving(false);
@@ -165,129 +206,157 @@ export function QuickAddModal() {
   }
 
   const preview = parseRupeeInput(amount);
+  const mobileTitle = kind === "income" ? "Add income" : "Add expense";
+
+  const mobileBody = success ? (
+    <div className="flex flex-1 items-center justify-center py-16">
+      <SuccessMark label="Saved" />
+    </div>
+  ) : (
+    <form onSubmit={handleSubmit} className="flex min-h-0 flex-1 flex-col">
+      <div className="px-4 py-3">
+        <TypePills kind={kind} onChange={handleKindChange} />
+        <p className="mt-3 text-center text-sm text-muted-foreground">
+          Tap a category, then enter the amount
+        </p>
+      </div>
+
+      <div className="scroll-premium min-h-0 flex-1 overflow-y-auto">
+        <CategoryGrid
+          categories={pool}
+          value={categoryId || String(pool[0]?.id ?? "")}
+          onChange={setCategoryId}
+        />
+      </div>
+
+      <div className="shrink-0 border-t border-border/50 bg-background px-4 py-4 pb-[max(1rem,env(safe-area-inset-bottom))]">
+        <div className="flex items-center gap-2 rounded-xl bg-muted/50 px-4 py-3">
+          <span className="text-lg font-medium text-muted-foreground">₹</span>
+          <input
+            type="text"
+            inputMode="decimal"
+            value={amount}
+            onChange={(e) => setAmount(e.target.value)}
+            placeholder="0"
+            className="min-w-0 flex-1 bg-transparent text-2xl font-semibold tabular-nums outline-none placeholder:text-muted-foreground/40"
+            aria-label="Amount in rupees"
+          />
+        </div>
+        {dupError && (
+          <Button type="button" variant="outline" size="sm" className="mt-3 w-full" onClick={() => submit(true)}>
+            Save anyway (similar entry exists)
+          </Button>
+        )}
+        <Button type="submit" className="mt-3 w-full" size="lg" disabled={saving || preview <= 0}>
+          {saving ? "Saving…" : "Save"}
+        </Button>
+      </div>
+    </form>
+  );
+
+  const desktopBody = success ? (
+    <div className="py-10">
+      <SuccessMark label="Saved" />
+    </div>
+  ) : (
+    <>
+      <TypePills kind={kind} onChange={handleKindChange} className="mb-5" />
+      {preview > 0 && (
+        <p className="mb-4 text-center text-2xl font-semibold tabular-nums text-primary">{formatINR(preview)}</p>
+      )}
+      <form onSubmit={handleSubmit} className="space-y-4">
+        {aiActive && (
+          <div className="rounded-xl bg-muted/40 p-3 space-y-2">
+            <div className="flex items-center gap-2 text-xs font-medium text-primary">
+              <Sparkles size={14} />
+              Describe it (optional)
+            </div>
+            <div className="flex gap-2">
+              <Input
+                value={aiLine}
+                onChange={(e) => setAiLine(e.target.value)}
+                placeholder="e.g. 450 lunch on Swiggy"
+                className="flex-1"
+              />
+              <Button
+                type="button"
+                variant="outline"
+                disabled={aiParsing || !aiLine.trim()}
+                onClick={() => void handleAiParse()}
+              >
+                <Wand2 size={15} />
+              </Button>
+            </div>
+          </div>
+        )}
+        <Input
+          label="Amount (₹)"
+          required
+          type="number"
+          inputMode="decimal"
+          value={amount}
+          onChange={(e) => setAmount(e.target.value)}
+          placeholder="0"
+        />
+        <CategoryPicker
+          categories={pool}
+          value={categoryId || String(pool[0]?.id ?? "")}
+          onChange={setCategoryId}
+          label="Category"
+        />
+        <Select label="Paid with" value={paymentMethod} onChange={(e) => setPaymentMethod(e.target.value)}>
+          {PAYMENT_METHODS.map((m) => (
+            <option key={m} value={m}>{m}</option>
+          ))}
+        </Select>
+        <Input
+          label="Note (optional)"
+          value={title}
+          onChange={(e) => setTitle(e.target.value)}
+          placeholder="Optional"
+        />
+        <Checkbox label="Repeats every month" checked={isRecurring} onChange={(e) => setIsRecurring(e.target.checked)} />
+        {dupError && (
+          <Button type="button" variant="outline" size="sm" onClick={() => submit(true)}>
+            Save anyway
+          </Button>
+        )}
+        <div className="flex justify-end gap-2 border-t border-border pt-4">
+          <Button type="button" variant="ghost" onClick={handleClose}>Cancel</Button>
+          <Button type="submit" disabled={saving}>{saving ? "Saving…" : "Save"}</Button>
+        </div>
+      </form>
+    </>
+  );
 
   return (
-    <Dialog open={open} onClose={handleClose} labelledBy="quick-add-title">
-      <div className="p-6">
-        <div className="mb-6 flex items-start justify-between gap-4">
-          <div>
-            <div className="mb-2 flex items-center gap-2">
-              <h2 id="quick-add-title" className="text-lg font-semibold tracking-tight">
-                Quick add
-              </h2>
-              <Badge variant={kind === "income" ? "success" : "primary"}>{kind}</Badge>
-            </div>
-            <p className="text-sm text-muted-foreground">{format(new Date(), "EEEE, d MMMM")}</p>
+    <>
+      {isMobile && (
+        <Sheet open={open} onClose={handleClose} labelledBy="quick-add-title" fullScreen>
+          <div className="flex h-full flex-col bg-background">
+            <header className="flex shrink-0 items-center justify-between border-b border-border/50 px-4 py-3 pt-[max(0.75rem,env(safe-area-inset-top))]">
+              <button type="button" onClick={handleClose} className="text-sm text-muted-foreground">
+                Cancel
+              </button>
+              <h2 id="quick-add-title" className="text-base font-semibold">{mobileTitle}</h2>
+              <span className="w-12" aria-hidden />
+            </header>
+            {mobileBody}
           </div>
-          <Button variant="ghost" size="icon" onClick={handleClose} aria-label="Close">
-            <X size={18} />
-          </Button>
-        </div>
+        </Sheet>
+      )}
 
-        {success ? (
-          <div className="py-10">
-            <SuccessMark label="Saved successfully" />
+      {!isMobile && (
+        <Dialog open={open} onClose={handleClose} labelledBy="quick-add-title-desktop" size="lg">
+          <div className="p-6">
+            <div className="mb-4 flex items-center justify-between">
+              <h2 id="quick-add-title-desktop" className="text-lg font-semibold">Add transaction</h2>
+              <Button variant="ghost" size="sm" onClick={handleClose}>Close</Button>
+            </div>
+            {desktopBody}
           </div>
-        ) : (
-          <>
-            <SegmentedControl
-              options={[
-                { value: "expense", label: "Expense" },
-                { value: "income", label: "Income" },
-              ]}
-              value={kind}
-              onChange={handleKindChange}
-              fullWidth
-              className="mb-5"
-            />
-            {preview > 0 && (
-              <p className="mb-4 text-center text-2xl font-semibold tabular-nums text-primary">{formatINR(preview)}</p>
-            )}
-            <form onSubmit={handleSubmit} className="space-y-4">
-              {aiActive && (
-                <div className="rounded-xl border border-primary/20 bg-primary/[0.04] p-3 space-y-2">
-                  <div className="flex items-center gap-2 text-xs font-medium text-primary">
-                    <Sparkles size={14} />
-                    AI quick add
-                  </div>
-                  <div className="flex gap-2">
-                    <Input
-                      label="Describe it"
-                      value={aiLine}
-                      onChange={(e) => setAiLine(e.target.value)}
-                      placeholder="e.g. 450 Swiggy lunch"
-                      className="flex-1"
-                    />
-                    <Button
-                      type="button"
-                      variant="outline"
-                      className="mt-6 shrink-0"
-                      disabled={aiParsing || !aiLine.trim()}
-                      onClick={() => void handleAiParse()}
-                    >
-                      <Wand2 size={15} className="mr-1" />
-                      {aiParsing ? "…" : "Parse"}
-                    </Button>
-                  </div>
-                </div>
-              )}
-              <Input
-                label="Title"
-                value={title}
-                onChange={(e) => setTitle(e.target.value)}
-                placeholder={kind === "income" ? "Freelance, refund..." : "Optional — uses category if blank"}
-                hint="Leave blank to use the category name (e.g. Spotify)"
-                autoFocus
-              />
-              <Input
-                label="Amount (INR)"
-                required
-                type="number"
-                inputMode="decimal"
-                value={amount}
-                onChange={(e) => setAmount(e.target.value)}
-                placeholder="0.00"
-              />
-              <CategoryPicker
-                categories={pool}
-                value={categoryId || String(pool[0]?.id ?? "")}
-                onChange={setCategoryId}
-              />
-              <Select label="Payment" value={paymentMethod} onChange={(e) => setPaymentMethod(e.target.value)}>
-                  {PAYMENT_METHODS.map((m) => (
-                    <option key={m} value={m}>
-                      {m}
-                    </option>
-                  ))}
-                </Select>
-              <Checkbox
-                label="Mark as recurring"
-                checked={isRecurring}
-                onChange={(e) => setIsRecurring(e.target.checked)}
-              />
-              {dupError && (
-                <div className="rounded-xl border border-warning/30 bg-warning-muted/50 p-3 text-sm">
-                  <p className="text-warning">Similar transaction exists today.</p>
-                  <Button type="button" variant="outline" size="sm" className="mt-2" onClick={() => submit(true)}>
-                    Save anyway
-                  </Button>
-                </div>
-              )}
-              <div className="flex justify-end gap-2 border-t border-border pt-4">
-                <Button type="button" variant="ghost" onClick={handleClose}>
-                  Cancel
-                </Button>
-                <Button type="submit" disabled={saving}>
-                  {saving ? "Saving..." : "Save"}
-                </Button>
-              </div>
-            </form>
-            <Hint className="mt-4">
-              Tip: Press <kbd className="rounded bg-muted px-1">⌘K</kbd> anytime to open commands.
-            </Hint>
-          </>
-        )}
-      </div>
-    </Dialog>
+        </Dialog>
+      )}
+    </>
   );
 }

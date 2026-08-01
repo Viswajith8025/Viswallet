@@ -15,6 +15,7 @@ import { PaginationControls } from "@/components/shared/pagination-controls";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Hint } from "@/components/ui/hint";
 import { SegmentedControl } from "@/components/ui/segmented-control";
+import { TabBar } from "@/components/ui/tab-bar";
 import { DataList } from "@/components/ui/list";
 import { useCategories } from "@/lib/queries/use-finance";
 import { useInvalidateFinance, usePagination } from "@/hooks";
@@ -225,7 +226,7 @@ function TransactionsContent({
   }
 
   return (
-    <PageContainer className="max-w-5xl space-y-6">
+    <PageContainer className="max-w-5xl space-y-4 md:space-y-6">
       <FadeIn>
         <PageHeader
           title="Transactions"
@@ -244,7 +245,23 @@ function TransactionsContent({
         />
       </FadeIn>
 
+      <TabBar
+        className="md:hidden"
+        options={[
+          { value: "all", label: "All" },
+          { value: "expense", label: "Spent" },
+          { value: "income", label: "Earned" },
+        ]}
+        value={filter}
+        onChange={(f) => {
+          setFilter(f);
+          pagination.reset();
+        }}
+        aria-label="Filter transactions"
+      />
+
       <SegmentedControl
+        className="hidden md:flex"
         options={[
           { value: "all", label: "All" },
           { value: "expense", label: "Expense" },
@@ -341,20 +358,12 @@ function TransactionsContent({
 
       {list.length === 0 ? (
         <EmptyState
-          title="No transactions"
-          description="Add your first expense or income to begin tracking."
-          illustration="transactions"
-          action={
-            <div className="flex gap-2">
-              <Button variant="outline" onClick={() => openNew("income")}>
-                Add income
-              </Button>
-              <Button onClick={() => openNew("expense")}>Add expense</Button>
-            </div>
-          }
+          minimal
+          title="No data available."
+          description="Tap + to add your first transaction."
         />
       ) : (
-        <Card>
+        <Card className="border-border/60 shadow-none">
           <CardContent className="p-0">
             <DataList>
               {pagination.items.map((t) => (

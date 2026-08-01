@@ -23,7 +23,7 @@ export function InstallPrompt() {
           animate={{ opacity: 1, y: 0 }}
           exit={{ opacity: 0, y: 16 }}
           transition={{ duration: 0.28, ease: [0.16, 1, 0.3, 1] }}
-          className="fixed inset-x-0 bottom-[calc(4.75rem+env(safe-area-inset-bottom))] z-[90] px-4 md:bottom-6 md:left-auto md:right-6 md:max-w-sm md:px-0"
+          className="fixed inset-x-0 bottom-[calc(3.75rem+env(safe-area-inset-bottom))] z-[90] px-4 md:bottom-6 md:left-auto md:right-6 md:max-w-sm md:px-0"
         >
           <div className="surface-card border border-primary/15 p-4 shadow-glow">
             <div className="flex items-start gap-3">

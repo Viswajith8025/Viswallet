@@ -70,7 +70,7 @@ export const APP_NAV: NavEntry[] = [
 ];
 
 /** Bottom tab routes — everything else lives in the More menu on mobile. */
-export const MOBILE_TAB_HREFS = ["/", "/transactions", "/budgets"] as const;
+export const MOBILE_TAB_HREFS = ["/", "/transactions", "/analytics"] as const;
 
 export function isMobileMoreRoute(pathname: string): boolean {
   if (MOBILE_TAB_HREFS.includes(pathname as typeof MOBILE_TAB_HREFS[number])) return false;

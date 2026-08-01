@@ -12,20 +12,19 @@ export function TopBar() {
   const setQuickAddOpen = useUIStore((s) => s.setQuickAddOpen);
 
   return (
-    <header className="glass-panel sticky top-0 z-30 flex h-14 items-center gap-2 border-b border-border/60 px-4 pt-[env(safe-area-inset-top)] md:gap-3 md:px-6">
+    <header className="sticky top-0 z-30 flex h-12 shrink-0 items-center gap-2 border-b border-border/50 bg-background px-4 pt-[env(safe-area-inset-top)] md:h-14 md:gap-3 md:border-border/60 md:px-6">
       <Link
         href="/"
         className="flex shrink-0 items-center gap-2 md:hidden"
         aria-label="Viswallet home"
       >
-        <LogoMark size={28} />
-        <span className="font-display text-[15px] font-semibold tracking-tight">Viswallet</span>
+        <LogoMark size={26} />
       </Link>
 
       <button
         type="button"
         onClick={() => setCommandOpen(true)}
-        className="hidden h-9 min-w-0 flex-1 items-center gap-2 rounded-md border border-border-light bg-background/80 px-3 text-sm text-muted-foreground transition-colors hover:border-border hover:text-foreground md:flex md:max-w-sm"
+        className="hidden h-9 min-w-0 flex-1 items-center gap-2 rounded-md border border-border-light bg-surface-secondary/50 px-3 text-sm text-muted-foreground transition-colors hover:border-border hover:text-foreground md:flex md:max-w-sm"
         aria-label="Open command palette"
       >
         <Search size={15} className="shrink-0 opacity-60" />
@@ -35,25 +34,16 @@ export function TopBar() {
         </kbd>
       </button>
 
-      <div className="ml-auto flex items-center gap-1 md:gap-2">
+      <div className="ml-auto flex items-center gap-0.5 md:gap-2">
         <button
           type="button"
           onClick={() => setCommandOpen(true)}
-          className="flex h-9 w-9 items-center justify-center rounded-lg border border-border-light text-muted-foreground transition-colors hover:border-border hover:text-foreground md:hidden"
+          className="flex h-9 w-9 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:text-foreground md:hidden"
           aria-label="Search"
         >
-          <Search size={18} />
+          <Search size={20} strokeWidth={1.75} />
         </button>
         <NotificationBell />
-        <Button
-          variant="ghost"
-          size="icon"
-          onClick={() => setQuickAddOpen(true, "expense")}
-          className="hidden h-9 w-9 sm:flex md:hidden"
-          aria-label="Quick add transaction"
-        >
-          <Plus size={17} />
-        </Button>
         <Button
           onClick={() => setQuickAddOpen(true, "expense")}
           size="sm"
