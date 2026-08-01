@@ -28,7 +28,6 @@ import type { Transaction } from "@/lib/db/types";
 import { parseRupeeInput, formatINR } from "@/lib/money";
 import { getMonthKey } from "@/lib/salary-cycle";
 import { PAYMENT_METHODS } from "@/lib/categories-default";
-import { sanitizeTitle } from "@/lib/security";
 import {
   getLastPaymentMethod,
   pickDefaultCategoryId,
@@ -143,8 +142,8 @@ function TransactionsContent({
     e.preventDefault();
     if (saving) return;
     const paise = parseRupeeInput(amount);
-    if (!title.trim() || paise <= 0) {
-      setFormError("Enter a title and amount greater than zero.");
+    if (paise <= 0) {
+      setFormError("Enter an amount greater than zero.");
       return;
     }
     setFormError("");
@@ -159,7 +158,7 @@ function TransactionsContent({
         await updateTransactionWithLock(
           edit.id,
           {
-            title: sanitizeTitle(title),
+            title: title,
             kind,
             amountPaise: paise,
             categoryId: catId,
@@ -174,7 +173,7 @@ function TransactionsContent({
         await addTransaction(
           {
             kind,
-            title: sanitizeTitle(title),
+            title: title,
             amountPaise: paise,
             categoryId: catId,
             paymentMethod,
@@ -272,7 +271,14 @@ function TransactionsContent({
               )}
             </div>
             <form onSubmit={save} className="grid gap-4 md:grid-cols-2">
-              <Input label="Title" required value={title} onChange={(e) => setTitle(e.target.value)} autoFocus />
+              <Input
+                label="Title"
+                value={title}
+                onChange={(e) => setTitle(e.target.value)}
+                placeholder="Optional — uses category if blank"
+                hint="Leave blank to use the category name"
+                autoFocus
+              />
               <Input
                 label="Amount (INR)"
                 required

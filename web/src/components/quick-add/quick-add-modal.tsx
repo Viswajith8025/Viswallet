@@ -129,7 +129,7 @@ export function QuickAddModal() {
 
   async function submit(allowDuplicate = false) {
     const paise = parseRupeeInput(amount);
-    if (!title.trim() || paise <= 0) return;
+    if (paise <= 0) return;
     setSaving(true);
     setDupError(false);
     try {
@@ -233,10 +233,10 @@ export function QuickAddModal() {
               )}
               <Input
                 label="Title"
-                required
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
-                placeholder={kind === "income" ? "Freelance, refund..." : "Coffee, groceries..."}
+                placeholder={kind === "income" ? "Freelance, refund..." : "Optional — uses category if blank"}
+                hint="Leave blank to use the category name (e.g. Spotify)"
                 autoFocus
               />
               <Input

@@ -9,6 +9,7 @@ import { formatINR } from "@/lib/money";
 import type { Transaction } from "@/lib/db/types";
 import { cn } from "@/lib/design/cn";
 import { CategoryIconBadge } from "@/components/categories/category-icon-badge";
+import { titlesEquivalent } from "@/lib/transactions/resolve-title";
 
 export type TransactionRowProps = {
   transaction: Transaction;
@@ -33,6 +34,16 @@ export const TransactionRow = memo(function TransactionRow({
   onEdit,
   onDelete,
 }: TransactionRowProps) {
+  const showCategoryLabel = categoryName && !titlesEquivalent(t.title, categoryName);
+  const dateLabel = compact
+    ? format(new Date(t.occurredAt), "dd MMM")
+    : format(new Date(t.occurredAt), "dd MMM yyyy");
+  const metaParts = [
+    ...(showCategoryLabel ? [categoryName] : []),
+    dateLabel,
+    ...(compact ? [] : [t.paymentMethod]),
+  ];
+
   const content = (
     <>
       <div className="flex min-w-0 items-center gap-3">
@@ -46,10 +57,7 @@ export const TransactionRow = memo(function TransactionRow({
         />
         <div className="min-w-0">
           <p className="truncate font-medium">{t.title}</p>
-          <p className="text-xs text-muted-foreground">
-            {categoryName}
-            {compact ? ` · ${format(new Date(t.occurredAt), "dd MMM")}` : ` · ${format(new Date(t.occurredAt), "dd MMM yyyy")} · ${t.paymentMethod}`}
-          </p>
+          <p className="text-xs text-muted-foreground">{metaParts.join(" · ")}</p>
         </div>
       </div>
       <div className="flex shrink-0 items-center gap-1">

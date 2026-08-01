@@ -2,7 +2,6 @@ import { getSettings } from "@/lib/db";
 import { addTransaction } from "@/lib/db/repositories/transactions";
 import type { TransactionKind } from "@/lib/db/types";
 import { getMonthKey } from "@/lib/salary-cycle";
-import { sanitizeTitle } from "@/lib/security";
 import { setLastCategoryId, setLastPaymentMethod } from "@/lib/ux/defaults";
 
 export type QuickTransactionInput = {
@@ -27,7 +26,7 @@ export async function saveQuickTransaction(
   const id = await addTransaction(
     {
       kind: input.kind,
-      title: sanitizeTitle(input.title.trim()),
+      title: input.title,
       amountPaise: input.amountPaise,
       categoryId: input.categoryId,
       paymentMethod: input.paymentMethod,

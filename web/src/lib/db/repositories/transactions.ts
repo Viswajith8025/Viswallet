@@ -2,7 +2,7 @@ import { db } from "../client";
 import type { Transaction, TransactionKind } from "../types";
 import { assertCategoryExists, assertAccountExists, transactionFingerprint } from "../integrity";
 import { DuplicateTransactionError, OptimisticLockError } from "../errors";
-import { sanitizeTitle } from "@/lib/security";
+import { resolveTransactionTitle } from "@/lib/transactions/resolve-title";
 
 /** Uses monthKey index + isDeleted filter (indexed via isDeleted on v5 schema). */
 export async function getCycleTransactions(monthKey: string): Promise<Transaction[]> {
@@ -77,10 +77,13 @@ export async function addTransaction(
   }
 
   const now = new Date();
+  const category = await db.categories.get(input.categoryId);
+  const title = resolveTransactionTitle(input.title, category?.name, input.kind);
+
   return db.transaction("rw", db.transactions, async () => {
     return (await db.transactions.add({
       ...input,
-      title: sanitizeTitle(input.title),
+      title,
       isDeleted: false,
       rowVersion: 1,
       createdAt: now,
@@ -102,9 +105,16 @@ export async function updateTransactionWithLock(
     if (patch.categoryId) await assertCategoryExists(patch.categoryId);
     if (patch.accountId) await assertAccountExists(patch.accountId);
 
+    const categoryId = patch.categoryId ?? current.categoryId;
+    const category = categoryId ? await db.categories.get(categoryId) : undefined;
+    const resolvedTitle =
+      patch.title !== undefined
+        ? resolveTransactionTitle(patch.title, category?.name, patch.kind ?? current.kind)
+        : undefined;
+
     await db.transactions.update(id, {
       ...patch,
-      ...(patch.title ? { title: sanitizeTitle(patch.title) } : {}),
+      ...(resolvedTitle !== undefined ? { title: resolvedTitle } : {}),
       rowVersion: expectedVersion + 1,
       updatedAt: new Date(),
     });
