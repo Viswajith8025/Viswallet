@@ -16,6 +16,7 @@ import { BillsTimeline } from "@/components/bills/bills-timeline";
 import { showToast } from "@/lib/store/toast-store";
 import { useInvalidateFinance, useAsyncAction, useDexieTable } from "@/hooks";
 import { confirmAction } from "@/lib/store/confirm-store";
+import { notifyDataMutation } from "@/lib/db/notify-mutation";
 
 export default function BillsPage() {
   const invalidate = useInvalidateFinance();
@@ -88,6 +89,7 @@ export default function BillsPage() {
         });
       }
       resetForm();
+      notifyDataMutation();
       await invalidate();
     });
   }
@@ -115,6 +117,7 @@ export default function BillsPage() {
     });
     if (!ok) return;
     await db.bills.delete(id);
+    notifyDataMutation();
     await invalidate();
   }
 

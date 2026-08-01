@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useDb } from "@/components/providers/db-provider";
 import { getSettings } from "@/lib/db";
 import { fetchAiStatus, type AiStatus } from "@/lib/ai/client";
 
@@ -16,6 +17,7 @@ export type AiFeaturesState = {
 };
 
 export function useAiFeatures(): AiFeaturesState {
+  const { version } = useDb();
   const [status, setStatus] = useState<AiStatus | null>(null);
   const [enabled, setEnabled] = useState(false);
   const [loaded, setLoaded] = useState(false);
@@ -31,7 +33,7 @@ export function useAiFeatures(): AiFeaturesState {
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [version]);
 
   const available = Boolean(status?.groq);
   return {

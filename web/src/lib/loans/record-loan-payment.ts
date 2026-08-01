@@ -37,7 +37,7 @@ export async function recordLoanPayment(
 
   if (options.linkTransaction) {
     if (loan.direction === "borrowed_by_me") {
-      const categoryId = await getCategoryIdBySlug("emi");
+      const categoryId = await getCategoryIdBySlug("misc");
       transactionId = await saveQuickTransaction(
         {
           kind: "expense",

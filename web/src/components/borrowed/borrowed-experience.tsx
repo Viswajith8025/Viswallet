@@ -15,6 +15,7 @@ import { useDexieTable, useInvalidateFinance, useAsyncAction } from "@/hooks";
 import { confirmAction } from "@/lib/store/confirm-store";
 import { markBorrowedFullyPaid, loanProgress, recordLoanPayment } from "@/lib/loans/record-loan-payment";
 import { showToast } from "@/lib/store/toast-store";
+import { notifyDataMutation } from "@/lib/db/notify-mutation";
 import { cn } from "@/lib/design/cn";
 
 export function BorrowedExperience() {
@@ -86,6 +87,7 @@ export function BorrowedExperience() {
         );
       }
       resetForm();
+      notifyDataMutation();
       await invalidate();
     });
   }
@@ -136,6 +138,7 @@ export function BorrowedExperience() {
     });
     if (!ok) return;
     await db.loans.update(id, { isDeleted: true, updatedAt: new Date() });
+    notifyDataMutation();
     await invalidate();
   }
 

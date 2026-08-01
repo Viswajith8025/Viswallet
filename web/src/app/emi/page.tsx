@@ -14,6 +14,7 @@ import { formatINR, parseRupeeInput, parseInterestRate } from "@/lib/money";
 import { Progress } from "@/components/ui/progress";
 import { useInvalidateFinance, useDexieTable } from "@/hooks";
 import { confirmAction } from "@/lib/store/confirm-store";
+import { notifyDataMutation } from "@/lib/db/notify-mutation";
 import { markEmiPaid } from "@/lib/obligations/mark-emi-paid";
 import { showToast } from "@/lib/store/toast-store";
 
@@ -92,6 +93,7 @@ export default function EmiPage() {
       await db.emis.add({ ...payload, paidMonths: 0, createdAt: now });
     }
     resetForm();
+    notifyDataMutation();
     await invalidate();
     } finally {
       setSaving(false);
@@ -118,6 +120,7 @@ export default function EmiPage() {
     });
     if (!ok) return;
     await db.emis.update(id, { isActive: false, updatedAt: new Date() });
+    notifyDataMutation();
     await invalidate();
   }
 

@@ -17,6 +17,7 @@ import { formatINR } from "@/lib/money";
 import { formatCycleLabel } from "@/lib/salary-cycle";
 import { categoryMap } from "@/lib/engines/finance-snapshot";
 import { getProfile, getSettings } from "@/lib/db";
+import { useDb } from "@/components/providers/db-provider";
 import { DEFAULT_DASHBOARD_WIDGETS, type DashboardWidgetId } from "@/lib/db/types";
 
 function greeting(name?: string): string {
@@ -27,6 +28,7 @@ function greeting(name?: string): string {
 
 export default function DashboardPage() {
   const router = useRouter();
+  const { version } = useDb();
   const [widgets, setWidgets] = useState<DashboardWidgetId[]>(DEFAULT_DASHBOARD_WIDGETS);
   const [displayName, setDisplayName] = useState("");
 
@@ -35,7 +37,7 @@ export default function DashboardPage() {
     getProfile()
       .then((p) => setDisplayName(p.displayName))
       .catch(() => setDisplayName(""));
-  }, []);
+  }, [version]);
 
   const show = (id: DashboardWidgetId) => widgets.includes(id);
 

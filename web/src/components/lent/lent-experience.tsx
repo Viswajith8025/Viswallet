@@ -13,8 +13,9 @@ import type { Loan } from "@/lib/db/types";
 import { formatINR, parseRupeeInput } from "@/lib/money";
 import { useDexieTable, useInvalidateFinance, useAsyncAction } from "@/hooks";
 import { confirmAction } from "@/lib/store/confirm-store";
-import { markLentFullyReturned, loanProgress } from "@/lib/loans/record-loan-payment";
+import { markLentFullyReturned, loanProgress, recordLoanPayment } from "@/lib/loans/record-loan-payment";
 import { showToast } from "@/lib/store/toast-store";
+import { notifyDataMutation } from "@/lib/db/notify-mutation";
 
 export function LentExperience() {
   const invalidate = useInvalidateFinance();
@@ -29,6 +30,8 @@ export function LentExperience() {
   const [amount, setAmount] = useState("");
   const [reason, setReason] = useState("");
   const [payingId, setPayingId] = useState<number | null>(null);
+  const [partialLoanId, setPartialLoanId] = useState<number | null>(null);
+  const [partialAmount, setPartialAmount] = useState("");
 
   const active = loans.filter((l) => l.status !== "returned");
   const outstanding = active.reduce((s, l) => s + l.balancePaise, 0);
@@ -80,6 +83,7 @@ export function LentExperience() {
         showToast(`Lent ${formatINR(paise)} — mark returned when they pay you back`, { tone: "success" });
       }
       resetForm();
+      notifyDataMutation();
       await invalidate();
     });
   }
@@ -98,6 +102,22 @@ export function LentExperience() {
     }
   }
 
+  async function handlePartialReturn(loan: Loan, payAmount: string) {
+    if (!loan.id) return;
+    const paise = parseRupeeInput(payAmount);
+    if (paise <= 0) return;
+    setPayingId(loan.id);
+    try {
+      await recordLoanPayment(loan.id, paise, { linkTransaction: true });
+      showToast(`Received ${formatINR(paise)} — logged as income`, { tone: "success" });
+      await invalidate();
+    } catch (err) {
+      showToast(err instanceof Error ? err.message : "Failed", { tone: "error" });
+    } finally {
+      setPayingId(null);
+    }
+  }
+
   async function remove(id: number) {
     const ok = await confirmAction({
       title: "Remove entry?",
@@ -106,6 +126,7 @@ export function LentExperience() {
     });
     if (!ok) return;
     await db.loans.update(id, { isDeleted: true, updatedAt: new Date() });
+    notifyDataMutation();
     await invalidate();
   }
 
@@ -188,7 +209,7 @@ export function LentExperience() {
                     <p className="text-xs text-muted-foreground">{loanProgress(loan)}% returned</p>
                   </div>
                 )}
-                <div className="mt-4 flex gap-2">
+                <div className="mt-4 flex flex-wrap gap-2">
                   <Button
                     size="sm"
                     disabled={payingId === loan.id}
@@ -196,9 +217,39 @@ export function LentExperience() {
                   >
                     {payingId === loan.id ? "Saving…" : `Mark returned ${formatINR(loan.balancePaise)}`}
                   </Button>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => setPartialLoanId(partialLoanId === loan.id ? null : loan.id!)}
+                  >
+                    Partial
+                  </Button>
                   <Button size="icon" variant="ghost" onClick={() => startEdit(loan)}><Pencil size={14} /></Button>
                   <Button size="icon" variant="ghost" onClick={() => loan.id && remove(loan.id)}><Trash2 size={14} className="text-destructive" /></Button>
                 </div>
+                {partialLoanId === loan.id && (
+                  <div className="mt-3 flex gap-2 animate-fade-in">
+                    <Input
+                      type="number"
+                      inputMode="decimal"
+                      placeholder="Partial amount"
+                      value={partialAmount}
+                      onChange={(e) => setPartialAmount(e.target.value)}
+                      className="flex-1"
+                    />
+                    <Button
+                      size="sm"
+                      disabled={payingId === loan.id || !partialAmount}
+                      onClick={() => {
+                        handlePartialReturn(loan, partialAmount);
+                        setPartialAmount("");
+                        setPartialLoanId(null);
+                      }}
+                    >
+                      Receive
+                    </Button>
+                  </div>
+                )}
               </CardContent>
             </Card>
           ))}
