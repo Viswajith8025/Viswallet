@@ -1,7 +1,7 @@
 "use client";
 
-import { LoanList } from "@/components/loans/loan-list";
+import { LentExperience } from "@/components/lent/lent-experience";
 
-export default function LoansPage() {
-  return <LoanList direction="lent_by_me" />;
+export default function LentMoneyPage() {
+  return <LentExperience />;
 }

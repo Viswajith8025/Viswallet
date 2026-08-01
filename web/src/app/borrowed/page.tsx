@@ -1,7 +1,7 @@
 "use client";
 
-import { LoanList } from "@/components/loans/loan-list";
+import { BorrowedExperience } from "@/components/borrowed/borrowed-experience";
 
 export default function BorrowedMoneyPage() {
-  return <LoanList direction="borrowed_by_me" />;
+  return <BorrowedExperience />;
 }

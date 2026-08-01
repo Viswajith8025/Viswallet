@@ -23,7 +23,7 @@ export const DASHBOARD_WIDGET_LABELS: Record<DashboardWidgetId, string> = {
   stats: "Summary stats",
   insights: "Smart insights",
   recent: "Recent activity",
-  obligations: "Fixed obligations",
+  obligations: "Needs your attention",
   forecast: "Forecast preview",
   "net-worth": "Net worth snapshot",
   achievements: "Achievements progress",
@@ -208,6 +208,7 @@ export interface LoanPayment {
   amountPaise: number;
   paidAt: Date;
   notes?: string;
+  transactionId?: number;
   createdAt: Date;
 }
 

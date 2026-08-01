@@ -10,6 +10,7 @@ import { Button } from "@/components/ui/button";
 import { FinanceGate } from "@/components/layout/finance-gate";
 import { GlobalFilterBar } from "@/components/filters/global-filter-bar";
 import { HeroBalanceCard } from "@/components/dashboard/hero-balance-card";
+import { ActionCenter } from "@/components/dashboard/action-center";
 import { TransactionRow } from "@/components/shared/transaction-row";
 import { formatINR } from "@/lib/money";
 import { formatCycleLabel } from "@/lib/salary-cycle";
@@ -90,6 +91,14 @@ export default function DashboardPage() {
                     )}
                     hint="Subs · bills · EMI"
                   />
+                  {data.borrowedBalance > 0 && (
+                    <StatCard
+                      label="You owe"
+                      value={formatINR(data.borrowedBalance)}
+                      hint="Borrowed — mark paid on dashboard"
+                      tone="negative"
+                    />
+                  )}
                 </MetricStrip>
               </section>
             )}
@@ -105,6 +114,12 @@ export default function DashboardPage() {
                 />
                 <StatCard label="EMI" value={formatINR(data.emiMonthlyPaise)} />
               </MetricStrip>
+            )}
+
+            {show("obligations") && (
+              <section className="animate-fade-in">
+                <ActionCenter />
+              </section>
             )}
 
             {(show("recent") || show("insights")) && (

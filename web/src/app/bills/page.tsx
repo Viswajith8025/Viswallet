@@ -2,7 +2,6 @@
 
 import { useState } from "react";
 import { format, isPast, startOfDay } from "date-fns";
-import { Check, Pencil, Trash2 } from "lucide-react";
 import { PageHeader, StatCard, EmptyState, PageContainer } from "@/components/ui/page";
 import { DexiePageGate } from "@/components/layout/dexie-page-gate";
 import { Card, CardContent } from "@/components/ui/card";
@@ -12,6 +11,9 @@ import { db } from "@/lib/db";
 import type { Bill } from "@/lib/db/types";
 import { formatINR, parseRupeeInput } from "@/lib/money";
 import { computeBillStatus, loadBillsWithSyncedStatus } from "@/lib/bills/status";
+import { markBillPaid } from "@/lib/obligations/mark-bill-paid";
+import { BillsTimeline } from "@/components/bills/bills-timeline";
+import { showToast } from "@/lib/store/toast-store";
 import { useInvalidateFinance, useAsyncAction, useDexieTable } from "@/hooks";
 import { confirmAction } from "@/lib/store/confirm-store";
 
@@ -29,6 +31,7 @@ export default function BillsPage() {
   const [dueAt, setDueAt] = useState(format(new Date(), "yyyy-MM-dd"));
   const [isRecurring, setIsRecurring] = useState(false);
   const [notes, setNotes] = useState("");
+  const [payingId, setPayingId] = useState<number | null>(null);
 
   const unpaid = bills.filter((b) => computeBillStatus(b) !== "paid");
   const dueTotal = unpaid.reduce((s, b) => s + b.amountPaise, 0);
@@ -89,10 +92,17 @@ export default function BillsPage() {
     });
   }
 
-  async function markPaid(id: number) {
-    const now = new Date();
-    await db.bills.update(id, { status: "paid", paidAt: now, updatedAt: now });
-    await invalidate();
+  async function handleMarkPaid(id: number) {
+    setPayingId(id);
+    try {
+      await markBillPaid(id);
+      showToast("Bill paid — logged as expense", { tone: "success" });
+      await invalidate();
+    } catch (err) {
+      showToast(err instanceof Error ? err.message : "Could not mark paid", { tone: "error" });
+    } finally {
+      setPayingId(null);
+    }
   }
 
   async function remove(id: number) {
@@ -111,8 +121,9 @@ export default function BillsPage() {
   return (
     <PageContainer className="max-w-5xl">
       <PageHeader
+        eyebrow="Money"
         title="Bills"
-        description="Stay ahead of due dates and recurring payments."
+        description="Due dates on a timeline. Mark paid and we log it as an expense."
         actions={<Button onClick={() => { resetForm(); setShowForm(true); }}>Add bill</Button>}
       />
 
@@ -151,40 +162,13 @@ export default function BillsPage() {
       {bills.length === 0 ? (
         <EmptyState title="No bills yet" description="Add your first bill to track due dates." action={<Button onClick={() => setShowForm(true)}>Add bill</Button>} />
       ) : (
-        <Card>
-          <CardContent className="p-0">
-            <ul className="divide-y divide-border">
-              {bills.map((b) => {
-                const status = computeBillStatus(b);
-                return (
-                  <li key={b.id} className="flex items-center justify-between gap-3 px-5 py-4">
-                    <div>
-                      <p className="font-medium">{b.name}</p>
-                      <p className="text-xs text-muted-foreground">
-                        Due {format(new Date(b.dueAt), "dd MMM yyyy")}
-                        {b.isRecurring && " · Recurring"}
-                        {" · "}
-                        <span className={status === "overdue" ? "text-destructive" : status === "paid" ? "text-success" : ""}>
-                          {status}
-                        </span>
-                      </p>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <span className="tabular-nums font-semibold">{formatINR(b.amountPaise)}</span>
-                      {status !== "paid" && (
-                        <Button size="icon" variant="ghost" aria-label={`Mark ${b.name} paid`} onClick={() => b.id && markPaid(b.id)}>
-                          <Check size={14} className="text-success" />
-                        </Button>
-                      )}
-                      <Button size="icon" variant="ghost" onClick={() => startEdit(b)} aria-label={`Edit ${b.name}`}><Pencil size={14} /></Button>
-                      <Button size="icon" variant="ghost" onClick={() => b.id && remove(b.id)} aria-label={`Delete ${b.name}`}><Trash2 size={14} className="text-destructive" /></Button>
-                    </div>
-                  </li>
-                );
-              })}
-            </ul>
-          </CardContent>
-        </Card>
+        <BillsTimeline
+          bills={bills}
+          payingId={payingId}
+          onMarkPaid={handleMarkPaid}
+          onEdit={startEdit}
+          onDelete={remove}
+        />
       )}
       </div>
       </DexiePageGate>

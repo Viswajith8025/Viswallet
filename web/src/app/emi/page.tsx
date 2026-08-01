@@ -14,6 +14,8 @@ import { formatINR, parseRupeeInput, parseInterestRate } from "@/lib/money";
 import { Progress } from "@/components/ui/progress";
 import { useInvalidateFinance, useDexieTable } from "@/hooks";
 import { confirmAction } from "@/lib/store/confirm-store";
+import { markEmiPaid } from "@/lib/obligations/mark-emi-paid";
+import { showToast } from "@/lib/store/toast-store";
 
 export default function EmiPage() {
   const invalidate = useInvalidateFinance();
@@ -97,20 +99,13 @@ export default function EmiPage() {
   }
 
   async function recordPayment(id: number) {
-    const emi = await db.emis.get(id);
-    if (!emi) return;
-    const now = new Date();
-    const newBalance = Math.max(0, emi.balancePaise - emi.emiAmountPaise);
-    const nextMonth = new Date(emi.nextDueAt);
-    nextMonth.setMonth(nextMonth.getMonth() + 1);
-    await db.emis.update(id, {
-      balancePaise: newBalance,
-      paidMonths: emi.paidMonths + 1,
-      nextDueAt: nextMonth,
-      isActive: newBalance > 0,
-      updatedAt: now,
-    });
-    await invalidate();
+    try {
+      await markEmiPaid(id);
+      showToast("EMI paid — logged as expense", { tone: "success" });
+      await invalidate();
+    } catch (err) {
+      showToast(err instanceof Error ? err.message : "Payment failed", { tone: "error" });
+    }
   }
 
   async function remove(id: number) {

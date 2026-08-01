@@ -77,8 +77,12 @@ function mapAuthError(error: AuthError): string {
     return "Password must be at least 6 characters.";
   }
 
-  if (msg.includes("signup") && msg.includes("disabled")) {
-    return "Sign-ups are disabled. Contact the app owner.";
+  if (
+    msg.includes("signup") && msg.includes("disabled") ||
+    msg.includes("signups not allowed") ||
+    msg.includes("email provider is disabled")
+  ) {
+    return "Email sign-up is off in Supabase. Open Authentication → Providers → Email, turn on “Enable email provider”, then Save.";
   }
 
   if (msg.includes("invalid email") || msg.includes("unable to validate email")) {
