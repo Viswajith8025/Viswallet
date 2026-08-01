@@ -1,7 +1,7 @@
 import { BACKUP_VERSION } from "@/lib/security/constants";
 import { getSupabase } from "@/lib/supabase/client";
 import { getAuthUser } from "@/lib/supabase/auth";
-import { exportAllDataForSync, importAllData, resetLocalDatabase } from "@/lib/db/client";
+import { exportAllDataForSync, importAllData, resetLocalDatabase, getSettings } from "@/lib/db/client";
 import { emitDbDataChanged, emitNotificationsChanged } from "@/lib/notifications/bus";
 
 const LAST_SYNC_KEY = "vw_cloud_last_sync_at";
@@ -231,6 +231,11 @@ export async function syncCloudOnLogin(): Promise<"pulled" | "pushed" | "noop"> 
       const pulled = await pullCloudVault();
       if (pulled) clearVaultUnavailable();
       return pulled ? "pulled" : "noop";
+    }
+
+    const settings = await getSettings();
+    if (!settings.onboardingComplete) {
+      return "noop";
     }
 
     await pushCloudVault();

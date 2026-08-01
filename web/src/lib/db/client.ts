@@ -660,6 +660,8 @@ export async function importAllData(json: string, options: { skipRateLimit?: boo
     seedPromise = null;
     clearSettingsCache();
     await ensureDbSeeded();
+    const importedSettings = await db.settings.get(1);
+    if (importedSettings) rememberSettings(importedSettings);
     await logAudit("backup.import", { success: true });
     emitDbDataChanged();
   } catch {

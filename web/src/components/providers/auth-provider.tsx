@@ -67,10 +67,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       if (mounted) setSessionReady(true);
     }, 2500);
 
-    getAuthSession().then((session) => {
+    getAuthSession().then(async (session) => {
       if (!mounted) return;
-      setUser(session?.user ?? null);
-      setSessionReady(true);
+      const sessionUser = session?.user ?? null;
+      setUser(sessionUser);
+      if (sessionUser && canSyncCloudVault()) {
+        await runCloudSync();
+      }
+      if (mounted) setSessionReady(true);
     });
 
     const unsubscribe = onAuthStateChange((_event, session) => {
@@ -89,7 +93,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const signedInUser = await signInWithEmail(email, password);
     await syncProfileFromAuthUser(signedInUser);
     setUser(signedInUser);
-    window.setTimeout(() => void runCloudSync(), 500);
+    await runCloudSync();
   }, [runCloudSync]);
 
   const signUp = useCallback(async (email: string, password: string, displayName?: string) => {
@@ -97,7 +101,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     if (outcome.status === "signed_in") {
       await syncProfileFromAuthUser(outcome.user);
       setUser(outcome.user);
-      window.setTimeout(() => void runCloudSync(), 500);
+      await runCloudSync();
       return { signedIn: true as const };
     }
     return { signedIn: false as const, message: outcome.message };
