@@ -23,7 +23,7 @@ export function LogoWordmark({
       <div className="min-w-0">
         <p
           className={cn(
-            "font-display text-[18px] font-semibold leading-none tracking-[-0.035em]",
+            "font-display text-[17px] font-semibold leading-none tracking-[-0.04em]",
             inverted ? "text-[var(--cream)]" : "text-foreground",
           )}
         >
@@ -32,8 +32,8 @@ export function LogoWordmark({
         {showTagline && (
           <p
             className={cn(
-              "mt-1.5 text-[10px] font-medium tracking-[0.18em] uppercase",
-              inverted ? "text-[var(--cream)]/42" : "text-muted-foreground/75",
+              "mt-1.5 text-[10px] font-medium tracking-[0.22em] uppercase",
+              inverted ? "text-[var(--cream)]/45" : "text-muted-foreground/70",
             )}
           >
             Personal finance

@@ -1,49 +1,44 @@
+"use client";
+
+import { useId } from "react";
 import { cn } from "@/lib/design/cn";
 import {
-  LOGO_CLASP,
-  LOGO_COLORS,
-  LOGO_TILE_RX,
-  LOGO_VIEWBOX,
-  LOGO_WING_LEFT,
-  LOGO_WING_RIGHT,
-} from "@/lib/brand/logo-signature";
+  LogoMarkContent,
+  logoMarkClipRadius,
+  logoMarkSvgProps,
+  type LogoMarkVariant,
+} from "@/lib/brand/logo-mark-content";
 
 type LogoMarkProps = {
   size?: number;
   className?: string;
-  /** Violet tile with cream mark (default) */
-  variant?: "default" | "inverse" | "mark-only";
+  /** Violet vault tile with cream mark (default) */
+  variant?: LogoMarkVariant;
 };
 
 /**
- * Viswallet mark — two folded planes with a violet V valley (wallet + Vishwajit V).
+ * Viswallet premium mark — vault seal with geometric V facets.
  */
 export function LogoMark({ size = 36, className, variant = "default" }: LogoMarkProps) {
-  const tileFill =
-    variant === "inverse" ? LOGO_COLORS.cream : variant === "mark-only" ? "none" : LOGO_COLORS.violet;
-  const wingPrimary =
-    variant === "inverse" ? LOGO_COLORS.violet : variant === "mark-only" ? "currentColor" : LOGO_COLORS.cream;
-  const wingSecondary =
-    variant === "inverse" ? LOGO_COLORS.violet : variant === "mark-only" ? "currentColor" : LOGO_COLORS.creamDeep;
-  const claspFill =
-    variant === "inverse" ? LOGO_COLORS.cream : variant === "mark-only" ? "currentColor" : LOGO_COLORS.violet;
+  const clipId = useId();
+  const rx = logoMarkClipRadius();
 
   return (
     <svg
       width={size}
       height={size}
-      viewBox={`0 0 ${LOGO_VIEWBOX} ${LOGO_VIEWBOX}`}
-      fill="none"
-      xmlns="http://www.w3.org/2000/svg"
+      {...logoMarkSvgProps()}
       className={cn("shrink-0", className)}
       aria-hidden
     >
-      {variant !== "mark-only" && (
-        <rect width={LOGO_VIEWBOX} height={LOGO_VIEWBOX} rx={LOGO_TILE_RX} fill={tileFill} />
-      )}
-      <path d={LOGO_WING_LEFT} fill={wingPrimary} />
-      <path d={LOGO_WING_RIGHT} fill={wingSecondary} opacity={variant === "mark-only" ? 0.72 : 1} />
-      {variant !== "mark-only" && <path d={LOGO_CLASP} fill={claspFill} />}
+      <defs>
+        <clipPath id={clipId}>
+          <rect width={48} height={48} rx={rx} />
+        </clipPath>
+      </defs>
+      <g clipPath={`url(#${clipId})`}>
+        <LogoMarkContent variant={variant} />
+      </g>
     </svg>
   );
 }

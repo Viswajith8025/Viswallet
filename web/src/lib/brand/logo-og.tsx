@@ -1,20 +1,20 @@
-import {
-  LOGO_CLASP,
-  LOGO_COLORS,
-  LOGO_TILE_RX,
-  LOGO_VIEWBOX,
-  LOGO_WING_LEFT,
-  LOGO_WING_RIGHT,
-} from "@/lib/brand/logo-signature";
+import { LogoMarkContent, logoMarkClipRadius, logoMarkSvgProps } from "@/lib/brand/logo-mark-content";
 
 /** Shared mark for next/og ImageResponse routes — no client hooks. */
 export function OgLogoMark({ size }: { size: number }) {
+  const rx = logoMarkClipRadius();
+
   return (
-    <svg width={size} height={size} viewBox={`0 0 ${LOGO_VIEWBOX} ${LOGO_VIEWBOX}`}>
-      <rect width={LOGO_VIEWBOX} height={LOGO_VIEWBOX} rx={LOGO_TILE_RX} fill={LOGO_COLORS.violet} />
-      <path d={LOGO_WING_LEFT} fill={LOGO_COLORS.cream} />
-      <path d={LOGO_WING_RIGHT} fill={LOGO_COLORS.creamDeep} />
-      <path d={LOGO_CLASP} fill={LOGO_COLORS.violet} />
+    <svg width={size} height={size} {...logoMarkSvgProps()}>
+      <rect width={48} height={48} rx={rx} fill="transparent" />
+      <g clipPath="url(#viswallet-og-clip)">
+        <LogoMarkContent variant="default" />
+      </g>
+      <defs>
+        <clipPath id="viswallet-og-clip">
+          <rect width={48} height={48} rx={rx} />
+        </clipPath>
+      </defs>
     </svg>
   );
 }
