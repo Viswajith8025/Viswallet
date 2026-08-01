@@ -290,6 +290,40 @@ registerAuditDb(db);
 
 let seedPromise: Promise<void> | null = null;
 
+async function syncDefaultCategories(): Promise<void> {
+  const existing = await db.categories.toArray();
+  const bySlug = new Map(existing.map((c) => [c.slug, c]));
+  const maxOrder = existing.reduce((m, c) => Math.max(m, c.sortOrder), 0);
+
+  const toAdd = DEFAULT_CATEGORIES.filter((seed) => !bySlug.has(seed.slug));
+  if (toAdd.length > 0) {
+    await db.categories.bulkAdd(
+      toAdd.map((c, i) => ({
+        name: c.name,
+        slug: c.slug,
+        iconName: c.iconName,
+        color: c.color,
+        isSystem: true,
+        countsTowardSpending: c.countsTowardSpending,
+        sortOrder: c.sortOrder ?? maxOrder + i + 1,
+        isDeleted: false,
+      })),
+    );
+  }
+
+  for (const seed of DEFAULT_CATEGORIES) {
+    const row = bySlug.get(seed.slug);
+    if (!row?.id || !row.isSystem) continue;
+    await db.categories.update(row.id, {
+      name: seed.name,
+      iconName: seed.iconName,
+      color: seed.color,
+      countsTowardSpending: seed.countsTowardSpending,
+      sortOrder: seed.sortOrder,
+    });
+  }
+}
+
 export async function ensureDbSeeded(): Promise<void> {
   if (seedPromise) return seedPromise;
   seedPromise = (async () => {
@@ -321,6 +355,7 @@ export async function ensureDbSeeded(): Promise<void> {
         failedPinAttempts: 0,
         autoLockMinutes: 15,
         dashboardWidgets: DEFAULT_DASHBOARD_WIDGETS,
+        aiFeaturesEnabled: false,
         createdAt: now,
         updatedAt: now,
       });
@@ -369,6 +404,8 @@ export async function ensureDbSeeded(): Promise<void> {
           isDeleted: false,
         })),
       );
+    } else {
+      await syncDefaultCategories();
     }
 
     const latestSettings = await db.settings.get(1);

@@ -1,12 +1,11 @@
 import { NextResponse } from "next/server";
+import { getDeploymentReadiness } from "@/lib/deployment/readiness";
 
-export const dynamic = "force-static";
+export const dynamic = "force-dynamic";
 
 export function GET() {
-  return NextResponse.json({
-    ok: true,
-    service: "viswallet-web",
-    version: process.env.NEXT_PUBLIC_APP_VERSION ?? "1.0.0",
-    timestamp: new Date().toISOString(),
+  const readiness = getDeploymentReadiness();
+  return NextResponse.json(readiness, {
+    status: readiness.ok ? 200 : 503,
   });
 }

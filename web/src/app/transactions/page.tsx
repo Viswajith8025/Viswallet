@@ -10,6 +10,7 @@ import { Badge } from "@/components/ui/badge";
 import { FinanceGate } from "@/components/layout/finance-gate";
 import { FadeIn } from "@/components/ui/motion";
 import { TransactionRow } from "@/components/shared/transaction-row";
+import { CategoryPicker } from "@/components/categories/category-picker";
 import { PaginationControls } from "@/components/shared/pagination-controls";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Hint } from "@/components/ui/hint";
@@ -284,17 +285,11 @@ function TransactionsContent({
                 <option value="expense">Expense</option>
                 <option value="income">Income</option>
               </Select>
-              <Select
-                label="Category"
+              <CategoryPicker
+                categories={activeCats}
                 value={resolvedCategoryId}
-                onChange={(e) => setCategoryId(e.target.value)}
-              >
-                {activeCats.map((c) => (
-                  <option key={c.id} value={c.id}>
-                    {c.name}
-                  </option>
-                ))}
-              </Select>
+                onChange={setCategoryId}
+              />
               <Select label="Payment" value={paymentMethod} onChange={(e) => setPaymentMethod(e.target.value)}>
                 {PAYMENT_METHODS.map((m) => (
                   <option key={m} value={m}>
@@ -362,6 +357,7 @@ function TransactionsContent({
                   transaction={t}
                   categoryName={cats.get(t.categoryId)?.name}
                   categoryColor={cats.get(t.categoryId)?.color}
+                  categoryIconName={cats.get(t.categoryId)?.iconName}
                   showActions
                   onEdit={startEdit}
                   onDelete={remove}

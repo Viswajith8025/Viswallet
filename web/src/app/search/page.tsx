@@ -124,6 +124,7 @@ export default function SearchPage() {
                   transaction={t}
                   categoryName={cats.get(t.categoryId)?.name}
                   categoryColor={cats.get(t.categoryId)?.color}
+                  categoryIconName={cats.get(t.categoryId)?.iconName}
                   compact
                 />
               ))}

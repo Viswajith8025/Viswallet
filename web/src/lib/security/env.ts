@@ -33,4 +33,11 @@ export function getSupabaseConfig(): { url: string; anonKey: string } | null {
   return { url, anonKey };
 }
 
+export function getGroqApiKey(): string | null {
+  const key = process.env.GROQ_API_KEY?.trim();
+  if (!key) return null;
+  if (key.length < 20) throw new Error("GROQ_API_KEY appears invalid.");
+  return key;
+}
+
 export const isProduction = process.env.NODE_ENV === "production";

@@ -27,6 +27,11 @@ const StatementImportModal = dynamic(
   { ssr: false },
 );
 
+const SalaryCreditModal = dynamic(
+  () => import("@/components/salary/salary-credit-modal").then((m) => m.SalaryCreditModal),
+  { ssr: false },
+);
+
 export function AppShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const isFullBleed = pathname === "/onboarding" || pathname === "/auth";
@@ -55,6 +60,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           <CommandPalette />
           <QuickAddModal />
           <StatementImportModal />
+          <SalaryCreditModal />
           <ToastHost />
           <ConfirmDialog />
           <PageViewTracker />

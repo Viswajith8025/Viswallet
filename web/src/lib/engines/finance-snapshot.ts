@@ -62,11 +62,14 @@ export async function loadFinanceSnapshot(monthKeyOverride?: string): Promise<Fi
     .filter((t) => t.kind === "expense" && spendingCats.has(t.categoryId))
     .reduce((s, t) => s + t.amountPaise, 0);
 
+  const salaryBase = salary?.amountPaise ?? 0;
+  const carryOverPaise = salary?.carryOverPaise ?? 0;
+  const salaryPaise = salaryBase;
+
   const incomePaise =
     transactions.filter((t) => t.kind === "income").reduce((s, t) => s + t.amountPaise, 0) +
-    (salary?.amountPaise ?? 0);
-
-  const salaryPaise = salary?.amountPaise ?? 0;
+    salaryBase +
+    carryOverPaise;
   const remainingPaise = incomePaise - expensePaise;
   const daysLeft = getDaysLeftInCycle(settings.salaryDay);
   const safeSpendDaily = daysLeft > 0 ? Math.max(0, Math.floor(remainingPaise / daysLeft)) : 0;

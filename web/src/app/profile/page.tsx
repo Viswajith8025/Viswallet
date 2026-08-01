@@ -10,7 +10,7 @@ import { Input } from "@/components/ui/input";
 import { useAuth } from "@/components/providers/auth-provider";
 import { getProfile, updateProfile } from "@/lib/db";
 import { sanitizeName, sanitizeEmail } from "@/lib/security";
-import { getCloudLastSyncedAt, syncCloudNow, isCloudVaultConfigured } from "@/lib/supabase/cloud-sync";
+import { getCloudLastSyncedAt, syncCloudNow, isCloudVaultConfigured, isCloudVaultBlocked } from "@/lib/supabase/cloud-sync";
 import { showToast } from "@/lib/store/toast-store";
 
 export default function ProfilePage() {
@@ -87,6 +87,11 @@ export default function ProfilePage() {
                       ? `Cloud account · ${user.email}`
                       : "Local only — create an account to back up your data"}
                   </p>
+                  {configured && isCloudVaultConfigured() && isCloudVaultBlocked() && (
+                    <p className="text-xs text-warning">
+                      Cloud backup table missing — run supabase/migrations/003_user_data_vaults.sql in Supabase.
+                    </p>
+                  )}
                   {configured && isCloudVaultConfigured() && lastSynced && (
                     <p className="text-xs text-muted-foreground">
                       Last synced {format(lastSynced, "d MMM yyyy, h:mm a")}

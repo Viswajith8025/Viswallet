@@ -1,11 +1,12 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import { X } from "lucide-react";
+import { X, Sparkles, Wand2 } from "lucide-react";
 import { SuccessMark } from "@/components/ui/success-mark";
 import { successFeedback } from "@/lib/ux/feedback";
 import { useUIStore } from "@/lib/store/ui-store";
 import { Button } from "@/components/ui/button";
+import { CategoryPicker } from "@/components/categories/category-picker";
 import { Input, Select } from "@/components/ui/input";
 import { Dialog } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
@@ -21,6 +22,10 @@ import { saveQuickTransaction } from "@/lib/transactions/save-quick-transaction"
 import { useInvalidateFinance } from "@/hooks/use-invalidate-finance";
 import { showToast } from "@/lib/store/toast-store";
 import { format } from "date-fns";
+import { getSettings } from "@/lib/db";
+import { useAiStatus } from "@/hooks/use-ai-status";
+import { parseTransactionWithAi, suggestCategoryWithAi } from "@/lib/ai/client";
+import { useDebounce } from "@/hooks/use-debounce";
 
 export function QuickAddModal() {
   const open = useUIStore((s) => s.quickAddOpen);
@@ -43,7 +48,22 @@ export function QuickAddModal() {
   const [saving, setSaving] = useState(false);
   const [success, setSuccess] = useState(false);
   const [dupError, setDupError] = useState(false);
+  const [aiLine, setAiLine] = useState("");
+  const [aiParsing, setAiParsing] = useState(false);
+  const [aiEnabled, setAiEnabled] = useState(false);
+  const aiStatus = useAiStatus();
   const wasOpen = useRef(false);
+  const debouncedTitle = useDebounce(title, 700);
+
+  useEffect(() => {
+    void getSettings().then((s) => setAiEnabled(Boolean(s.aiFeaturesEnabled)));
+  }, []);
+
+  const aiActive = aiEnabled && aiStatus?.available;
+  const categoryOptions = useMemo(
+    () => pool.map((c) => ({ slug: c.slug, name: c.name })),
+    [pool],
+  );
 
   // Reset only when modal opens — not on every parent re-render.
   useEffect(() => {
@@ -55,10 +75,46 @@ export function QuickAddModal() {
       setIsRecurring(false);
       setDupError(false);
       setSuccess(false);
+      setAiLine("");
       setPaymentMethod(getLastPaymentMethod());
     }
     wasOpen.current = open;
   }, [open, kind, pool, categories]);
+
+  useEffect(() => {
+    if (!aiActive || !debouncedTitle.trim() || debouncedTitle.length < 3) return;
+    let cancelled = false;
+    void suggestCategoryWithAi(debouncedTitle.trim(), kind, categoryOptions)
+      .then((res) => {
+        if (cancelled) return;
+        const match = pool.find((c) => c.slug === res.categorySlug);
+        if (match?.id != null) setCategoryId(String(match.id));
+      })
+      .catch(() => undefined);
+    return () => {
+      cancelled = true;
+    };
+  }, [aiActive, debouncedTitle, kind, categoryOptions, pool]);
+
+  async function handleAiParse() {
+    if (!aiActive || !aiLine.trim()) return;
+    setAiParsing(true);
+    try {
+      const parsed = await parseTransactionWithAi(aiLine.trim(), categoryOptions, kind);
+      setTitle(parsed.title);
+      setAmount(String(parsed.amountPaise / 100));
+      useUIStore.setState({ quickAddKind: parsed.kind });
+      const match = (parsed.kind === "income" ? incomeCats : expenseCats).find(
+        (c) => c.slug === parsed.categorySlug,
+      );
+      if (match?.id != null) setCategoryId(String(match.id));
+      showToast("Filled from your description", { tone: "success" });
+    } catch (err) {
+      showToast(err instanceof Error ? err.message : "Could not parse", { tone: "default" });
+    } finally {
+      setAiParsing(false);
+    }
+  }
 
   function handleKindChange(k: "expense" | "income") {
     useUIStore.setState({ quickAddKind: k });
@@ -148,6 +204,33 @@ export function QuickAddModal() {
               <p className="mb-4 text-center text-2xl font-semibold tabular-nums text-primary">{formatINR(preview)}</p>
             )}
             <form onSubmit={handleSubmit} className="space-y-4">
+              {aiActive && (
+                <div className="rounded-xl border border-primary/20 bg-primary/[0.04] p-3 space-y-2">
+                  <div className="flex items-center gap-2 text-xs font-medium text-primary">
+                    <Sparkles size={14} />
+                    AI quick add
+                  </div>
+                  <div className="flex gap-2">
+                    <Input
+                      label="Describe it"
+                      value={aiLine}
+                      onChange={(e) => setAiLine(e.target.value)}
+                      placeholder="e.g. 450 Swiggy lunch"
+                      className="flex-1"
+                    />
+                    <Button
+                      type="button"
+                      variant="outline"
+                      className="mt-6 shrink-0"
+                      disabled={aiParsing || !aiLine.trim()}
+                      onClick={() => void handleAiParse()}
+                    >
+                      <Wand2 size={15} className="mr-1" />
+                      {aiParsing ? "…" : "Parse"}
+                    </Button>
+                  </div>
+                </div>
+              )}
               <Input
                 label="Title"
                 required
@@ -165,26 +248,18 @@ export function QuickAddModal() {
                 onChange={(e) => setAmount(e.target.value)}
                 placeholder="0.00"
               />
-              <div className="grid gap-4 sm:grid-cols-2">
-                <Select
-                  label="Category"
-                  value={categoryId || String(pool[0]?.id ?? "")}
-                  onChange={(e) => setCategoryId(e.target.value)}
-                >
-                  {pool.map((c) => (
-                    <option key={c.id} value={c.id}>
-                      {c.name}
-                    </option>
-                  ))}
-                </Select>
-                <Select label="Payment" value={paymentMethod} onChange={(e) => setPaymentMethod(e.target.value)}>
+              <CategoryPicker
+                categories={pool}
+                value={categoryId || String(pool[0]?.id ?? "")}
+                onChange={setCategoryId}
+              />
+              <Select label="Payment" value={paymentMethod} onChange={(e) => setPaymentMethod(e.target.value)}>
                   {PAYMENT_METHODS.map((m) => (
                     <option key={m} value={m}>
                       {m}
                     </option>
                   ))}
                 </Select>
-              </div>
               <Checkbox
                 label="Mark as recurring"
                 checked={isRecurring}

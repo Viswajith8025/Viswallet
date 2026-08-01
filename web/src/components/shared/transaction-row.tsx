@@ -8,11 +8,13 @@ import { Button } from "@/components/ui/button";
 import { formatINR } from "@/lib/money";
 import type { Transaction } from "@/lib/db/types";
 import { cn } from "@/lib/design/cn";
+import { CategoryIconBadge } from "@/components/categories/category-icon-badge";
 
 export type TransactionRowProps = {
   transaction: Transaction;
   categoryName?: string;
   categoryColor?: string;
+  categoryIconName?: string;
   showActions?: boolean;
   compact?: boolean;
   href?: string;
@@ -24,6 +26,7 @@ export const TransactionRow = memo(function TransactionRow({
   transaction: t,
   categoryName,
   categoryColor,
+  categoryIconName,
   showActions = false,
   compact = false,
   href,
@@ -33,16 +36,14 @@ export const TransactionRow = memo(function TransactionRow({
   const content = (
     <>
       <div className="flex min-w-0 items-center gap-3">
-        <div
-          className={cn(
-            "flex shrink-0 items-center justify-center rounded-xl font-semibold text-primary-foreground",
-            compact ? "h-9 w-9 text-xs" : "h-10 w-10 text-xs",
-          )}
-          style={{ background: categoryColor ?? "var(--primary)" }}
-          aria-hidden
-        >
-          {categoryName?.charAt(0) ?? "?"}
-        </div>
+        <CategoryIconBadge
+          size={compact ? "sm" : "md"}
+          category={{
+            iconName: categoryIconName ?? "circle-dot",
+            color: categoryColor ?? "var(--primary)",
+            name: categoryName ?? "?",
+          }}
+        />
         <div className="min-w-0">
           <p className="truncate font-medium">{t.title}</p>
           <p className="text-xs text-muted-foreground">

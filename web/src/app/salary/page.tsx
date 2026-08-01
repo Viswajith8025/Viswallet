@@ -74,8 +74,13 @@ function SalaryContent({ data }: { data: FinanceSnapshot }) {
         description="Set your monthly salary and the day it arrives each cycle."
       />
 
-      <div className="grid gap-4 md:grid-cols-2">
+      <div className="grid gap-4 md:grid-cols-3">
         <StatCard label="Current salary" value={formatINR(data.salaryPaise)} tone="positive" />
+        <StatCard
+          label="Carry-over"
+          value={formatINR(salary?.carryOverPaise ?? 0)}
+          hint="Unspent from last cycle"
+        />
         <StatCard label="Salary day" value={salaryDay} hint="Day of month (1–28)" />
       </div>
 

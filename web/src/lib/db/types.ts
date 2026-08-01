@@ -57,6 +57,8 @@ export interface AppSettings {
   autoLockMinutes: number;
   dashboardWidgets: DashboardWidgetId[];
   lastBackupAt?: Date;
+  lastSalaryPromptDate?: string;
+  aiFeaturesEnabled?: boolean;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -154,6 +156,7 @@ export interface MonthlySalary {
   id?: number;
   monthKey: string;
   amountPaise: number;
+  carryOverPaise?: number;
   receivedAt?: Date;
   notes?: string;
   createdAt: Date;

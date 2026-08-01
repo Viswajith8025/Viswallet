@@ -39,8 +39,14 @@ export function DbProvider({ children }: { children: React.ReactNode }) {
     const invalidateNotifications = () => {
       void queryClient.invalidateQueries({ queryKey: financeKeys.notificationsUnread });
     };
+    const onDataChanged = () => {
+      invalidateAll();
+      void getAuthUser().then((user) => {
+        if (user && canSyncCloudVault()) scheduleCloudSync();
+      });
+    };
     const offNotifications = onNotificationsChanged(invalidateNotifications);
-    const offDb = onDbDataChanged(invalidateAll);
+    const offDb = onDbDataChanged(onDataChanged);
     return () => {
       offNotifications();
       offDb();

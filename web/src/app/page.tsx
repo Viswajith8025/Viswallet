@@ -138,6 +138,7 @@ export default function DashboardPage() {
                                 transaction={t}
                                 categoryName={cat?.name ?? "Uncategorized"}
                                 categoryColor={cat?.color}
+                                categoryIconName={cat?.iconName}
                                 compact
                                 href="/transactions"
                               />

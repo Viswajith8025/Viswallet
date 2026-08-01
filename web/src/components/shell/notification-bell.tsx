@@ -32,7 +32,7 @@ export function NotificationBell() {
   const unread = useUnreadNotificationCount();
   const notifications = useNotificationsList();
   const [open, setOpen] = useState(false);
-  const panelRef = useRef<HTMLDivElement>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
 
   const items = (notifications ?? []).slice(0, 6);
   const isLoading = notifications === undefined;
@@ -45,7 +45,7 @@ export function NotificationBell() {
   useEffect(() => {
     if (!open) return;
     const onPointerDown = (event: MouseEvent) => {
-      if (!panelRef.current?.contains(event.target as Node)) {
+      if (!containerRef.current?.contains(event.target as Node)) {
         setOpen(false);
       }
     };
@@ -73,7 +73,7 @@ export function NotificationBell() {
   }
 
   return (
-    <div ref={panelRef} className="relative">
+    <div ref={containerRef} className="relative">
       <Button
         variant="ghost"
         size="icon"
@@ -95,7 +95,11 @@ export function NotificationBell() {
         <div
           role="dialog"
           aria-label="Recent notifications"
-          className="absolute right-0 top-[calc(100%+0.5rem)] z-50 w-[min(22rem,calc(100vw-2rem))] overflow-hidden rounded-xl border border-border bg-elevated/98 shadow-lg backdrop-blur-md"
+          className={cn(
+            "z-50 w-[min(20rem,calc(100vw-2rem))] overflow-hidden rounded-xl border border-border bg-elevated/98 shadow-lg backdrop-blur-md",
+            "max-md:fixed max-md:right-4 max-md:top-[calc(env(safe-area-inset-top)+3.75rem)]",
+            "md:absolute md:right-0 md:top-[calc(100%+0.5rem)]",
+          )}
         >
           <div className="flex items-center justify-between border-b border-border-light px-4 py-3">
             <div>

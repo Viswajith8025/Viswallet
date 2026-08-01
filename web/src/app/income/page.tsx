@@ -60,6 +60,7 @@ export default function IncomePage() {
                   transaction={t}
                   categoryName={cats.get(t.categoryId)?.name}
                   categoryColor={cats.get(t.categoryId)?.color}
+                  categoryIconName={cats.get(t.categoryId)?.iconName}
                   href={`/transactions?edit=${t.id}`}
                 />
               ))}

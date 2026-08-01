@@ -47,8 +47,11 @@ import { enableAppLock, disableAppLock } from "@/lib/security/pin";
 import { useSecurityStore } from "@/lib/store/security-store";
 import type { AuditLog } from "@/lib/db/types";
 import { confirmAction } from "@/lib/store/confirm-store";
+import { DeploymentStatus } from "@/components/settings/deployment-status";
 import { Hint } from "@/components/ui/hint";
 import { Checkbox } from "@/components/ui/checkbox";
+import { useAiStatus } from "@/hooks/use-ai-status";
+import { isSupabaseConfigured } from "@/lib/supabase/client";
 
 export default function SettingsPage() {
   const { refresh } = useDb();
@@ -74,6 +77,8 @@ export default function SettingsPage() {
   const [success, setSuccess] = useState("");
   const [auditLogs, setAuditLogs] = useState<AuditLog[]>([]);
   const [settingsLoaded, setSettingsLoaded] = useState(false);
+  const [aiFeaturesEnabled, setAiFeaturesEnabled] = useState(false);
+  const aiStatus = useAiStatus();
 
   useEffect(() => {
     Promise.all([getSettings(), getRecentAuditLogs(20)])
@@ -84,6 +89,7 @@ export default function SettingsPage() {
         setWidgets(s.dashboardWidgets ?? DEFAULT_DASHBOARD_WIDGETS);
         setAppLockEnabled(s.appLockEnabled);
         setAutoLockMinutes(String(s.autoLockMinutes ?? 15));
+        setAiFeaturesEnabled(s.aiFeaturesEnabled ?? false);
         setAuditLogs(logs);
       })
       .catch(() => setError("Could not load settings."))
@@ -118,6 +124,12 @@ export default function SettingsPage() {
     setBiometricEnabled(enabled);
     await updateSettings({ biometricEnabled: enabled });
     flash(enabled ? "Biometric unlock enabled (WebAuthn-ready)." : "Biometric unlock disabled.");
+  }
+
+  async function handleAiToggle(enabled: boolean) {
+    setAiFeaturesEnabled(enabled);
+    await updateSettings({ aiFeaturesEnabled: enabled });
+    flash(enabled ? "AI features enabled." : "AI features disabled.");
   }
 
   async function toggleWidget(id: DashboardWidgetId) {
@@ -395,6 +407,53 @@ export default function SettingsPage() {
               </form>
             </div>
           )}
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Production status</CardTitle>
+        </CardHeader>
+        <CardContent className="pt-0">
+          <DeploymentStatus />
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Smart features & cloud</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4 pt-0">
+          <Hint>
+            Finance data stays in IndexedDB on your device. Cloud sync needs Supabase env vars in hosting settings.
+            AI sends only the text you type or cycle totals — never your full vault.
+          </Hint>
+          <div className="grid gap-3 text-sm sm:grid-cols-2">
+            <div className="rounded-xl border border-border/60 px-3 py-2">
+              <p className="font-medium">Groq AI</p>
+              <p className="text-muted-foreground">
+                {aiStatus?.groq ? "Server key detected" : "Add GROQ_API_KEY to .env.local / Vercel"}
+              </p>
+            </div>
+            <div className="rounded-xl border border-border/60 px-3 py-2">
+              <p className="font-medium">Supabase</p>
+              <p className="text-muted-foreground">
+                {configured
+                  ? aiStatus?.cloudVault
+                    ? "Signed in · cloud vault on"
+                    : "Signed in · set NEXT_PUBLIC_CLOUD_VAULT=true for backup"
+                  : isSupabaseConfigured()
+                    ? "Configured · sign in from Profile"
+                    : "Add URL + anon key to enable sign-in & sync"}
+              </p>
+            </div>
+          </div>
+          <Checkbox
+            label="Enable AI features (smart categorize, insights, natural-language quick add)"
+            checked={aiFeaturesEnabled}
+            onChange={(e) => void handleAiToggle(e.target.checked)}
+            disabled={!aiStatus?.groq}
+          />
         </CardContent>
       </Card>
 
