@@ -16,6 +16,9 @@ import { confirmAction } from "@/lib/store/confirm-store";
 import { markLentFullyReturned, loanProgress, recordLoanPayment } from "@/lib/loans/record-loan-payment";
 import { showToast } from "@/lib/store/toast-store";
 import { notifyDataMutation } from "@/lib/db/notify-mutation";
+import { LoanDueBadge } from "@/components/loans/loan-due-badge";
+import { defaultLoanDueDate, parseLoanDueInput, getLoanDueStatus } from "@/lib/loans/loan-due";
+import { cn } from "@/lib/design/cn";
 
 export function LentExperience() {
   const invalidate = useInvalidateFinance();
@@ -29,6 +32,7 @@ export function LentExperience() {
   const [name, setName] = useState("");
   const [amount, setAmount] = useState("");
   const [reason, setReason] = useState("");
+  const [dueAt, setDueAt] = useState("");
   const [payingId, setPayingId] = useState<number | null>(null);
   const [partialLoanId, setPartialLoanId] = useState<number | null>(null);
   const [partialAmount, setPartialAmount] = useState("");
@@ -41,6 +45,7 @@ export function LentExperience() {
     setName("");
     setAmount("");
     setReason("");
+    setDueAt("");
     setShowForm(false);
   }
 
@@ -49,6 +54,15 @@ export function LentExperience() {
     setName(l.personName);
     setAmount(String(l.principalPaise / 100));
     setReason(l.reason ?? "");
+    setDueAt(
+      l.expectedReturnAt ? format(new Date(l.expectedReturnAt), "yyyy-MM-dd") : "",
+    );
+    setShowForm(true);
+  }
+
+  function openAddForm() {
+    resetForm();
+    setDueAt(defaultLoanDueDate());
     setShowForm(true);
   }
 
@@ -58,6 +72,7 @@ export function LentExperience() {
     if (!name.trim() || paise <= 0) return;
     await run(async () => {
       const now = new Date();
+      const expectedReturnAt = parseLoanDueInput(dueAt);
       if (edit?.id) {
         const diff = paise - edit.principalPaise;
         await db.loans.update(edit.id, {
@@ -65,6 +80,7 @@ export function LentExperience() {
           principalPaise: paise,
           balancePaise: Math.max(0, edit.balancePaise + diff),
           reason: reason.trim() || undefined,
+          expectedReturnAt,
           updatedAt: now,
         });
       } else {
@@ -75,6 +91,7 @@ export function LentExperience() {
           balancePaise: paise,
           reason: reason.trim() || undefined,
           borrowedAt: now,
+          expectedReturnAt,
           status: "pending",
           isDeleted: false,
           createdAt: now,
@@ -137,7 +154,7 @@ export function LentExperience() {
         title="Lent"
         description="Money others owe you. Mark returned when they pay back — it becomes income."
         actions={
-          <Button onClick={() => { resetForm(); setShowForm(true); }}>
+          <Button onClick={openAddForm}>
             <Plus size={16} className="mr-1" />
             Add lent
           </Button>
@@ -171,6 +188,13 @@ export function LentExperience() {
               <Input label="Who lent to?" required value={name} onChange={(e) => setName(e.target.value)} />
               <Input label="Amount (₹)" required type="number" value={amount} onChange={(e) => setAmount(e.target.value)} />
               <Textarea label="Reason (optional)" value={reason} onChange={(e) => setReason(e.target.value)} />
+              <Input
+                label="Return by (optional)"
+                type="date"
+                value={dueAt}
+                onChange={(e) => setDueAt(e.target.value)}
+                hint="Shows on your dashboard as a reminder"
+              />
               <div className="flex gap-2">
                 <Button type="submit" disabled={saving}>{saving ? "Saving…" : edit ? "Update" : "Save"}</Button>
                 <Button type="button" variant="ghost" onClick={resetForm}>Cancel</Button>
@@ -185,13 +209,16 @@ export function LentExperience() {
           <CardContent className="flex flex-col items-center gap-4 py-12 text-center">
             <HandCoins size={40} className="text-muted-foreground" />
             <p className="font-medium">No money lent out</p>
-            <Button onClick={() => setShowForm(true)}>Lend money</Button>
+            <Button onClick={openAddForm}>Lend money</Button>
           </CardContent>
         </Card>
       ) : (
         <div className="space-y-3">
           {active.map((loan) => (
-            <Card key={loan.id} className="surface-card surface-interactive">
+            <Card key={loan.id} className={cn(
+              "surface-card surface-interactive",
+              loan.expectedReturnAt && getLoanDueStatus(loan) === "overdue" && "border-warning/40",
+            )}>
               <CardContent className="p-5">
                 <div className="flex justify-between gap-3">
                   <div>
@@ -200,6 +227,7 @@ export function LentExperience() {
                     <p className="text-xs text-muted-foreground mt-1">
                       Since {format(new Date(loan.borrowedAt), "dd MMM yyyy")}
                     </p>
+                    <LoanDueBadge loan={loan} direction="lent_by_me" className="mt-1" />
                   </div>
                   <p className="text-2xl font-bold tabular-nums text-success">{formatINR(loan.balancePaise)}</p>
                 </div>

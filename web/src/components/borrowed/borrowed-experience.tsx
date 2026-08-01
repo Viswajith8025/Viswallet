@@ -17,6 +17,8 @@ import { markBorrowedFullyPaid, loanProgress, recordLoanPayment } from "@/lib/lo
 import { showToast } from "@/lib/store/toast-store";
 import { notifyDataMutation } from "@/lib/db/notify-mutation";
 import { cn } from "@/lib/design/cn";
+import { LoanDueBadge } from "@/components/loans/loan-due-badge";
+import { defaultLoanDueDate, parseLoanDueInput, getLoanDueStatus } from "@/lib/loans/loan-due";
 
 export function BorrowedExperience() {
   const invalidate = useInvalidateFinance();
@@ -30,6 +32,7 @@ export function BorrowedExperience() {
   const [name, setName] = useState("");
   const [amount, setAmount] = useState("");
   const [reason, setReason] = useState("");
+  const [dueAt, setDueAt] = useState("");
   const [payingId, setPayingId] = useState<number | null>(null);
 
   const active = loans.filter((l) => l.status !== "returned");
@@ -41,6 +44,7 @@ export function BorrowedExperience() {
     setName("");
     setAmount("");
     setReason("");
+    setDueAt("");
     setShowForm(false);
   }
 
@@ -49,6 +53,15 @@ export function BorrowedExperience() {
     setName(l.personName);
     setAmount(String(l.principalPaise / 100));
     setReason(l.reason ?? "");
+    setDueAt(
+      l.expectedReturnAt ? format(new Date(l.expectedReturnAt), "yyyy-MM-dd") : "",
+    );
+    setShowForm(true);
+  }
+
+  function openAddForm() {
+    resetForm();
+    setDueAt(defaultLoanDueDate());
     setShowForm(true);
   }
 
@@ -58,6 +71,7 @@ export function BorrowedExperience() {
     if (!name.trim() || paise <= 0) return;
     await run(async () => {
       const now = new Date();
+      const expectedReturnAt = parseLoanDueInput(dueAt);
       if (edit?.id) {
         const diff = paise - edit.principalPaise;
         await db.loans.update(edit.id, {
@@ -65,6 +79,7 @@ export function BorrowedExperience() {
           principalPaise: paise,
           balancePaise: Math.max(0, edit.balancePaise + diff),
           reason: reason.trim() || undefined,
+          expectedReturnAt,
           updatedAt: now,
         });
         showToast("Entry updated", { tone: "success" });
@@ -76,6 +91,7 @@ export function BorrowedExperience() {
           balancePaise: paise,
           reason: reason.trim() || undefined,
           borrowedAt: now,
+          expectedReturnAt,
           status: "pending",
           isDeleted: false,
           createdAt: now,
@@ -149,7 +165,7 @@ export function BorrowedExperience() {
         title="Borrowed"
         description="Money you owe others. Mark as paid when you repay — it becomes an expense automatically."
         actions={
-          <Button onClick={() => { resetForm(); setShowForm(true); }}>
+          <Button onClick={openAddForm}>
             <Plus size={16} className="mr-1" />
             Add borrowed
           </Button>
@@ -210,6 +226,13 @@ export function BorrowedExperience() {
                 onChange={(e) => setReason(e.target.value)}
                 placeholder="Emergency, trip, gadget…"
               />
+              <Input
+                label="Pay by (optional)"
+                type="date"
+                value={dueAt}
+                onChange={(e) => setDueAt(e.target.value)}
+                hint="Shows on your dashboard as a reminder"
+              />
               <div className="flex gap-2">
                 <Button type="submit" disabled={saving}>
                   {saving ? "Saving…" : edit ? "Update" : "Save borrowed"}
@@ -233,7 +256,7 @@ export function BorrowedExperience() {
                 When you borrow from someone, add it here. We&apos;ll remind you on the dashboard to mark it paid.
               </p>
             </div>
-            <Button onClick={() => setShowForm(true)}>Add borrowed money</Button>
+            <Button onClick={openAddForm}>Add borrowed money</Button>
           </CardContent>
         </Card>
       ) : (
@@ -300,6 +323,7 @@ function BorrowedCard({
       className={cn(
         "surface-card surface-interactive overflow-hidden transition-all",
         loan.balancePaise > 50_000_00 && "border-destructive/25",
+        loan.expectedReturnAt && getLoanDueStatus(loan) === "overdue" && "border-destructive/40",
       )}
     >
       <CardContent className="p-0">
@@ -313,6 +337,7 @@ function BorrowedCard({
               <p className="text-xs text-muted-foreground mt-1">
                 Since {format(new Date(loan.borrowedAt), "dd MMM yyyy")}
               </p>
+              <LoanDueBadge loan={loan} direction="borrowed_by_me" className="mt-1" />
             </div>
             <div className="text-right shrink-0">
               <p className="text-2xl font-bold tabular-nums text-destructive">

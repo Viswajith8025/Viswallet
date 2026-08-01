@@ -11,6 +11,7 @@ import { FinanceGate } from "@/components/layout/finance-gate";
 import { GlobalFilterBar } from "@/components/filters/global-filter-bar";
 import { HeroBalanceCard } from "@/components/dashboard/hero-balance-card";
 import { ActionCenter } from "@/components/dashboard/action-center";
+import { LoanDueReminders } from "@/components/dashboard/loan-due-reminders";
 import { AiCoachStrip } from "@/components/ai/ai-coach-strip";
 import { TransactionRow } from "@/components/shared/transaction-row";
 import { formatINR } from "@/lib/money";
@@ -205,6 +206,10 @@ export default function DashboardPage() {
                 )}
               </div>
             )}
+
+            <section className="animate-fade-in">
+              <LoanDueReminders />
+            </section>
           </PageContainer>
         );
       }}

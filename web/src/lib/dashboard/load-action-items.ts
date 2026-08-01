@@ -1,6 +1,7 @@
 import { addDays, isBefore, startOfDay } from "date-fns";
 import { db } from "@/lib/db";
 import { computeBillStatus } from "@/lib/bills/status";
+import { formatLoanDueLabel, getLoanDueStatus } from "@/lib/loans/loan-due";
 
 export type ActionItemKind = "borrowed" | "bill" | "emi" | "lent";
 
@@ -27,16 +28,27 @@ export async function loadActionItems(): Promise<ActionItem[]> {
   const weekOut = addDays(today, 7);
 
   for (const loan of loans) {
+    const dueStatus = getLoanDueStatus(loan);
+    const dueSubtitle = formatLoanDueLabel(loan, loan.direction);
+    const urgency =
+      dueStatus === "overdue"
+        ? "high"
+        : dueStatus === "due_today" || dueStatus === "due_soon"
+          ? "medium"
+          : loan.direction === "borrowed_by_me" && loan.balancePaise > 50_000_00
+            ? "medium"
+            : "low";
+
     if (loan.direction === "borrowed_by_me") {
       items.push({
         id: `borrowed-${loan.id}`,
         kind: "borrowed",
         entityId: loan.id!,
         title: `Pay back ${loan.personName}`,
-        subtitle: loan.reason ?? "Borrowed money",
+        subtitle: loan.reason ? `${dueSubtitle} · ${loan.reason}` : dueSubtitle,
         amountPaise: loan.balancePaise,
         href: "/borrowed",
-        urgency: loan.balancePaise > 50_000_00 ? "high" : "medium",
+        urgency,
       });
     } else {
       items.push({
@@ -44,10 +56,10 @@ export async function loadActionItems(): Promise<ActionItem[]> {
         kind: "lent",
         entityId: loan.id!,
         title: `${loan.personName} owes you`,
-        subtitle: loan.reason ?? "Waiting for return",
+        subtitle: loan.reason ? `${dueSubtitle} · ${loan.reason}` : dueSubtitle,
         amountPaise: loan.balancePaise,
         href: "/loans",
-        urgency: "low",
+        urgency,
       });
     }
   }
