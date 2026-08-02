@@ -292,6 +292,7 @@ export function QuickAddModal() {
           value={categoryId || String(visiblePool[0]?.id ?? pool[0]?.id ?? "")}
           onChange={setCategoryId}
           label="Category"
+          kind={kind}
         />
         <Select label="Paid with" value={paymentMethod} onChange={(e) => setPaymentMethod(e.target.value)}>
           {PAYMENT_METHODS.map((m) => (

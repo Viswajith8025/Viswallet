@@ -2,9 +2,10 @@
 
 import { useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { getSettings, getActiveCategories } from "@/lib/db";
+import { getSettings } from "@/lib/db";
 import { getCurrentCycleKey, getPreviousCycleKeys, formatCycleLabel } from "@/lib/salary-cycle";
 import { useFilterStore } from "@/lib/store/filter-store";
+import { useCategoriesQuery } from "@/hooks/use-categories";
 import { Select } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { RotateCcw } from "lucide-react";
@@ -24,10 +25,7 @@ export function GlobalFilterBar({ className }: { className?: string }) {
     queryFn: getSettings,
   });
 
-  const { data: categories = [] } = useQuery({
-    queryKey: ["categories"],
-    queryFn: getActiveCategories,
-  });
+  const { data: categories = [] } = useCategoriesQuery();
 
   const salaryDay = settings?.salaryDay ?? 1;
   const currentKey = getCurrentCycleKey(salaryDay);

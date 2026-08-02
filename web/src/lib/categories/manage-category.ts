@@ -6,6 +6,14 @@ export function filterQuickAddCategories(categories: Category[]): Category[] {
   return categories.filter((c) => !c.hiddenFromQuickAdd);
 }
 
+/** Custom categories first so they are easy to find in long lists. */
+export function sortCategoriesForDisplay(categories: Category[]): Category[] {
+  const visible = filterQuickAddCategories(categories);
+  const custom = visible.filter((c) => !c.isSystem).sort((a, b) => a.sortOrder - b.sortOrder);
+  const system = visible.filter((c) => c.isSystem).sort((a, b) => a.sortOrder - b.sortOrder);
+  return [...custom, ...system];
+}
+
 export async function hideCategoryFromQuickAdd(categoryId: number): Promise<void> {
   await db.categories.update(categoryId, { hiddenFromQuickAdd: true });
   notifyDataMutation();

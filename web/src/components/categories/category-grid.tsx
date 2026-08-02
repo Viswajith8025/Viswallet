@@ -10,6 +10,7 @@ import {
   archiveCategory,
   filterQuickAddCategories,
   showCategoryInQuickAdd,
+  sortCategoriesForDisplay,
 } from "@/lib/categories/manage-category";
 import { useInvalidateFinance } from "@/hooks";
 import { confirmAction } from "@/lib/store/confirm-store";
@@ -32,7 +33,9 @@ export function CategoryGrid({
   const [editMode, setEditMode] = useState(false);
   const invalidate = useInvalidateFinance();
 
-  const visible = useMemo(() => filterQuickAddCategories(categories), [categories]);
+  const visible = useMemo(() => sortCategoriesForDisplay(categories), [categories]);
+  const customVisible = useMemo(() => visible.filter((c) => !c.isSystem), [visible]);
+  const systemVisible = useMemo(() => visible.filter((c) => c.isSystem), [visible]);
   const hidden = useMemo(
     () => categories.filter((c) => c.hiddenFromQuickAdd && !c.isDeleted),
     [categories],
@@ -77,6 +80,41 @@ export function CategoryGrid({
     showToast(`"${cat.name}" restored`, { tone: "success" });
   }
 
+  function renderCategoryButton(c: Category) {
+    if (c.id == null) return null;
+    const id = String(c.id);
+    const active = id === value;
+    return (
+      <div key={c.id} className="relative">
+        <button
+          type="button"
+          onClick={() => pick(id)}
+          className="flex w-full flex-col items-center gap-2 text-center"
+          aria-pressed={active}
+        >
+          <CategoryIconBadge
+            category={c}
+            size="grid"
+            className={cn(active && "ring-2 ring-primary ring-offset-2 ring-offset-background")}
+          />
+          <span className="line-clamp-2 text-[11px] leading-tight text-muted-foreground">
+            {c.name}
+          </span>
+        </button>
+        {editMode && (
+          <button
+            type="button"
+            onClick={() => void handleRemove(c)}
+            className="absolute -right-0.5 -top-0.5 flex h-5 w-5 items-center justify-center rounded-full bg-destructive text-destructive-foreground shadow-sm"
+            aria-label={`Remove ${c.name}`}
+          >
+            <X size={12} strokeWidth={2.5} />
+          </button>
+        )}
+      </div>
+    );
+  }
+
   return (
     <>
       <div className="flex items-center justify-between gap-2 px-4 pb-2">
@@ -93,40 +131,18 @@ export function CategoryGrid({
       </div>
 
       <div className="grid grid-cols-4 gap-x-2 gap-y-5 px-4 py-2">
-        {visible.map((c) => {
-          if (c.id == null) return null;
-          const id = String(c.id);
-          const active = id === value;
-          return (
-            <div key={c.id} className="relative">
-              <button
-                type="button"
-                onClick={() => pick(id)}
-                className="flex w-full flex-col items-center gap-2 text-center"
-                aria-pressed={active}
-              >
-                <CategoryIconBadge
-                  category={c}
-                  size="grid"
-                  className={cn(active && "ring-2 ring-primary ring-offset-2 ring-offset-background")}
-                />
-                <span className="line-clamp-2 text-[11px] leading-tight text-muted-foreground">
-                  {c.name}
-                </span>
-              </button>
-              {editMode && (
-                <button
-                  type="button"
-                  onClick={() => void handleRemove(c)}
-                  className="absolute -right-0.5 -top-0.5 flex h-5 w-5 items-center justify-center rounded-full bg-destructive text-destructive-foreground shadow-sm"
-                  aria-label={`Remove ${c.name}`}
-                >
-                  <X size={12} strokeWidth={2.5} />
-                </button>
-              )}
-            </div>
-          );
-        })}
+        {customVisible.length > 0 && (
+          <p className="col-span-4 text-[10px] font-medium uppercase tracking-wide text-primary/80">
+            Your categories
+          </p>
+        )}
+        {customVisible.map((c) => renderCategoryButton(c))}
+        {customVisible.length > 0 && systemVisible.length > 0 && (
+          <p className="col-span-4 pt-1 text-[10px] font-medium uppercase tracking-wide text-muted-foreground/70">
+            All categories
+          </p>
+        )}
+        {systemVisible.map((c) => renderCategoryButton(c))}
         <button
           type="button"
           onClick={() => setCreateOpen(true)}

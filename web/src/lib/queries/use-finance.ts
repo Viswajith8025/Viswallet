@@ -28,7 +28,5 @@ export function useFinanceSnapshot() {
     placeholderData: (previousData) => previousData,
   });
 }
-export function useCategories() {
-  const { data } = useFinanceSnapshot();
-  return data?.categories ?? [];
-}
+
+export { useCategories } from "@/hooks/use-categories";

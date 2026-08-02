@@ -22,6 +22,7 @@ export function DbProvider({ children }: { children: React.ReactNode }) {
   const invalidateAll = useCallback(() => {
     void Promise.all([
       queryClient.invalidateQueries({ queryKey: financeKeys.all }),
+      queryClient.invalidateQueries({ queryKey: ["categories"] }),
       queryClient.invalidateQueries({ queryKey: ["dexie"] }),
       queryClient.invalidateQueries({ queryKey: financeKeys.notificationsUnread }),
       queryClient.invalidateQueries({ queryKey: ["accounts"] }),

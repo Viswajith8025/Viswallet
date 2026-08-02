@@ -10,6 +10,7 @@ import {
   archiveCategory,
   filterQuickAddCategories,
   showCategoryInQuickAdd,
+  sortCategoriesForDisplay,
 } from "@/lib/categories/manage-category";
 import { useInvalidateFinance } from "@/hooks";
 import { confirmAction } from "@/lib/store/confirm-store";
@@ -32,7 +33,7 @@ export function CategoryPicker({
   const [editMode, setEditMode] = useState(false);
   const invalidate = useInvalidateFinance();
 
-  const visible = useMemo(() => filterQuickAddCategories(categories), [categories]);
+  const visible = useMemo(() => sortCategoriesForDisplay(categories), [categories]);
   const hidden = useMemo(
     () => categories.filter((c) => c.hiddenFromQuickAdd && !c.isDeleted),
     [categories],
