@@ -1,17 +1,27 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { getSettings } from "@/lib/db";
 import { getCurrentCycleKey, getPreviousCycleKeys, formatCycleLabel } from "@/lib/salary-cycle";
 import { useFilterStore } from "@/lib/store/filter-store";
 import { useCategoriesQuery } from "@/hooks/use-categories";
+import { useMobileLayout } from "@/hooks/use-mobile-layout";
 import { Select } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { RotateCcw } from "lucide-react";
+import { RotateCcw, SlidersHorizontal } from "lucide-react";
 import { cn } from "@/lib/design/cn";
 
-export function GlobalFilterBar({ className }: { className?: string }) {
+export function GlobalFilterBar({
+  className,
+  collapsible = false,
+}: {
+  className?: string;
+  /** On mobile, show a single button that expands filters. */
+  collapsible?: boolean;
+}) {
+  const isMobileLayout = useMobileLayout();
+  const [expanded, setExpanded] = useState(false);
   const cycleKey = useFilterStore((s) => s.cycleKey);
   const kind = useFilterStore((s) => s.kind);
   const categoryId = useFilterStore((s) => s.categoryId);
@@ -42,8 +52,43 @@ export function GlobalFilterBar({ className }: { className?: string }) {
   const hasFilters =
     cycleKey !== currentKey || kind !== "all" || categoryId;
 
+  const showCollapsed = collapsible && isMobileLayout && !expanded;
+
+  if (showCollapsed) {
+    return (
+      <div className={cn("pb-3", className)}>
+        <button
+          type="button"
+          onClick={() => setExpanded(true)}
+          className="flex w-full min-h-11 items-center justify-between gap-2 rounded-xl border border-border/60 bg-muted/30 px-4 py-2.5 text-sm transition-colors active:scale-[0.99] hover:bg-muted/50"
+          aria-expanded={false}
+        >
+          <span className="flex items-center gap-2 text-muted-foreground">
+            <SlidersHorizontal size={16} />
+            <span>
+              {formatCycleLabel(cycleKey ?? currentKey)}
+              {hasFilters ? " · filtered" : ""}
+            </span>
+          </span>
+          <span className="text-xs font-medium text-primary">Edit</span>
+        </button>
+      </div>
+    );
+  }
+
   return (
     <div className={cn("flex flex-wrap items-center gap-2 border-b border-border/60 pb-4", className)}>
+      {collapsible && isMobileLayout && (
+        <Button
+          type="button"
+          variant="ghost"
+          size="sm"
+          className="h-10 shrink-0 gap-1.5 text-xs"
+          onClick={() => setExpanded(false)}
+        >
+          Hide filters
+        </Button>
+      )}
       <Select
         tone="filter"
         value={cycleKey ?? currentKey}

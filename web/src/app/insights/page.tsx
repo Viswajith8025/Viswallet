@@ -1,8 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { Sparkles, ArrowRight, AlertTriangle, CheckCircle2, Info } from "lucide-react";
-import { PageHeader, StatCard, PageContainer, EmptyState } from "@/components/ui/page";
+import { Sparkles, ArrowRight } from "lucide-react";
+import { PageContainer, EmptyState } from "@/components/ui/page";
 import { FinanceGate } from "@/components/layout/finance-gate";
 import { GlobalFilterBar } from "@/components/filters/global-filter-bar";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -14,132 +14,129 @@ import { formatCycleLabel } from "@/lib/salary-cycle";
 import { cn } from "@/lib/design/cn";
 import { Progress } from "@/components/ui/progress";
 import { AiInsightCard } from "@/components/ai/ai-insight-card";
+import { InsightsHero } from "@/components/insights/insights-hero";
+import { InsightFeedItem } from "@/components/insights/insight-feed-item";
 import { useAiFeatures } from "@/hooks/use-ai-features";
 import type { FinanceSnapshot } from "@/lib/engines/finance-snapshot";
-
-const SEVERITY_STYLES = {
-  info: "bg-muted/60 border-border/50",
-  success: "bg-success/5 border-success/20",
-  warning: "bg-warning/5 border-warning/30",
-  critical: "bg-destructive/5 border-destructive/30",
-};
-
-const SEVERITY_ICONS = {
-  info: Info,
-  success: CheckCircle2,
-  warning: AlertTriangle,
-  critical: AlertTriangle,
-};
 
 function InsightsBody({ data }: { data: FinanceSnapshot }) {
   const { active: showAi } = useAiFeatures();
   const breakdown = sumByCategory(data.transactions, data.categories, "expense");
   const totalSpent = data.expensePaise;
   const budgetUsedPct = data.salaryPaise > 0 ? Math.round((totalSpent / data.salaryPaise) * 100) : 0;
-  const insights = generatePremiumInsights(data);
+  const allInsights = generatePremiumInsights(data);
+  const feedInsights = allInsights.filter((i) => i.id !== "health");
   const recommendations = generateBudgetRecommendations(data);
   const topCategories = breakdown.slice(0, 5).map((c) => ({ name: c.name, amountPaise: c.amount }));
+  const topSpending = breakdown.slice(0, 6);
 
   return (
-    <PageContainer className="max-w-5xl">
-      <PageHeader
-        eyebrow={formatCycleLabel(data.monthKey)}
-        title="Smart Financial Insights"
-        description="On-device rules plus optional AI coaching when enabled in Settings."
+    <PageContainer className="max-w-5xl space-y-5 lg:space-y-6">
+      <header className="space-y-1">
+        <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+          {formatCycleLabel(data.monthKey)}
+        </p>
+        <h1 className="font-display text-2xl font-semibold tracking-tight text-foreground lg:text-3xl">
+          Insights
+        </h1>
+        <p className="text-sm text-muted-foreground lg:max-w-xl">
+          Smart tips from your spending this cycle — calculated on your device.
+        </p>
+      </header>
+
+      <GlobalFilterBar collapsible className="border-b-0 pb-0" />
+
+      <InsightsHero
+        healthScore={data.healthScore}
+        budgetUsedPct={budgetUsedPct}
+        totalSpent={totalSpent}
+        remainingPaise={data.remainingPaise}
+        safeSpendDaily={data.safeSpendDaily}
+        daysLeft={data.daysLeft}
+        insightCount={allInsights.length}
       />
-      <GlobalFilterBar />
 
-      <div className="grid gap-4 md:grid-cols-3">
-        <StatCard
-          label="Health score"
-          value={`${data.healthScore}/100`}
-          tone={data.healthScore >= 70 ? "positive" : data.healthScore >= 40 ? "primary" : "negative"}
-        />
-        <StatCard label="Budget used" value={`${budgetUsedPct}%`} hint={formatINR(totalSpent)} />
-        <StatCard label="Insights" value={insights.length} hint="Active recommendations" />
-      </div>
+      {showAi && (
+        <AiInsightCard data={data} enabled={showAi} topCategories={topCategories} />
+      )}
 
-      <AiInsightCard data={data} enabled={showAi} topCategories={topCategories} />
+      <section className="space-y-3">
+        <div className="flex items-center justify-between gap-2 px-0.5">
+          <h2 className="flex items-center gap-2 text-base font-semibold">
+            <Sparkles size={18} className="text-primary" />
+            Smart analysis
+          </h2>
+          <span className="text-xs text-muted-foreground">{feedInsights.length} tips</span>
+        </div>
+        <div className="space-y-3">
+          {feedInsights.map((insight) => (
+            <InsightFeedItem key={insight.id} insight={insight} />
+          ))}
+        </div>
+      </section>
 
-      <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2 text-base font-semibold">
-                  <Sparkles size={18} />
-                  Smart analysis
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-3 pt-0">
-                {insights.map((insight) => {
-                  const Icon = SEVERITY_ICONS[insight.severity];
-                  return (
-                    <div
-                      key={insight.id}
-                      className={cn("rounded-xl border p-4", SEVERITY_STYLES[insight.severity])}
-                    >
-                      <div className="flex gap-3">
-                        <Icon size={18} className="mt-0.5 shrink-0 text-primary" />
-                        <div className="min-w-0 flex-1">
-                          <p className="font-medium">{insight.title}</p>
-                          <p className="mt-1 text-sm text-muted-foreground">{insight.body}</p>
-                          {insight.action && (
-                            <Link
-                              href={insight.action.href}
-                              className="mt-2 inline-flex items-center gap-1 text-sm font-medium text-primary hover:underline"
-                            >
-                              {insight.action.label} <ArrowRight size={14} />
-                            </Link>
-                          )}
-                        </div>
-                      </div>
-                    </div>
-                  );
-                })}
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-base font-semibold">Budget recommendations</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-3 pt-0">
-                {recommendations.map((r) => (
-                  <div key={r.category} className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-border/60 p-3 text-sm">
-                    <div>
-                      <p className="font-medium">{r.category}</p>
-                      <p className="text-xs text-muted-foreground">{r.reason}</p>
-                    </div>
-                    <div className="text-right">
-                      <p className="tabular-nums">{formatINR(r.currentPaise)} → {formatINR(r.recommendedPaise)}</p>
-                      <p className={cn("text-xs font-medium", r.changePaise < 0 ? "text-success" : "text-warning")}>
-                        {r.changePaise >= 0 ? "+" : ""}{formatINR(r.changePaise)}
-                      </p>
-                    </div>
-                  </div>
-                ))}
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-base font-semibold">Spending by category</CardTitle>
-              </CardHeader>
-              <CardContent className="pt-0">
-                <div className="space-y-4">
-                  {breakdown.map((item) => {
-                    const pct = totalSpent > 0 ? (item.amount / totalSpent) * 100 : 0;
-                    return (
-                      <div key={item.name}>
-                        <div className="mb-1 flex justify-between text-sm">
-                          <span>{item.name}</span>
-                          <span className="tabular-nums font-medium">{formatINR(item.amount)}</span>
-                        </div>
-                        <Progress value={pct} max={100} size="md" color={item.color} />
-                      </div>
-                    );
-                  })}
+      {recommendations.length > 0 && (
+        <Card className="border-border/60">
+          <CardHeader className="pb-2">
+            <CardTitle className="text-base font-semibold">Budget tweaks</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-2 pt-0">
+            {recommendations.map((r) => (
+              <div
+                key={r.category}
+                className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-border/50 bg-muted/20 px-4 py-3 text-sm"
+              >
+                <div className="min-w-0">
+                  <p className="font-medium">{r.category}</p>
+                  <p className="text-xs text-muted-foreground">{r.reason}</p>
                 </div>
-              </CardContent>
-            </Card>
+                <div className="text-right">
+                  <p className="tabular-nums text-xs text-muted-foreground">
+                    {formatINR(r.currentPaise)} → {formatINR(r.recommendedPaise)}
+                  </p>
+                  <p
+                    className={cn(
+                      "text-sm font-semibold tabular-nums",
+                      r.changePaise < 0 ? "text-success" : "text-warning",
+                    )}
+                  >
+                    {r.changePaise >= 0 ? "+" : ""}{formatINR(r.changePaise)}
+                  </p>
+                </div>
+              </div>
+            ))}
+          </CardContent>
+        </Card>
+      )}
+
+      <Card className="border-border/60">
+        <CardHeader className="flex-row items-center justify-between space-y-0 pb-2">
+          <CardTitle className="text-base font-semibold">Top spending</CardTitle>
+          <Link
+            href="/analytics"
+            className="inline-flex items-center gap-1 text-xs font-medium text-primary"
+          >
+            All charts
+            <ArrowRight size={13} />
+          </Link>
+        </CardHeader>
+        <CardContent className="pt-0">
+          <div className="space-y-4">
+            {topSpending.map((item) => {
+              const pct = totalSpent > 0 ? (item.amount / totalSpent) * 100 : 0;
+              return (
+                <div key={item.name}>
+                  <div className="mb-1.5 flex justify-between gap-2 text-sm">
+                    <span className="truncate">{item.name}</span>
+                    <span className="shrink-0 tabular-nums font-medium">{formatINR(item.amount)}</span>
+                  </div>
+                  <Progress value={pct} max={100} size="md" color={item.color} />
+                </div>
+              );
+            })}
+          </div>
+        </CardContent>
+      </Card>
     </PageContainer>
   );
 }
@@ -151,18 +148,19 @@ export default function InsightsPage() {
         if (data.transactions.length === 0) {
           return (
             <PageContainer className="max-w-5xl">
-              <PageHeader
-                eyebrow={formatCycleLabel(data.monthKey)}
-                title="Smart Financial Insights"
-                description="On-device rules plus optional AI coaching when enabled in Settings."
-              />
+              <header className="mb-6 space-y-1">
+                <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                  {formatCycleLabel(data.monthKey)}
+                </p>
+                <h1 className="font-display text-2xl font-semibold tracking-tight">Insights</h1>
+              </header>
               <EmptyState
                 title="Not enough data yet"
                 description="Add expenses and income to unlock personalized insights and budget recommendations."
                 illustration="transactions"
                 action={
                   <Link href="/transactions?add=expense" className="inline-flex">
-                    <span className="inline-flex h-10 items-center justify-center rounded-xl bg-primary px-4 text-sm font-medium text-primary-foreground">
+                    <span className="inline-flex h-11 items-center justify-center rounded-xl bg-primary px-5 text-sm font-medium text-primary-foreground">
                       Add your first expense
                     </span>
                   </Link>
