@@ -1,4 +1,4 @@
-const CACHE = "viswallet-v10";
+const CACHE = "viswallet-v11";
 const ASSETS = [
   "/offline.html",
   "/brand/logo-mark.svg",
@@ -25,6 +25,17 @@ self.addEventListener("activate", (event) => {
   );
 });
 
+function shouldBypassServiceWorker(request, url) {
+  if (url.pathname.startsWith("/api")) return true;
+  // Next.js chunks + flight data — must not be blocked by SW offline fallbacks.
+  if (url.pathname.startsWith("/_next/")) return true;
+  if (url.searchParams.has("_rsc")) return true;
+  if (request.headers.get("RSC") === "1") return true;
+  if (request.headers.get("Next-Router-Prefetch")) return true;
+  if (request.headers.get("Next-Action")) return true;
+  return false;
+}
+
 async function offlinePageResponse() {
   const cached = await caches.match("/offline.html");
   if (cached) return cached;
@@ -35,28 +46,49 @@ async function offlinePageResponse() {
 }
 
 async function networkFirst(request) {
+  const cache = await caches.open(CACHE);
+
   try {
     const response = await fetch(request);
+    if (response?.ok) {
+      await cache.put(request, response.clone());
+      return response;
+    }
     if (response) return response;
   } catch {
     // network failed
   }
+
   const cached = await caches.match(request);
   if (cached) return cached;
+
   if (request.mode === "navigate") return offlinePageResponse();
-  return new Response("", { status: 408, statusText: "Network unavailable" });
+
+  // Don't synthesize 408 — let the browser surface the real network error.
+  try {
+    return await fetch(request);
+  } catch {
+    return new Response("", { status: 503, statusText: "Network error" });
+  }
 }
 
 async function cacheFirst(request) {
   const cached = await caches.match(request);
   if (cached) return cached;
+
   try {
     const response = await fetch(request);
+    if (response?.ok) {
+      const cache = await caches.open(CACHE);
+      await cache.put(request, response.clone());
+      return response;
+    }
     if (response) return response;
   } catch {
     // network failed
   }
-  return new Response("", { status: 408, statusText: "Network unavailable" });
+
+  return new Response("", { status: 503, statusText: "Network error" });
 }
 
 self.addEventListener("fetch", (event) => {
@@ -65,7 +97,7 @@ self.addEventListener("fetch", (event) => {
   const url = new URL(event.request.url);
 
   if (!url.origin.startsWith(self.location.origin)) return;
-  if (url.pathname.startsWith("/api")) return;
+  if (shouldBypassServiceWorker(event.request, url)) return;
 
   if (event.request.mode === "navigate") {
     event.respondWith(networkFirst(event.request));
