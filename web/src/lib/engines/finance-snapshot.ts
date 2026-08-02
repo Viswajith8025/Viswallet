@@ -1,4 +1,4 @@
-import type { Category, Transaction } from "@/lib/db/types";
+import type { Category, Transaction, Account } from "@/lib/db/types";
 import { getCurrentCycleKey, getDaysLeftInCycle } from "@/lib/salary-cycle";
 import {
   getActiveCategories,
@@ -40,9 +40,15 @@ export type FinanceSnapshot = {
   parkedWalletsPaise: number;
   netWorthPaise: number;
   healthScore: number;
+  accounts: Account[];
+  selectedAccountId: number | null;
+  selectedAccount: Account | null;
 };
 
-export async function loadFinanceSnapshot(monthKeyOverride?: string): Promise<FinanceSnapshot> {
+export async function loadFinanceSnapshot(
+  monthKeyOverride?: string,
+  accountId?: number | null,
+): Promise<FinanceSnapshot> {
   const settings = await getSettings();
   const monthKey = monthKeyOverride ?? getCurrentCycleKey(settings.salaryDay);
   const [transactions, salary, categories, subs, bills, emis, loans, goals, investments, accounts] =
@@ -63,7 +69,7 @@ export async function loadFinanceSnapshot(monthKeyOverride?: string): Promise<Fi
     categories.filter((c) => c.countsTowardSpending).map((c) => c.id),
   );
 
-  const expensePaise = transactions
+  const fullExpensePaise = transactions
     .filter((t) => t.kind === "expense" && spendingCats.has(t.categoryId))
     .reduce((s, t) => s + t.amountPaise, 0);
 
@@ -71,13 +77,41 @@ export async function loadFinanceSnapshot(monthKeyOverride?: string): Promise<Fi
   const carryOverPaise = salary?.carryOverPaise ?? 0;
   const salaryPaise = salaryBase;
 
+  const fullTransactionIncomePaise = transactions
+    .filter((t) => t.kind === "income")
+    .reduce((s, t) => s + t.amountPaise, 0);
+
+  const fullIncomePaise = fullTransactionIncomePaise + salaryBase + carryOverPaise;
+  const cycleRemainingPaise = fullIncomePaise - fullExpensePaise;
+
+  const selectedAccount =
+    accountId != null ? accounts.find((a) => a.id === accountId) ?? null : null;
+  const scopedTransactions =
+    selectedAccount != null
+      ? transactions.filter((t) => t.accountId === accountId)
+      : transactions;
+
+  const expensePaise =
+    selectedAccount != null
+      ? scopedTransactions
+          .filter((t) => t.kind === "expense" && spendingCats.has(t.categoryId))
+          .reduce((s, t) => s + t.amountPaise, 0)
+      : fullExpensePaise;
+
   const incomePaise =
-    transactions.filter((t) => t.kind === "income").reduce((s, t) => s + t.amountPaise, 0) +
-    salaryBase +
-    carryOverPaise;
-  const remainingPaise = incomePaise - expensePaise;
+    selectedAccount != null
+      ? scopedTransactions.filter((t) => t.kind === "income").reduce((s, t) => s + t.amountPaise, 0)
+      : fullIncomePaise;
+
+  const remainingPaise =
+    selectedAccount != null ? selectedAccount.balancePaise : cycleRemainingPaise;
   const daysLeft = getDaysLeftInCycle(settings.salaryDay);
-  const safeSpendDaily = daysLeft > 0 ? Math.max(0, Math.floor(remainingPaise / daysLeft)) : 0;
+  const safeSpendDaily =
+    selectedAccount != null
+      ? 0
+      : daysLeft > 0
+        ? Math.max(0, Math.floor(cycleRemainingPaise / daysLeft))
+        : 0;
 
   const subscriptionMonthlyPaise = subs.reduce((s, sub) => s + toMonthlySubscriptionPaise(sub), 0);
 
@@ -99,14 +133,15 @@ export async function loadFinanceSnapshot(monthKeyOverride?: string): Promise<Fi
     .reduce((s, a) => s + a.balancePaise, 0);
   const parkedWalletsPaise = backupWalletsPaise + savingsPotsPaise;
   const netWorthPaise =
-    remainingPaise +
+    cycleRemainingPaise +
     parkedWalletsPaise +
     goalsSaved +
     investmentValue +
     lentBalance -
     borrowedBalance;
 
-  const budgetUsed = salaryPaise > 0 ? expensePaise / salaryPaise : 0;
+  const budgetUsed = salaryPaise > 0 ? fullExpensePaise / salaryPaise : 0;
+  const healthBaseRemaining = cycleRemainingPaise;
   const healthScore = Math.round(
     Math.max(
       0,
@@ -116,7 +151,7 @@ export async function loadFinanceSnapshot(monthKeyOverride?: string): Promise<Fi
           budgetUsed * 50 -
           (subscriptionMonthlyPaise / Math.max(salaryPaise, 1)) * 20 -
           (borrowedBalance / Math.max(salaryPaise, 1)) * 15 +
-          (remainingPaise > 0 ? 10 : 0),
+          (healthBaseRemaining > 0 ? 10 : 0),
       ),
     ),
   );
@@ -130,7 +165,7 @@ export async function loadFinanceSnapshot(monthKeyOverride?: string): Promise<Fi
     remainingPaise,
     safeSpendDaily,
     daysLeft,
-    transactions: transactions.sort(
+    transactions: scopedTransactions.sort(
       (a, b) => new Date(b.occurredAt).getTime() - new Date(a.occurredAt).getTime(),
     ),
     categories,
@@ -146,6 +181,9 @@ export async function loadFinanceSnapshot(monthKeyOverride?: string): Promise<Fi
     parkedWalletsPaise,
     netWorthPaise,
     healthScore,
+    accounts,
+    selectedAccountId: selectedAccount?.id ?? null,
+    selectedAccount,
   };
 }
 

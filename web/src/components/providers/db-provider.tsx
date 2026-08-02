@@ -24,6 +24,8 @@ export function DbProvider({ children }: { children: React.ReactNode }) {
       queryClient.invalidateQueries({ queryKey: financeKeys.all }),
       queryClient.invalidateQueries({ queryKey: ["dexie"] }),
       queryClient.invalidateQueries({ queryKey: financeKeys.notificationsUnread }),
+      queryClient.invalidateQueries({ queryKey: ["accounts"] }),
+      queryClient.invalidateQueries({ queryKey: ["account-transfers"] }),
     ]);
     setVersion((v) => v + 1);
   }, [queryClient]);

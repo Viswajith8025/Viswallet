@@ -213,18 +213,12 @@ export default function AccountsPage() {
       <PageHeader
         eyebrow="Wealth"
         title="Wallets & pots"
-        description="Track money in your bank, backup wallets (Amazon Pay, Slice, Mobikwik), and Jupiter savings pots."
+        description="Track money across bank, backup wallets, and Jupiter pots. Add or edit accounts here."
         actions={
-          <div className="flex flex-wrap gap-2">
-            <Button variant="outline" onClick={() => openTransfer()}>
-              <ArrowLeftRight size={16} className="mr-1.5" />
-              Transfer
-            </Button>
-            <Button onClick={() => setShowForm(!showForm)}>
-              <Plus size={16} className="mr-1.5" />
-              Add
-            </Button>
-          </div>
+          <Button variant="outline" onClick={() => openTransfer()}>
+            <ArrowLeftRight size={16} className="mr-1.5" />
+            Transfer
+          </Button>
         }
       />
 

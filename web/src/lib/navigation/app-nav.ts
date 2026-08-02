@@ -54,7 +54,7 @@ export const APP_NAV: NavEntry[] = [
   { href: "/emi", label: "EMI Tracker", icon: CreditCard },
   { href: "/debt-planner", label: "Debt Planner", icon: Calculator },
   { section: "Wealth" },
-  { href: "/accounts", label: "Accounts", icon: Landmark },
+  { href: "/accounts", label: "Wallets & accounts", icon: Landmark },
   { href: "/goals", label: "Savings Goals", icon: Target },
   { href: "/wishlist", label: "Wishlist", icon: Heart },
   { href: "/investments", label: "Investments", icon: TrendingUp },

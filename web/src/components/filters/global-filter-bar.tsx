@@ -8,8 +8,9 @@ import { useFilterStore } from "@/lib/store/filter-store";
 import { Select } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { RotateCcw } from "lucide-react";
+import { cn } from "@/lib/design/cn";
 
-export function GlobalFilterBar() {
+export function GlobalFilterBar({ className }: { className?: string }) {
   const cycleKey = useFilterStore((s) => s.cycleKey);
   const accountId = useFilterStore((s) => s.accountId);
   const kind = useFilterStore((s) => s.kind);
@@ -45,7 +46,7 @@ export function GlobalFilterBar() {
     cycleKey !== currentKey || accountId || kind !== "all" || categoryId;
 
   return (
-    <div className="flex flex-wrap items-center gap-2 border-b border-border/60 pb-4">
+    <div className={cn("flex flex-wrap items-center gap-2 border-b border-border/60 pb-4", className)}>
       <Select
         tone="filter"
         value={cycleKey ?? currentKey}

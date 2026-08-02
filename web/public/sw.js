@@ -1,4 +1,4 @@
-const CACHE = "viswallet-v8";
+const CACHE = "viswallet-v9";
 const ASSETS = [
   "/offline.html",
   "/brand/logo-mark.svg",
