@@ -11,6 +11,7 @@ import { db } from "@/lib/db";
 import { sanitizeTitle, sanitizeNotes } from "@/lib/security";
 import { useAsyncAction } from "@/hooks";
 import { confirmAction } from "@/lib/store/confirm-store";
+import { notifyDataMutation } from "@/lib/db/notify-mutation";
 
 export default function NotesPage() {
   const qc = useQueryClient();
@@ -40,12 +41,14 @@ export default function NotesPage() {
       setTitle("");
       setBody("");
       setShowForm(false);
+      notifyDataMutation();
       qc.invalidateQueries({ queryKey: ["secure-notes"] });
     });
   }
 
   async function togglePin(id: number, pinned: boolean) {
     await db.secureNotes.update(id, { isPinned: !pinned, updatedAt: new Date() });
+    notifyDataMutation();
     qc.invalidateQueries({ queryKey: ["secure-notes"] });
   }
 
@@ -59,6 +62,7 @@ export default function NotesPage() {
     });
     if (!ok) return;
     await db.secureNotes.delete(id);
+    notifyDataMutation();
     qc.invalidateQueries({ queryKey: ["secure-notes"] });
   }
 

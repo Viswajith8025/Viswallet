@@ -1,18 +1,18 @@
-/** User-safe error messages — never expose internal details. */
+/** User-safe error messages — calm, clear, never expose internals. */
 export const SECURE_ERRORS = {
-  BACKUP_INVALID: "Backup file is invalid or corrupted.",
-  BACKUP_TOO_LARGE: "Backup file exceeds the maximum allowed size (10 MB).",
-  BACKUP_WRONG_TYPE: "Only JSON backup files are accepted.",
-  BACKUP_DECRYPT_FAILED: "Could not decrypt backup. Check your passphrase.",
-  IMPORT_FAILED: "Import failed. Your existing data was not changed.",
-  EXPORT_FAILED: "Export failed. Please try again.",
-  PIN_INVALID: "Incorrect PIN.",
-  PIN_LOCKED: "Too many attempts. Try again later.",
-  PIN_WEAK: "PIN must be 4–8 digits.",
-  PIN_MISMATCH: "PINs do not match.",
-  RATE_LIMITED: "Too many attempts. Please wait before trying again.",
-  GENERIC: "Something went wrong. Please try again.",
-  SETTINGS_UNAVAILABLE: "Settings are not available. Refresh the page.",
+  BACKUP_INVALID: "That backup file doesn't look right. Try another file.",
+  BACKUP_TOO_LARGE: "This file is larger than 10 MB. Try a smaller export.",
+  BACKUP_WRONG_TYPE: "Please choose a JSON or .vwbackup file.",
+  BACKUP_DECRYPT_FAILED: "Couldn't open this backup. Check your passphrase.",
+  IMPORT_FAILED: "Import didn't complete. Your current data is unchanged.",
+  EXPORT_FAILED: "Export didn't finish. Try again in a moment.",
+  PIN_INVALID: "That PIN didn't match.",
+  PIN_LOCKED: "Too many tries. Wait a bit, then try again.",
+  PIN_WEAK: "Use 4 to 8 digits for your PIN.",
+  PIN_MISMATCH: "Those PINs don't match.",
+  RATE_LIMITED: "A few too many attempts. Pause for a moment.",
+  GENERIC: "Something went wrong. Try again in a moment.",
+  SETTINGS_UNAVAILABLE: "Settings aren't available right now. Refresh the page.",
 } as const;
 
 export type SecureErrorCode = keyof typeof SECURE_ERRORS;

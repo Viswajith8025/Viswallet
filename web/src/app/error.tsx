@@ -2,9 +2,10 @@
 
 import { useEffect } from "react";
 import { Button } from "@/components/ui/button";
+import { copy } from "@/lib/ux/copy";
 import { reportError } from "@/lib/monitoring/report";
 
-export default function GlobalError({
+export default function RouteError({
   error,
   reset,
 }: {
@@ -20,15 +21,15 @@ export default function GlobalError({
         <span className="text-2xl font-bold">!</span>
       </div>
       <div className="space-y-2">
-        <h1 className="text-xl font-semibold tracking-tight">Something went wrong</h1>
+        <h1 className="text-xl font-semibold tracking-tight">{copy.gates.globalError.title}</h1>
         <p className="max-w-md text-sm text-muted-foreground">
-          We hit an unexpected error. Your financial data remains stored locally and was not affected.
+          {copy.gates.globalError.description}
         </p>
       </div>
       <div className="flex gap-3">
-        <Button onClick={reset}>Try again</Button>
+        <Button onClick={reset}>{copy.gates.globalError.retry}</Button>
         <Button variant="outline" onClick={() => (window.location.href = "/")}>
-          Go home
+          {copy.gates.globalError.home}
         </Button>
       </div>
     </div>

@@ -4,6 +4,7 @@ import { useState } from "react";
 import { format } from "date-fns";
 import { ArrowDownLeft, Pencil, Plus, Trash2, Wallet } from "lucide-react";
 import { PageHeader, PageContainer } from "@/components/ui/page";
+import { DexiePageGate } from "@/components/layout/dexie-page-gate";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input, Textarea } from "@/components/ui/input";
@@ -14,6 +15,7 @@ import { formatINR, parseRupeeInput } from "@/lib/money";
 import { useDexieTable, useInvalidateFinance, useAsyncAction } from "@/hooks";
 import { confirmAction } from "@/lib/store/confirm-store";
 import { markBorrowedFullyPaid, loanProgress, recordLoanPayment } from "@/lib/loans/record-loan-payment";
+import { copy, toastCopy } from "@/lib/ux/copy";
 import { showToast } from "@/lib/store/toast-store";
 import { notifyDataMutation } from "@/lib/db/notify-mutation";
 import { cn } from "@/lib/design/cn";
@@ -23,7 +25,7 @@ import { defaultLoanDueDate, parseLoanDueInput, getLoanDueStatus } from "@/lib/l
 export function BorrowedExperience() {
   const invalidate = useInvalidateFinance();
   const { loading: saving, run } = useAsyncAction();
-  const { data: loans = [] } = useDexieTable("loans-borrowed", () =>
+  const { data: loans = [], isPending, isError, refetch } = useDexieTable("loans-borrowed", () =>
     db.loans.filter((l) => !l.isDeleted && l.direction === "borrowed_by_me").toArray(),
   );
 
@@ -82,7 +84,7 @@ export function BorrowedExperience() {
           expectedReturnAt,
           updatedAt: now,
         });
-        showToast("Entry updated", { tone: "success" });
+        showToast(copy.toast.entryUpdated, { tone: "success" });
       } else {
         await db.loans.add({
           personName: name.trim(),
@@ -97,10 +99,7 @@ export function BorrowedExperience() {
           createdAt: now,
           updatedAt: now,
         });
-        showToast(
-          `Borrowed ${formatINR(paise)} — mark as paid on dashboard when you repay`,
-          { tone: "success" },
-        );
+        showToast(copy.toast.borrowedRecorded(formatINR(paise)), { tone: "success" });
       }
       resetForm();
       notifyDataMutation();
@@ -114,15 +113,15 @@ export function BorrowedExperience() {
     try {
       const result = await markBorrowedFullyPaid(loan.id);
       showToast(
-        `Paid ${formatINR(loan.balancePaise)} to ${loan.personName} — logged as expense`,
+        copy.toast.paidToPerson(formatINR(loan.balancePaise), loan.personName),
         { tone: "success" },
       );
       if (result.fullyPaid) {
-        showToast("Debt cleared!", { tone: "success" });
+        showToast(copy.toast.debtCleared, { tone: "success" });
       }
       await invalidate();
     } catch (err) {
-      showToast(err instanceof Error ? err.message : "Payment failed", { tone: "error" });
+      showToast(err instanceof Error ? err.message : copy.toast.paymentFailed, { tone: "error" });
     } finally {
       setPayingId(null);
     }
@@ -135,10 +134,10 @@ export function BorrowedExperience() {
     setPayingId(loan.id);
     try {
       await recordLoanPayment(loan.id, paise, { linkTransaction: true });
-      showToast(`Paid ${formatINR(paise)} — logged as expense`, { tone: "success" });
+      showToast(toastCopy.paid(paise), { tone: "success" });
       await invalidate();
     } catch (err) {
-      showToast(err instanceof Error ? err.message : "Payment failed", { tone: "error" });
+      showToast(err instanceof Error ? err.message : copy.toast.paymentFailed, { tone: "error" });
     } finally {
       setPayingId(null);
     }
@@ -147,9 +146,9 @@ export function BorrowedExperience() {
   async function remove(id: number) {
     const loan = loans.find((l) => l.id === id);
     const ok = await confirmAction({
-      title: "Remove this entry?",
-      description: loan ? `"${loan.personName}" will be deleted.` : undefined,
-      confirmLabel: "Delete",
+      title: copy.confirm.removeBorrowed,
+      description: loan ? copy.confirmDesc.removeLoanEntry(loan.personName) : undefined,
+      confirmLabel: copy.confirm.remove,
       destructive: true,
     });
     if (!ok) return;
@@ -159,6 +158,7 @@ export function BorrowedExperience() {
   }
 
   return (
+    <DexiePageGate isPending={isPending} isError={isError} onRetry={() => refetch()}>
     <PageContainer className="max-w-3xl">
       <PageHeader
         eyebrow="Credit"
@@ -296,6 +296,7 @@ export function BorrowedExperience() {
         </section>
       )}
     </PageContainer>
+    </DexiePageGate>
   );
 }
 

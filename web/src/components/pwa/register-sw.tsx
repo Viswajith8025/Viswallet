@@ -1,13 +1,14 @@
 "use client";
 
 import { useEffect, useRef } from "react";
+import { copy } from "@/lib/ux/copy";
 import { showToast } from "@/lib/store/toast-store";
 
 function promptAppRefresh() {
-  showToast("Update ready — refresh for the latest version.", {
+  showToast(copy.toast.updateReady, {
     tone: "default",
     action: {
-      label: "Refresh",
+      label: copy.buttons.refresh,
       onClick: () => {
         window.location.reload();
       },

@@ -2,7 +2,7 @@
 
 import { useQuery } from "@tanstack/react-query";
 import { loadFinanceSnapshot } from "@/lib/engines/finance-snapshot";
-import { useFilterStore } from "@/lib/store/filter-store";
+import { selectCycleKey, useFilterStore } from "@/lib/store/filter-store";
 import { getSettings } from "@/lib/db";
 import { getCurrentCycleKey } from "@/lib/salary-cycle";
 
@@ -14,7 +14,7 @@ export const financeKeys = {
 };
 
 export function useFinanceSnapshot() {
-  const cycleKey = useFilterStore((s) => s.cycleKey);
+  const cycleKey = useFilterStore(selectCycleKey);
 
   return useQuery({
     queryKey: financeKeys.snapshot(cycleKey ?? undefined),

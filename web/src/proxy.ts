@@ -38,7 +38,7 @@ function buildCsp(): string {
   ].join("; ");
 }
 
-export function middleware(request: NextRequest) {
+export function proxy(request: NextRequest) {
   const response = NextResponse.next();
 
   response.headers.set("X-Frame-Options", "DENY");
@@ -57,7 +57,6 @@ export function middleware(request: NextRequest) {
     response.headers.set("Strict-Transport-Security", "max-age=63072000; includeSubDomains; preload");
   }
 
-  // Block common probe paths
   const path = request.nextUrl.pathname;
   if (/^\/(\.env|wp-admin|wp-login|admin|api\/debug)/.test(path)) {
     return new NextResponse(null, { status: 404 });

@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { groqChat } from "@/lib/ai/groq-server";
 import { enforceAiRateLimit } from "@/lib/api/ai-rate-limit";
+import { enforceAiAccess, sanitizeAiError } from "@/lib/api/ai-guard";
 
 const bodySchema = z.object({
   text: z.string().min(1).max(300),
@@ -15,6 +16,9 @@ const bodySchema = z.object({
 export async function POST(request: Request) {
   const limited = enforceAiRateLimit(request);
   if (limited) return limited;
+
+  const denied = await enforceAiAccess(request);
+  if (denied) return denied;
 
   try {
     const parsed = bodySchema.safeParse(await request.json());
@@ -64,8 +68,7 @@ amountPaise must be rupees × 100 (paise). title max 60 chars.`,
     }
 
     return NextResponse.json({ title, amountPaise, kind, categorySlug });
-  } catch (err) {
-    const message = err instanceof Error ? err.message : "AI parse failed.";
-    return NextResponse.json({ error: message }, { status: 503 });
+  } catch {
+    return NextResponse.json({ error: sanitizeAiError() }, { status: 503 });
   }
 }

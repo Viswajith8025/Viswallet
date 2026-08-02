@@ -1,4 +1,4 @@
-import { getGroqApiKey } from "@/lib/security/env";
+import { getGroqApiKey, isProduction } from "@/lib/security/env";
 
 const GROQ_CHAT_URL = "https://api.groq.com/openai/v1/chat/completions";
 const DEFAULT_MODEL = "llama-3.1-8b-instant";
@@ -38,6 +38,9 @@ export async function groqChat(
   });
 
   if (!response.ok) {
+    if (isProduction) {
+      throw new Error("Groq request failed.");
+    }
     const detail = await response.text().catch(() => "");
     throw new Error(`Groq request failed (${response.status}): ${detail.slice(0, 200)}`);
   }

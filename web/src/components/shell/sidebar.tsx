@@ -59,7 +59,7 @@ export function Sidebar() {
             !collapsed && (
               <p
                 key={i}
-                className="px-3 pb-1 pt-4 text-[11px] font-medium text-muted-foreground/70 first:pt-2"
+                className="px-3 pb-1 pt-4 text-eyebrow first:pt-2"
               >
                 {item.section}
               </p>
@@ -71,9 +71,9 @@ export function Sidebar() {
               prefetch={false}
               title={item.label}
               className={cn(
-                "flex items-center gap-2.5 rounded-md px-3 py-2 text-[13px] transition-colors duration-150",
+                "flex items-center gap-2.5 rounded-lg px-3 py-2 text-[13px] transition-colors duration-[var(--duration-fast)]",
                 pathname === item.href
-                  ? "bg-foreground/[0.06] font-medium text-foreground"
+                  ? "bg-primary-muted/70 font-medium text-[var(--violet)] dark:text-[var(--cream)]"
                   : "text-muted-foreground hover:bg-foreground/[0.04] hover:text-foreground",
                 collapsed && "justify-center px-0",
               )}

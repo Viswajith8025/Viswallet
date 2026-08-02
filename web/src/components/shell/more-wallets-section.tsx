@@ -13,6 +13,7 @@ import { ACCOUNT_ROLE_LABELS } from "@/lib/accounts/wallet-presets";
 import { loadWalletFromSalary } from "@/lib/accounts/load-wallet-from-salary";
 import { useInvalidateFinance } from "@/hooks/use-invalidate-finance";
 import { useAsyncAction } from "@/hooks";
+import { copy, toastCopy } from "@/lib/ux/copy";
 import { showToast } from "@/lib/store/toast-store";
 
 function isUserWallet(a: { role?: AccountRole; isDefault?: boolean }) {
@@ -60,7 +61,7 @@ export function MoreWalletsSection() {
       setName("");
       setShowAdd(false);
       await refresh();
-      showToast("Wallet added", { tone: "success" });
+      showToast(copy.toast.walletAdded, { tone: "success" });
     });
   }
 
@@ -68,7 +69,7 @@ export function MoreWalletsSection() {
     const raw = loadAmounts[walletId] ?? "";
     const paise = parseRupeeInput(raw);
     if (paise <= 0) {
-      showToast("Enter an amount", { tone: "error" });
+      showToast(copy.validation.walletAmountRequired, { tone: "error" });
       return;
     }
     await run(async () => {
@@ -76,7 +77,7 @@ export function MoreWalletsSection() {
       await loadWalletFromSalary(walletId, paise);
       setLoadAmounts((prev) => ({ ...prev, [walletId]: "" }));
       await refresh();
-      showToast(`₹${(paise / 100).toFixed(0)} moved to ${wallet?.name ?? "wallet"}`, {
+      showToast(toastCopy.walletMoved(paise, wallet?.name ?? "wallet"), {
         tone: "success",
       });
     }, { errorMessage: "Could not load wallet. Check your salary balance." });

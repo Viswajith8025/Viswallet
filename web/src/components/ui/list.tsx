@@ -4,10 +4,14 @@ import { listVariants } from "@/lib/design/variants";
 export function DataList({
   className,
   children,
+  inset = false,
   ...props
-}: React.HTMLAttributes<HTMLUListElement>) {
+}: React.HTMLAttributes<HTMLUListElement> & { inset?: boolean }) {
   return (
-    <ul className={cn(listVariants.root, className)} {...props}>
+    <ul
+      className={cn(inset ? listVariants.inset : listVariants.root, className)}
+      {...props}
+    >
       {children}
     </ul>
   );

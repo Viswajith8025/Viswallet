@@ -19,6 +19,7 @@ import { filterQuickAddCategories } from "@/lib/categories/manage-category";
 import { saveQuickTransaction } from "@/lib/transactions/save-quick-transaction";
 import { useInvalidateFinance } from "@/hooks/use-invalidate-finance";
 import { useMobileLayout } from "@/hooks/use-mobile-layout";
+import { copy, toastCopy } from "@/lib/ux/copy";
 import { showToast } from "@/lib/store/toast-store";
 import { useAiFeatures } from "@/hooks/use-ai-features";
 import { suggestCategoryWithAi, type AiParseResult } from "@/lib/ai/client";
@@ -26,8 +27,8 @@ import { useDebounce } from "@/hooks/use-debounce";
 import { cn } from "@/lib/design/cn";
 
 const TYPE_OPTIONS = [
-  { value: "expense" as const, label: "Spent" },
-  { value: "income" as const, label: "Earned" },
+  { value: "expense" as const, label: copy.quickAdd.spent },
+  { value: "income" as const, label: copy.quickAdd.earned },
 ];
 
 function TypePills({
@@ -147,7 +148,10 @@ export function QuickAddModal() {
 
   async function submit(allowDuplicate = false) {
     const paise = parseRupeeInput(amount);
-    if (paise <= 0) return;
+    if (paise <= 0) {
+      showToast(copy.validation.amountRequired, { tone: "error" });
+      return;
+    }
     setSaving(true);
     setDupError(false);
     try {
@@ -167,7 +171,10 @@ export function QuickAddModal() {
       successFeedback();
       setSaving(false);
       setSuccess(true);
-      showToast(`${kind === "income" ? "Earned" : "Spent"} ${formatINR(paise)}`, { tone: "success" });
+      showToast(
+        kind === "income" ? toastCopy.recordedIncome(paise) : toastCopy.recordedExpense(paise),
+        { tone: "success" },
+      );
       setTimeout(handleClose, 700);
     } catch (err) {
       setSaving(false);
@@ -183,11 +190,11 @@ export function QuickAddModal() {
   }
 
   const preview = parseRupeeInput(amount);
-  const mobileTitle = kind === "income" ? "Add income" : "Add expense";
+  const mobileTitle = kind === "income" ? copy.quickAdd.addIncome : copy.quickAdd.addExpense;
 
   const mobileBody = success ? (
     <div className="flex flex-1 items-center justify-center py-16">
-      <SuccessMark label="Saved" />
+      <SuccessMark label={copy.success.saved} />
     </div>
   ) : (
     <div className="flex min-h-0 flex-1 flex-col">
@@ -205,9 +212,9 @@ export function QuickAddModal() {
           type="text"
           value={title}
           onChange={(e) => setTitle(e.target.value)}
-          placeholder="Title — Lunch, Uber, Amazon…"
+          placeholder={copy.quickAdd.titlePlaceholder}
           className="w-full rounded-xl border border-border/60 bg-muted/40 px-4 py-3.5 text-base outline-none placeholder:text-muted-foreground/60 focus:border-primary/40 focus:ring-2 focus:ring-primary/10"
-          aria-label="Title"
+          aria-label={copy.forms.title}
         />
       </div>
 
@@ -231,13 +238,13 @@ export function QuickAddModal() {
             onChange={(e) => setAmount(e.target.value)}
             placeholder="0"
             className="min-w-0 flex-1 bg-transparent text-3xl font-semibold tabular-nums outline-none placeholder:text-muted-foreground/40"
-            aria-label="Amount in rupees"
+            aria-label={copy.forms.amountRupee}
           />
         </div>
 
         <div className="mt-3 grid grid-cols-2 gap-2">
           <label className="space-y-1">
-            <span className="text-xs text-muted-foreground">Paid with</span>
+            <span className="text-xs text-muted-foreground">{copy.quickAdd.paidWith}</span>
             <select
               value={paymentMethod}
               onChange={(e) => setPaymentMethod(e.target.value)}
@@ -255,17 +262,17 @@ export function QuickAddModal() {
               onChange={(e) => setIsRecurring(e.target.checked)}
               className="h-4 w-4 accent-primary"
             />
-            <span className="text-sm">Monthly</span>
+            <span className="text-sm">{copy.quickAdd.monthly}</span>
           </label>
         </div>
 
         {dupError && (
           <Button type="button" variant="outline" size="sm" className="mt-3 w-full" onClick={() => submit(true)}>
-            Save anyway (similar entry exists)
+            {copy.buttons.saveAnywayDuplicate}
           </Button>
         )}
         <Button type="submit" className="mt-3 w-full" size="lg" disabled={saving || preview <= 0}>
-          {saving ? "Saving…" : "Save"}
+          {saving ? copy.buttons.saving : copy.buttons.save}
         </Button>
       </form>
     </div>
@@ -273,7 +280,7 @@ export function QuickAddModal() {
 
   const desktopBody = success ? (
     <div className="py-10">
-      <SuccessMark label="Saved" />
+      <SuccessMark label={copy.success.saved} />
     </div>
   ) : (
     <>
@@ -290,20 +297,20 @@ export function QuickAddModal() {
           />
         )}
         <Input
-          label="Title"
+          label={copy.forms.title}
           value={title}
           onChange={(e) => setTitle(e.target.value)}
-          placeholder="e.g. Lunch, Uber, salary bonus"
-          hint="Uses category name if left blank"
+          placeholder={copy.quickAdd.titlePlaceholderDesktop}
+          hint={copy.quickAdd.titleHint}
         />
         <Input
-          label="Amount (₹)"
+          label={copy.forms.amountInr}
           required
           type="number"
           inputMode="decimal"
           value={amount}
           onChange={(e) => setAmount(e.target.value)}
-          placeholder="0"
+          placeholder={copy.forms.balancePlaceholder}
         />
         <CategoryCollapsiblePicker
           categories={pool}
@@ -312,20 +319,20 @@ export function QuickAddModal() {
           kind={kind}
           className="px-0"
         />
-        <Select label="Paid with" value={paymentMethod} onChange={(e) => setPaymentMethod(e.target.value)}>
+        <Select label={copy.quickAdd.paidWith} value={paymentMethod} onChange={(e) => setPaymentMethod(e.target.value)}>
           {PAYMENT_METHODS.map((m) => (
             <option key={m} value={m}>{m}</option>
           ))}
         </Select>
-        <Checkbox label="Repeats every month" checked={isRecurring} onChange={(e) => setIsRecurring(e.target.checked)} />
+        <Checkbox label={copy.quickAdd.repeatsMonthly} checked={isRecurring} onChange={(e) => setIsRecurring(e.target.checked)} />
         {dupError && (
           <Button type="button" variant="outline" size="sm" onClick={() => submit(true)}>
-            Save anyway
+            {copy.buttons.saveAnyway}
           </Button>
         )}
         <div className="flex justify-end gap-2 border-t border-border pt-4">
-          <Button type="button" variant="ghost" onClick={handleClose}>Cancel</Button>
-          <Button type="submit" disabled={saving}>{saving ? "Saving…" : "Save"}</Button>
+          <Button type="button" variant="ghost" onClick={handleClose}>{copy.buttons.cancel}</Button>
+          <Button type="submit" disabled={saving}>{saving ? copy.buttons.saving : copy.buttons.save}</Button>
         </div>
       </form>
     </>
@@ -338,7 +345,7 @@ export function QuickAddModal() {
           <div className="flex h-full flex-col bg-background">
             <header className="flex shrink-0 items-center justify-between border-b border-border/50 px-4 py-3 pt-[max(0.75rem,env(safe-area-inset-top))]">
               <button type="button" onClick={handleClose} className="min-h-11 px-1 text-sm text-muted-foreground">
-                Cancel
+                {copy.buttons.cancel}
               </button>
               <h2 id="quick-add-title" className="text-base font-semibold">{mobileTitle}</h2>
               <span className="w-12" aria-hidden />
@@ -352,8 +359,8 @@ export function QuickAddModal() {
         <Dialog open={open} onClose={handleClose} labelledBy="quick-add-title-desktop" size="lg">
           <div className="p-6">
             <div className="mb-4 flex items-center justify-between">
-              <h2 id="quick-add-title-desktop" className="text-lg font-semibold">Add transaction</h2>
-              <Button variant="ghost" size="sm" onClick={handleClose}>Close</Button>
+              <h2 id="quick-add-title-desktop" className="text-lg font-semibold">{copy.quickAdd.addTransaction}</h2>
+              <Button variant="ghost" size="sm" onClick={handleClose}>{copy.buttons.close}</Button>
             </div>
             {desktopBody}
           </div>

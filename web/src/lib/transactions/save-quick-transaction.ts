@@ -3,7 +3,6 @@ import { addTransaction } from "@/lib/db/repositories/transactions";
 import type { TransactionKind } from "@/lib/db/types";
 import { getMonthKey } from "@/lib/salary-cycle";
 import { setLastCategoryId, setLastPaymentMethod } from "@/lib/ux/defaults";
-import { adjustAccountBalance } from "@/lib/accounts/adjust-account-balance";
 
 export type QuickTransactionInput = {
   kind: TransactionKind;
@@ -40,11 +39,6 @@ export async function saveQuickTransaction(
     },
     options,
   );
-
-  if (input.accountId) {
-    const delta = input.kind === "income" ? input.amountPaise : -input.amountPaise;
-    await adjustAccountBalance(input.accountId, delta);
-  }
 
   setLastPaymentMethod(input.paymentMethod);
   setLastCategoryId(input.kind, input.categoryId);

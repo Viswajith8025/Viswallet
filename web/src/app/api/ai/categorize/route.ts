@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { groqChat } from "@/lib/ai/groq-server";
 import { enforceAiRateLimit } from "@/lib/api/ai-rate-limit";
+import { enforceAiAccess, sanitizeAiError } from "@/lib/api/ai-guard";
 
 const bodySchema = z.object({
   title: z.string().min(1).max(200),
@@ -15,6 +16,9 @@ const bodySchema = z.object({
 export async function POST(request: Request) {
   const limited = enforceAiRateLimit(request);
   if (limited) return limited;
+
+  const denied = await enforceAiAccess(request);
+  if (denied) return denied;
 
   try {
     const parsed = bodySchema.safeParse(await request.json());
@@ -47,8 +51,7 @@ export async function POST(request: Request) {
     }
 
     return NextResponse.json({ categorySlug: valid.slug });
-  } catch (err) {
-    const message = err instanceof Error ? err.message : "AI categorize failed.";
-    return NextResponse.json({ error: message }, { status: 503 });
+  } catch {
+    return NextResponse.json({ error: sanitizeAiError() }, { status: 503 });
   }
 }

@@ -1,6 +1,6 @@
 import { db } from "../client";
 import type { Transaction, TransactionKind } from "../types";
-import { assertCategoryExists, assertAccountExists, transactionFingerprint } from "../integrity";
+import { assertCategoryExists, assertAccountExists, transactionFingerprint, applyTransactionAccountDelta } from "../integrity";
 import { DuplicateTransactionError, OptimisticLockError } from "../errors";
 import { resolveTransactionTitle } from "@/lib/transactions/resolve-title";
 import { emitDbDataChanged } from "@/lib/notifications/bus";
@@ -81,8 +81,8 @@ export async function addTransaction(
   const category = await db.categories.get(input.categoryId);
   const title = resolveTransactionTitle(input.title, category?.name, input.kind);
 
-  return db.transaction("rw", db.transactions, async () => {
-    return (await db.transactions.add({
+  return db.transaction("rw", [db.transactions, db.accounts], async () => {
+    const id = (await db.transactions.add({
       ...input,
       title,
       isDeleted: false,
@@ -90,6 +90,12 @@ export async function addTransaction(
       createdAt: now,
       updatedAt: now,
     })) as number;
+
+    if (input.accountId) {
+      await applyTransactionAccountDelta(input.accountId, input.kind, input.amountPaise);
+    }
+
+    return id;
   }).then((id) => {
     emitDbDataChanged();
     return id;
@@ -113,10 +119,22 @@ export async function updateTransactionWithLock(
       ? resolveTransactionTitle(patch.title, category?.name, patch.kind ?? current.kind)
       : undefined;
 
-  await db.transaction("rw", db.transactions, async () => {
+  await db.transaction("rw", [db.transactions, db.accounts], async () => {
     const live = await db.transactions.get(id);
     if (!live || live.isDeleted) throw new OptimisticLockError();
     const version = live.rowVersion ?? 1;
+
+    const nextAccountId = patch.accountId !== undefined ? patch.accountId : live.accountId;
+    const nextKind = patch.kind ?? live.kind;
+    const nextAmount = patch.amountPaise ?? live.amountPaise;
+
+    if (live.accountId) {
+      await applyTransactionAccountDelta(live.accountId, live.kind, live.amountPaise, true);
+    }
+    if (nextAccountId) {
+      await assertAccountExists(nextAccountId);
+      await applyTransactionAccountDelta(nextAccountId, nextKind, nextAmount);
+    }
 
     await db.transactions.update(id, {
       ...patch,

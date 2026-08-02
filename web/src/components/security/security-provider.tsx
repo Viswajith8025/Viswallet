@@ -2,15 +2,14 @@
 
 import { useEffect } from "react";
 import { useSecurityStore, setupActivityMonitor, setupSessionWatcher } from "@/lib/store/security-store";
-import { peekBootCache } from "@/lib/db";
 import { AppLockScreen } from "./app-lock";
+import { SplashScreen } from "@/components/ui/splash-screen";
 
 export function SecurityProvider({ children }: { children: React.ReactNode }) {
   const init = useSecurityStore((s) => s.init);
   const initialized = useSecurityStore((s) => s.initialized);
   const appLockEnabled = useSecurityStore((s) => s.appLockEnabled);
   const unlocked = useSecurityStore((s) => s.unlocked);
-  const bootLockEnabled = peekBootCache()?.appLockEnabled ?? false;
 
   useEffect(() => {
     init();
@@ -23,8 +22,7 @@ export function SecurityProvider({ children }: { children: React.ReactNode }) {
   }, [init]);
 
   if (!initialized) {
-    if (bootLockEnabled) return <AppLockScreen />;
-    return <>{children}</>;
+    return <SplashScreen />;
   }
 
   if (appLockEnabled && !unlocked) {

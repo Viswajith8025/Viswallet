@@ -46,7 +46,7 @@ export function AnalyticsCharts({
         </ResponsiveContainer>
       </ChartCard>
 
-      <ChartCard title="Expense distribution" description="Where your money goes" empty={expenseBreakdown.length === 0}>
+      <ChartCard title="Expense distribution" description="Where your money goes" empty={expenseBreakdown.length === 0} emptyDescription="Add expenses to see your spending breakdown.">
         <ResponsiveContainer width="100%" height="100%">
           <PieChart>
             <Pie

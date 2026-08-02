@@ -20,6 +20,7 @@ import { markBillPaid } from "@/lib/obligations/mark-bill-paid";
 import { markEmiPaid } from "@/lib/obligations/mark-emi-paid";
 import { markSubscriptionRenewed } from "@/lib/obligations/mark-subscription-renewed";
 import { useInvalidateFinance, useDexieTable } from "@/hooks";
+import { copy, toastCopy } from "@/lib/ux/copy";
 import { showToast } from "@/lib/store/toast-store";
 import { useMemo, useState } from "react";
 
@@ -30,7 +31,7 @@ const KIND_META: Record<
   borrowed: {
     icon: ArrowDownLeft,
     accent: "text-destructive bg-destructive/10",
-    actionLabel: "Mark paid",
+    actionLabel: "Record payment",
   },
   lent: {
     icon: ArrowUpRight,
@@ -45,12 +46,12 @@ const KIND_META: Record<
   emi: {
     icon: CreditCard,
     accent: "text-primary bg-primary/10",
-    actionLabel: "Pay EMI",
+    actionLabel: "Record payment",
   },
   subscription: {
     icon: Repeat,
     accent: "text-primary bg-primary/10",
-    actionLabel: "Mark paid",
+    actionLabel: "Record renewal",
   },
 };
 
@@ -82,24 +83,24 @@ function ActionRow({
         <p className="truncate font-medium text-sm">{item.title}</p>
         <p className="text-xs text-muted-foreground">{item.subtitle}</p>
       </div>
-      <div className="flex shrink-0 flex-col items-end gap-1.5 sm:flex-row sm:items-center sm:gap-2">
-        <span className="text-sm font-semibold tabular-nums">{formatINR(item.amountPaise)}</span>
-        <div className="flex gap-1">
+      <div className="flex shrink-0 flex-col items-stretch gap-2 sm:flex-row sm:items-center sm:justify-end sm:gap-2">
+        <span className="text-sm font-semibold tabular-nums sm:order-first sm:mr-auto">{formatINR(item.amountPaise)}</span>
+        <div className="flex flex-col gap-1.5 sm:flex-row sm:items-center sm:gap-1">
           <Button
             size="sm"
             variant="ghost"
             disabled={busy}
             onClick={() => onPayLater(item)}
-            className="shrink-0 text-xs"
+            className="shrink-0 text-xs w-full sm:w-auto"
           >
-            Pay later
+            {copy.actionCenter.remindTomorrow}
           </Button>
           <Button
             size="sm"
             variant={item.urgency === "high" ? "primary" : "outline"}
             disabled={busy}
             onClick={() => onAction(item)}
-            className="shrink-0 text-xs"
+            className="shrink-0 text-xs w-full sm:w-auto"
           >
             <Check size={14} className="mr-1" />
             {meta.actionLabel}
@@ -124,7 +125,7 @@ export function ActionCenter() {
   function handlePayLater(item: ActionItem) {
     snoozeActionItem(item.id);
     setHiddenIds((prev) => new Set(prev).add(item.id));
-    showToast("Reminder postponed until tomorrow", { tone: "info" });
+    showToast(copy.toast.remindTomorrow, { tone: "info" });
   }
 
   async function handleAction(item: ActionItem) {
@@ -132,23 +133,23 @@ export function ActionCenter() {
     try {
       if (item.kind === "borrowed") {
         await markBorrowedFullyPaid(item.entityId);
-        showToast(`Paid ${formatINR(item.amountPaise)} — added to your expenses`, { tone: "success" });
+        showToast(toastCopy.paid(item.amountPaise), { tone: "success" });
       } else if (item.kind === "lent") {
         await markLentFullyReturned(item.entityId);
-        showToast(`Received ${formatINR(item.amountPaise)} back`, { tone: "success" });
+        showToast(toastCopy.received(item.amountPaise), { tone: "success" });
       } else if (item.kind === "bill") {
         await markBillPaid(item.entityId);
-        showToast(`${item.title} marked paid — logged as expense`, { tone: "success" });
+        showToast(copy.toast.billPaidNamed(item.title), { tone: "success" });
       } else if (item.kind === "emi") {
         await markEmiPaid(item.entityId);
-        showToast(`${item.title} EMI paid — logged as expense`, { tone: "success" });
+        showToast(copy.toast.emiPaidNamed(item.title), { tone: "success" });
       } else if (item.kind === "subscription") {
         await markSubscriptionRenewed(item.entityId);
-        showToast(`${item.title} renewed — logged as expense`, { tone: "success" });
+        showToast(copy.toast.renewedNamed(item.title), { tone: "success" });
       }
       await invalidate();
     } catch (err) {
-      showToast(err instanceof Error ? err.message : "Could not complete action", { tone: "error" });
+      showToast(err instanceof Error ? err.message : copy.toast.actionFailed, { tone: "error" });
     } finally {
       setBusyId(null);
     }
@@ -172,9 +173,9 @@ export function ActionCenter() {
             <Check size={18} />
           </div>
           <div>
-            <p className="font-medium text-sm">All clear</p>
+            <p className="font-medium text-sm">{copy.empty.actionCenterClear.title}</p>
             <p className="text-xs text-muted-foreground">
-              No bills, subscriptions, borrowed money, or EMI due right now.
+              {copy.empty.actionCenterClear.description}
             </p>
           </div>
         </CardContent>
@@ -183,22 +184,23 @@ export function ActionCenter() {
   }
 
   const highCount = visibleItems.filter((i) => i.urgency === "high").length;
+  const viewAllHref = visibleItems[0]?.href ?? "/bills";
 
   return (
     <Card className="overflow-hidden">
       <CardHeader className="flex-row items-center justify-between space-y-0 pb-3">
         <div>
-          <CardTitle className="text-base">Needs attention</CardTitle>
+          <CardTitle className="text-base">{copy.actionCenter.title}</CardTitle>
           <p className="text-xs text-muted-foreground mt-0.5">
-            {visibleItems.length} item{visibleItems.length !== 1 ? "s" : ""}
-            {highCount > 0 && ` · ${highCount} urgent`}
+            {copy.actionCenter.itemCount(visibleItems.length)}
+            {highCount > 0 && ` · ${copy.actionCenter.urgent(highCount)}`}
           </p>
         </div>
         <Link
-          href="/bills"
+          href={viewAllHref}
           className="text-sm text-muted-foreground hover:text-foreground transition-colors"
         >
-          View all
+          {copy.actionCenter.viewAll}
         </Link>
       </CardHeader>
       <CardContent className="pt-0">
@@ -215,7 +217,7 @@ export function ActionCenter() {
         </ul>
         {visibleItems.length > 5 && (
           <p className="mt-3 text-center text-xs text-muted-foreground">
-            +{visibleItems.length - 5} more in Bills, Subscriptions, Borrowed, or EMI
+            {copy.actionCenter.moreItems(visibleItems.length - 5)}
           </p>
         )}
       </CardContent>

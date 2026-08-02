@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { groqChat } from "@/lib/ai/groq-server";
 import { enforceAiRateLimit } from "@/lib/api/ai-rate-limit";
+import { enforceAiAccess, sanitizeAiError } from "@/lib/api/ai-guard";
 
 const bodySchema = z.object({
   monthLabel: z.string().max(40),
@@ -26,6 +27,9 @@ function formatRupees(paise: number): string {
 export async function POST(request: Request) {
   const limited = enforceAiRateLimit(request);
   if (limited) return limited;
+
+  const denied = await enforceAiAccess(request);
+  if (denied) return denied;
 
   try {
     const parsed = bodySchema.safeParse(await request.json());
@@ -80,8 +84,7 @@ export async function POST(request: Request) {
     const tips = (json.tips ?? []).filter((t) => typeof t === "string" && t.trim()).slice(0, 2);
 
     return NextResponse.json({ summary, tips });
-  } catch (err) {
-    const message = err instanceof Error ? err.message : "AI insights failed.";
-    return NextResponse.json({ error: message }, { status: 503 });
+  } catch {
+    return NextResponse.json({ error: sanitizeAiError() }, { status: 503 });
   }
 }

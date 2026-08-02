@@ -18,9 +18,11 @@ import {
   detectSubscriptionsFromTransactions,
   formatDetectionSummary,
 } from "@/lib/engines/premium/subscription-detector";
+import { copy } from "@/lib/ux/copy";
 import { confirmAction } from "@/lib/store/confirm-store";
 import { Hint } from "@/components/ui/hint";
 import { useInvalidateFinance, useAsyncAction, useDexieTable } from "@/hooks";
+import { showToast } from "@/lib/store/toast-store";
 
 export default function SubscriptionsPage() {
   const invalidate = useInvalidateFinance();
@@ -75,7 +77,11 @@ export default function SubscriptionsPage() {
   async function save(e: React.FormEvent) {
     e.preventDefault();
     const paise = parseRupeeInput(amount);
-    if (!name.trim() || paise <= 0) return;
+    if (!name.trim() || paise <= 0) {
+      if (!name.trim()) showToast(copy.validation.billNameRequired, { tone: "error" });
+      else showToast(copy.validation.amountRequired, { tone: "error" });
+      return;
+    }
     await run(async () => {
       const now = new Date();
       const payload = {
@@ -100,9 +106,9 @@ export default function SubscriptionsPage() {
   async function cancel(id: number) {
     const sub = subs.find((s) => s.id === id);
     const ok = await confirmAction({
-      title: "Cancel subscription?",
-      description: sub ? `"${sub.name}" (${formatINR(sub.amountPaise)}/${sub.billingCycle}) will be archived.` : undefined,
-      confirmLabel: "Cancel subscription",
+      title: copy.confirm.cancelSubscription,
+      description: sub ? copy.confirmDesc.archiveSubscription(sub.name, formatINR(sub.amountPaise), sub.billingCycle) : undefined,
+      confirmLabel: copy.confirm.archive,
       destructive: true,
     });
     if (!ok) return;
@@ -113,27 +119,30 @@ export default function SubscriptionsPage() {
   return (
     <PageContainer className="max-w-5xl">
       <PageHeader
-        title="Subscriptions"
-        description="Manage recurring services and their monthly impact."
-        actions={<Button onClick={() => { resetForm(); setShowForm(true); }}>Add subscription</Button>}
+        title={copy.pages.subscriptions.title}
+        description={copy.pages.subscriptions.description}
+        actions={<Button onClick={() => { resetForm(); setShowForm(true); }}>{copy.buttons.addSubscription}</Button>}
+        mobileActions={
+          <Button size="sm" onClick={() => { resetForm(); setShowForm(true); }}>
+            {copy.buttons.add}
+          </Button>
+        }
       />
 
-      <DexiePageGate isPending={isPending} isError={isError} onRetry={() => refetch()} label="Loading subscriptions…">
+      <DexiePageGate isPending={isPending} isError={isError} onRetry={() => refetch()} label={copy.loading.subscriptions}>
       <div className="space-y-8">
 
       <div className="grid gap-4 md:grid-cols-2">
-        <StatCard label="Active subscriptions" value={subs.length} />
-        <StatCard label="Monthly run rate" value={formatINR(monthlyTotal)} hint="Normalized across billing cycles" />
+        <StatCard label={copy.labels.activeSubscriptions} value={subs.length} />
+        <StatCard label={copy.labels.monthlyRunRate} value={formatINR(monthlyTotal)} hint={copy.subscriptionDetection.normalizedHint} />
       </div>
 
-      <Hint>
-        Mark expenses as recurring when logging transactions — we also scan your history to suggest subscriptions you may have missed.
-      </Hint>
+      <Hint>{copy.subscriptionDetection.hint}</Hint>
 
       {detected.length > 0 && (
         <Card>
           <CardHeader>
-            <CardTitle className="text-base">Detected from transactions</CardTitle>
+            <CardTitle className="text-base">{copy.subscriptionDetection.detectedTitle}</CardTitle>
           </CardHeader>
           <CardContent className="space-y-2 pt-0">
             {detected.map((d) => (
@@ -164,20 +173,20 @@ export default function SubscriptionsPage() {
         <Card>
           <CardContent className="p-5">
             <form onSubmit={save} className="grid gap-4 md:grid-cols-2">
-              <Input label="Name" required value={name} onChange={(e) => setName(e.target.value)} placeholder="Netflix" />
-              <Input label="Amount (INR)" required type="number" value={amount} onChange={(e) => setAmount(e.target.value)} />
-              <Select label="Billing cycle" value={cycle} onChange={(e) => setCycle(e.target.value as Subscription["billingCycle"])}>
-                <option value="monthly">Monthly</option>
+              <Input label={copy.forms.title} required value={name} onChange={(e) => setName(e.target.value)} placeholder="Netflix" />
+              <Input label={copy.forms.amountInr} required type="number" value={amount} onChange={(e) => setAmount(e.target.value)} />
+              <Select label={copy.forms.billingCycle} value={cycle} onChange={(e) => setCycle(e.target.value as Subscription["billingCycle"])}>
+                <option value="monthly">{copy.quickAdd.monthly}</option>
                 <option value="yearly">Yearly</option>
                 <option value="weekly">Weekly</option>
               </Select>
-              <Select label="Payment method" value={paymentMethod} onChange={(e) => setPaymentMethod(e.target.value)}>
+              <Select label={copy.forms.paymentMethod} value={paymentMethod} onChange={(e) => setPaymentMethod(e.target.value)}>
                 {PAYMENT_METHODS.map((m) => <option key={m} value={m}>{m}</option>)}
               </Select>
-              <Input label="Next renewal" type="date" value={renewal} onChange={(e) => setRenewal(e.target.value)} />
+              <Input label={copy.forms.nextRenewal} type="date" value={renewal} onChange={(e) => setRenewal(e.target.value)} />
               <div className="flex items-end gap-2 md:col-span-2">
-                <Button type="submit" disabled={saving}>{saving ? "Saving…" : edit ? "Update" : "Save"}</Button>
-                <Button type="button" variant="ghost" onClick={resetForm}>Cancel</Button>
+                <Button type="submit" disabled={saving}>{saving ? copy.buttons.saving : edit ? copy.labels.update : copy.buttons.save}</Button>
+                <Button type="button" variant="ghost" onClick={resetForm}>{copy.buttons.cancel}</Button>
               </div>
             </form>
           </CardContent>
@@ -185,7 +194,7 @@ export default function SubscriptionsPage() {
       )}
 
       {subs.length === 0 ? (
-        <EmptyState title="No subscriptions" description="Track streaming, apps, and other recurring charges." action={<Button onClick={() => setShowForm(true)}>Add subscription</Button>} />
+        <EmptyState title={copy.empty.noSubscriptions.title} description={copy.empty.noSubscriptions.description} action={<Button onClick={() => setShowForm(true)}>{copy.buttons.addSubscription}</Button>} />
       ) : (
         <Card>
           <CardContent className="p-0">

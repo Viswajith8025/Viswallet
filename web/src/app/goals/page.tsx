@@ -13,6 +13,7 @@ import type { SavingsGoal } from "@/lib/db/types";
 import { formatINR, parseRupeeInput } from "@/lib/money";
 import { projectSavingsGoal } from "@/lib/engines/premium/savings-projection";
 import { confirmAction } from "@/lib/store/confirm-store";
+import { copy } from "@/lib/ux/copy";
 import { showToast } from "@/lib/store/toast-store";
 import { Progress } from "@/components/ui/progress";
 import { Hint } from "@/components/ui/hint";
@@ -115,15 +116,15 @@ export default function GoalsPage() {
   async function remove(id: number) {
     const goal = goals.find((g) => g.id === id);
     const ok = await confirmAction({
-      title: "Delete goal?",
+      title: copy.confirm.deleteGoal,
       description: goal ? `"${goal.name}" and its progress will be archived.` : undefined,
-      confirmLabel: "Delete",
+      confirmLabel: copy.confirm.remove,
       destructive: true,
     });
     if (!ok) return;
     await db.savingsGoals.update(id, { isActive: false, updatedAt: new Date() });
     await invalidate();
-    showToast("Goal removed", {
+    showToast(copy.toast.goalRemoved, {
       undo: async () => {
         await db.savingsGoals.update(id, { isActive: true, updatedAt: new Date() });
         await invalidate();
@@ -137,6 +138,9 @@ export default function GoalsPage() {
         title="Savings Goals"
         description="Set targets and watch your progress grow."
         actions={<Button onClick={() => { resetForm(); setShowForm(true); }}>Add goal</Button>}
+        mobileActions={
+          <Button size="sm" onClick={() => { resetForm(); setShowForm(true); }}>{copy.buttons.add}</Button>
+        }
       />
 
       <DexiePageGate isPending={isPending} isError={isError} onRetry={() => refetch()} label="Loading goals…">
@@ -161,10 +165,14 @@ export default function GoalsPage() {
               <Input label="Already saved (INR)" type="number" value={saved} onChange={(e) => setSaved(e.target.value)} />
               <Input label="Monthly contribution (INR)" type="number" value={monthly} onChange={(e) => setMonthly(e.target.value)} />
               <Input label="Target date" type="date" value={targetDate} onChange={(e) => setTargetDate(e.target.value)} />
-              <div className="flex gap-2 md:col-span-2">
-                {formError && <p className="w-full text-sm text-destructive" role="alert">{formError}</p>}
-                <Button type="submit" disabled={saving}>{saving ? "Saving…" : edit ? "Update" : "Save"}</Button>
-                <Button type="button" variant="ghost" onClick={resetForm}>Cancel</Button>
+              <div className="flex flex-col gap-2 md:col-span-2">
+                {formError && (
+                  <p className="text-sm text-destructive md:col-span-2" role="alert">{formError}</p>
+                )}
+                <div className="flex flex-wrap gap-2">
+                  <Button type="submit" disabled={saving}>{saving ? copy.buttons.saving : edit ? copy.labels.update : copy.buttons.save}</Button>
+                  <Button type="button" variant="ghost" onClick={resetForm}>{copy.buttons.cancel}</Button>
+                </div>
               </div>
             </form>
           </CardContent>

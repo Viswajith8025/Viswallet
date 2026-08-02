@@ -3,6 +3,7 @@
 import { useQueryClient } from "@tanstack/react-query";
 import { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
 import { financeKeys } from "@/lib/queries/use-finance";
+import { queryKeys } from "@/lib/react-query/keys";
 import { onNotificationsChanged, onDbDataChanged } from "@/lib/notifications/bus";
 import { scheduleNotificationSync } from "@/lib/notifications/sync";
 import { scheduleCloudSync, shouldAutoCloudSync } from "@/lib/supabase/cloud-sync";
@@ -22,11 +23,17 @@ export function DbProvider({ children }: { children: React.ReactNode }) {
   const invalidateAll = useCallback(() => {
     void Promise.all([
       queryClient.invalidateQueries({ queryKey: financeKeys.all }),
-      queryClient.invalidateQueries({ queryKey: ["categories"] }),
+      queryClient.invalidateQueries({ queryKey: queryKeys.settings }),
+      queryClient.invalidateQueries({ queryKey: queryKeys.categories }),
       queryClient.invalidateQueries({ queryKey: ["dexie"] }),
       queryClient.invalidateQueries({ queryKey: financeKeys.notificationsUnread }),
-      queryClient.invalidateQueries({ queryKey: ["accounts"] }),
-      queryClient.invalidateQueries({ queryKey: ["account-transfers"] }),
+      queryClient.invalidateQueries({ queryKey: queryKeys.accounts }),
+      queryClient.invalidateQueries({ queryKey: queryKeys.accountTransfers }),
+      queryClient.invalidateQueries({ queryKey: queryKeys.netWorthTrend }),
+      queryClient.invalidateQueries({ queryKey: queryKeys.debtPlanner }),
+      queryClient.invalidateQueries({ queryKey: queryKeys.secureNotes }),
+      queryClient.invalidateQueries({ queryKey: queryKeys.achievements }),
+      queryClient.invalidateQueries({ queryKey: ["budget-buckets"] }),
     ]);
     setVersion((v) => v + 1);
   }, [queryClient]);

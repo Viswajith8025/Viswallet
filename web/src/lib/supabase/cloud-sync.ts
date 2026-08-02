@@ -1,4 +1,4 @@
-import { BACKUP_VERSION } from "@/lib/security/constants";
+import { BACKUP_VERSION, MAX_BACKUP_BYTES } from "@/lib/security/constants";
 import { getSupabase } from "@/lib/supabase/client";
 import { getAuthUser } from "@/lib/supabase/auth";
 import { exportAllDataForSync, importAllData, resetLocalDatabase, getSettings } from "@/lib/db/client";
@@ -189,6 +189,9 @@ export async function pushCloudVault(): Promise<void> {
   await ensureAccountScopedLocalData(user.id);
 
   const json = await exportAllDataForSync();
+  if (json.length > MAX_BACKUP_BYTES) {
+    throw new Error("Local data exceeds cloud vault size limit. Export a backup and trim old records.");
+  }
   const payload = JSON.parse(json) as Record<string, unknown>;
   const now = new Date().toISOString();
 
@@ -291,7 +294,10 @@ export async function syncCloudNow(): Promise<void> {
       try {
         const user = await getAuthUser();
         if (!user) return;
-        await pushCloudVault();
+        const pulled = await pullCloudVault();
+        if (!pulled) {
+          await pushCloudVault();
+        }
       } finally {
         emitCloudSyncActive(false);
       }

@@ -19,17 +19,14 @@ import { formatCycleLabel } from "@/lib/salary-cycle";
 import { categoryMap } from "@/lib/engines/finance-snapshot";
 import { getProfile, getSettings } from "@/lib/db";
 import { useDb } from "@/components/providers/db-provider";
+import { useUIStore } from "@/lib/store/ui-store";
+import { copy } from "@/lib/ux/copy";
 import { DEFAULT_DASHBOARD_WIDGETS, type DashboardWidgetId } from "@/lib/db/types";
-
-function greeting(name?: string): string {
-  const hour = new Date().getHours();
-  const time = hour < 12 ? "Good morning" : hour < 17 ? "Good afternoon" : "Good evening";
-  return name?.trim() ? `${time}, ${name.trim()}` : time;
-}
 
 export default function DashboardPage() {
   const router = useRouter();
   const { version } = useDb();
+  const setQuickAddOpen = useUIStore((s) => s.setQuickAddOpen);
   const [widgets, setWidgets] = useState<DashboardWidgetId[]>(DEFAULT_DASHBOARD_WIDGETS);
   const [displayName, setDisplayName] = useState("");
 
@@ -55,20 +52,24 @@ export default function DashboardPage() {
           <PageContainer>
             <PageHeader
               eyebrow={formatCycleLabel(data.monthKey)}
-              title={greeting(displayName)}
+              title={copy.greeting(displayName)}
               actions={
                 <Button
                   variant="outline"
                   size="sm"
-                  className="hidden sm:inline-flex"
-                  onClick={() => router.push("/transactions?add=expense")}
+                  onClick={() => setQuickAddOpen(true, "expense")}
                 >
-                  New transaction
+                  {copy.buttons.newTransaction}
+                </Button>
+              }
+              mobileActions={
+                <Button size="sm" onClick={() => setQuickAddOpen(true, "expense")}>
+                  {copy.buttons.add}
                 </Button>
               }
             />
 
-            <GlobalFilterBar collapsible className="border-b-0 pb-0" />
+            <GlobalFilterBar collapsible showCategoryFilter={false} className="border-b-0 pb-0" />
 
             {show("hero") && (
               <section className="space-y-4">
@@ -80,27 +81,30 @@ export default function DashboardPage() {
                   savingsRate={savingsRate}
                 />
 
-                <MetricStrip>
+                <MetricStrip className={data.borrowedBalance > 0 ? "lg:grid-cols-5" : undefined}>
                   <StatCard
-                    label="Daily budget"
+                    inset
+                    label={copy.labels.dailyBudget}
                     value={formatINR(data.safeSpendDaily)}
-                    hint={`${data.daysLeft} days in cycle`}
+                    hint={copy.dashboard.daysInCycle(data.daysLeft)}
                     tone="positive"
                   />
-                  <StatCard label="Health" value={data.healthScore} hint="Out of 100" />
-                  <StatCard label="Net worth" value={formatINR(data.netWorthPaise)} />
+                  <StatCard inset label={copy.labels.health} value={data.healthScore} hint={copy.dashboard.healthHint} />
+                  <StatCard inset label={copy.labels.netWorth} value={formatINR(data.netWorthPaise)} />
                   <StatCard
-                    label="Fixed costs"
+                    inset
+                    label={copy.labels.fixedCosts}
                     value={formatINR(
                       data.subscriptionMonthlyPaise + data.billsDuePaise + data.emiMonthlyPaise,
                     )}
-                    hint="Subs · bills · EMI"
+                    hint={copy.dashboard.fixedCostsHint}
                   />
                   {data.borrowedBalance > 0 && (
                     <StatCard
-                      label="You owe"
+                      inset
+                      label={copy.labels.youOwe}
                       value={formatINR(data.borrowedBalance)}
-                      hint="Borrowed — mark paid on dashboard"
+                      hint={copy.dashboard.youOweHint}
                       tone="negative"
                     />
                   )}
@@ -110,14 +114,15 @@ export default function DashboardPage() {
 
             {show("stats") && !show("hero") && (
               <MetricStrip>
-                <StatCard label="Net worth" value={formatINR(data.netWorthPaise)} />
-                <StatCard label="Subscriptions" value={formatINR(data.subscriptionMonthlyPaise)} />
+                <StatCard inset label={copy.labels.netWorth} value={formatINR(data.netWorthPaise)} />
+                <StatCard inset label={copy.labels.subscriptions} value={formatINR(data.subscriptionMonthlyPaise)} />
                 <StatCard
-                  label="Bills due"
+                  inset
+                  label={copy.labels.billsDue}
                   value={formatINR(data.billsDuePaise)}
                   tone={data.billsDuePaise > 0 ? "negative" : "default"}
                 />
-                <StatCard label="EMI" value={formatINR(data.emiMonthlyPaise)} />
+                <StatCard inset label={copy.labels.emi} value={formatINR(data.emiMonthlyPaise)} />
               </MetricStrip>
             )}
 
@@ -133,24 +138,26 @@ export default function DashboardPage() {
                 {show("recent") && (
                   <Card className="lg:col-span-3">
                     <CardHeader className="flex-row items-center justify-between space-y-0 pb-2">
-                      <CardTitle>Recent</CardTitle>
+                      <CardTitle>{copy.dashboard.recent}</CardTitle>
                       <Link
                         href="/transactions"
                         className="inline-flex items-center gap-1 text-xs text-muted-foreground transition-colors hover:text-foreground"
                       >
-                        All transactions
+                        {copy.buttons.allTransactions}
                         <ArrowUpRight size={13} />
                       </Link>
                     </CardHeader>
                     <CardContent className="pt-0">
                       {recent.length === 0 ? (
                         <EmptyState
-                          title="No activity yet"
-                          description="Record an expense or income to start tracking."
+                          minimal
+                          compact
+                          title={copy.empty.noActivity.title}
+                          description={copy.empty.noActivity.description}
                           illustration="transactions"
                           action={
-                            <Button size="sm" onClick={() => router.push("/transactions?add=expense")}>
-                              Add transaction
+                            <Button size="sm" onClick={() => setQuickAddOpen(true, "expense")}>
+                              {copy.buttons.addTransaction}
                             </Button>
                           }
                         />
@@ -162,11 +169,11 @@ export default function DashboardPage() {
                               <TransactionRow
                                 key={t.id}
                                 transaction={t}
-                                categoryName={cat?.name ?? "Uncategorized"}
+                                categoryName={cat?.name ?? copy.labels.uncategorized}
                                 categoryColor={cat?.color}
                                 categoryIconName={cat?.iconName}
                                 compact
-                                href="/transactions"
+                                href={t.id ? `/transactions?edit=${t.id}` : "/transactions"}
                               />
                             );
                           })}
@@ -179,20 +186,20 @@ export default function DashboardPage() {
                 {show("insights") && (
                   <Card className="lg:col-span-2">
                     <CardHeader className="pb-2">
-                      <CardTitle>This cycle</CardTitle>
+                      <CardTitle>{copy.dashboard.thisCycle}</CardTitle>
                     </CardHeader>
                     <CardContent className="space-y-4 pt-0 text-sm leading-relaxed text-muted-foreground">
                       <p>
-                        You have{" "}
-                        <span className="font-medium text-foreground">{formatINR(data.remainingPaise)}</span>{" "}
-                        left with {data.daysLeft} days to go — about{" "}
-                        <span className="font-medium text-foreground">{formatINR(data.safeSpendDaily)}</span> per
-                        day.
+                        {copy.cycleNarrative(
+                          formatINR(data.remainingPaise),
+                          data.daysLeft,
+                          formatINR(data.safeSpendDaily),
+                        )}
                       </p>
                       <p>
                         {data.expensePaise > data.salaryPaise * 0.8
-                          ? "Spending is running high. Worth a look at recurring costs."
-                          : "Spending is within a comfortable range for this cycle."}
+                          ? copy.dashboard.cycleNarrativeHigh
+                          : copy.dashboard.cycleNarrativeComfortable}
                       </p>
                       <Button
                         variant="outline"
@@ -200,7 +207,7 @@ export default function DashboardPage() {
                         className="w-full"
                         onClick={() => router.push("/insights")}
                       >
-                        View insights
+                        {copy.buttons.viewInsights}
                       </Button>
                     </CardContent>
                   </Card>

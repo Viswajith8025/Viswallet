@@ -7,6 +7,8 @@ import { DashboardSkeleton } from "@/components/ui/skeleton";
 import { ErrorState } from "@/components/ui/page";
 import { PageEnter } from "@/components/ui/motion";
 import { Button } from "@/components/ui/button";
+import { copy } from "@/lib/ux/copy";
+import { reportError } from "@/lib/monitoring/report";
 
 export function FinanceGate({
   children,
@@ -24,11 +26,11 @@ export function FinanceGate({
   if (isError || !data) {
     return (
       <ErrorState
-        title="Couldn't load your finances"
-        description="Your data is stored locally. Try refreshing the page."
+        title={copy.gates.financesError.title}
+        description={copy.gates.financesError.description}
         action={
           <Button variant="outline" onClick={() => refetch()}>
-            Try again
+            {copy.gates.financesError.retry}
           </Button>
         }
       />

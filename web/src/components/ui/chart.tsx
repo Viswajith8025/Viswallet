@@ -4,6 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { EmptyState } from "@/components/ui/page";
 import { cn } from "@/lib/design/cn";
 import { formatINR } from "@/lib/money";
+import { copy } from "@/lib/ux/copy";
 import { BarChart3 } from "lucide-react";
 
 export function ChartTooltip({
@@ -17,10 +18,10 @@ export function ChartTooltip({
 }) {
   if (!active || !payload?.length) return null;
   return (
-    <div className="rounded-xl border border-border bg-card/95 px-3 py-2 shadow-lg backdrop-blur-sm">
-      {label && <p className="mb-1 text-[11px] font-medium text-muted-foreground">{label}</p>}
+    <div className="rounded-xl border border-border-light bg-elevated/98 px-3.5 py-2.5 shadow-[var(--shadow-md)] backdrop-blur-md">
+      {label && <p className="mb-1.5 text-[11px] font-semibold uppercase tracking-[0.06em] text-muted-foreground">{label}</p>}
       {payload.map((p, i) => (
-        <p key={i} className="text-sm font-semibold tabular-nums" style={{ color: p.color }}>
+        <p key={i} className="text-sm font-semibold tabular-nums tracking-[-0.02em]" style={{ color: p.color }}>
           {formatINR(p.value)}
         </p>
       ))}
@@ -33,8 +34,8 @@ export function ChartCard({
   description,
   children,
   empty = false,
-  emptyTitle = "No data yet",
-  emptyDescription,
+  emptyTitle = copy.empty.chart.title,
+  emptyDescription = copy.empty.chart.description,
   className,
   height = "h-72",
 }: {
@@ -51,15 +52,19 @@ export function ChartCard({
     <Card className={className}>
       <CardHeader>
         <CardTitle>{title}</CardTitle>
-        {description && <p className="text-sm text-muted-foreground">{description}</p>}
+        {description && <p className="text-sm leading-relaxed text-muted-foreground">{description}</p>}
       </CardHeader>
-      <CardContent className={cn(height, "pt-0")}>
+      <CardContent className={cn(height, "flex pt-0")}>
         {empty ? (
-          <EmptyState
-            title={emptyTitle}
-            description={emptyDescription}
-            icon={BarChart3}
-          />
+          <div className="flex h-full w-full items-center justify-center">
+            <EmptyState
+              minimal
+              compact
+              title={emptyTitle}
+              description={emptyDescription}
+              icon={BarChart3}
+            />
+          </div>
         ) : (
           children
         )}

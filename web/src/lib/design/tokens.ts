@@ -54,9 +54,19 @@ export const typography = {
 } as const;
 
 export const spacing = {
-  page: "space-y-8",
+  page: "space-y-5 md:space-y-8",
   section: "space-y-6",
   stack: "space-y-4",
   inline: "gap-2",
   card: "p-5",
+  statGrid: "grid gap-4 md:grid-cols-3",
+  statGrid2: "grid gap-4 md:grid-cols-2",
+} as const;
+
+/** Mobile shell layout — keep nav, FAB, and main padding aligned */
+export const shell = {
+  mobileNavHeight: "3.5rem",
+  mainPadBottom:
+    "calc(3.5rem + 3.5rem + env(safe-area-inset-bottom))" /* nav + FAB clearance */,
+  fabBottom: "calc(3.5rem + 1.25rem + env(safe-area-inset-bottom))",
 } as const;

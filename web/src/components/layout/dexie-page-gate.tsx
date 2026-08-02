@@ -4,11 +4,13 @@ import { Button } from "@/components/ui/button";
 import { ErrorState } from "@/components/ui/page";
 import { PageEnter } from "@/components/ui/motion";
 import { BrandLoader } from "@/components/brand/brand-loader";
+import { copy } from "@/lib/ux/copy";
 
 export function DexiePageGate({
   isPending,
   isError,
   onRetry,
+  label,
   children,
 }: {
   isPending: boolean;
@@ -17,15 +19,16 @@ export function DexiePageGate({
   label?: string;
   children: React.ReactNode;
 }) {
-  if (isPending) return <BrandLoader />;
+  if (isPending) return <BrandLoader label={label} />;
   if (isError) {
     return (
       <ErrorState
-        description="We couldn't load your data. Try again."
+        title={copy.gates.dataError.title}
+        description={copy.gates.dataError.description}
         action={
           onRetry ? (
             <Button variant="outline" onClick={() => onRetry()}>
-              Try again
+              {copy.gates.dataError.retry}
             </Button>
           ) : undefined
         }

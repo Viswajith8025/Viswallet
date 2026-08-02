@@ -36,6 +36,7 @@ import {
   setLastPaymentMethod,
 } from "@/lib/ux/defaults";
 import { confirmAction } from "@/lib/store/confirm-store";
+import { copy, toastCopy } from "@/lib/ux/copy";
 import { showToast } from "@/lib/store/toast-store";
 import { useUIStore } from "@/lib/store/ui-store";
 
@@ -52,6 +53,7 @@ function TransactionsContent({
 }) {
   const invalidate = useInvalidateFinance();
   const setStatementImportOpen = useUIStore((s) => s.setStatementImportOpen);
+  const setQuickAddOpen = useUIStore((s) => s.setQuickAddOpen);
   const categories = useCategories();
   const expenseCats = useMemo(() => categories.filter((c) => c.countsTowardSpending), [categories]);
   const incomeCats = useMemo(
@@ -92,6 +94,13 @@ function TransactionsContent({
     if (t) startEdit(t);
     // eslint-disable-next-line react-hooks/exhaustive-deps -- open edit once from deep link
   }, [editId]);
+
+  useEffect(() => {
+    if (!initialShowForm) return;
+    requestAnimationFrame(() => {
+      document.getElementById("transaction-form")?.scrollIntoView({ behavior: "smooth", block: "start" });
+    });
+  }, [initialShowForm]);
 
   function resetForm() {
     setTitle("");
@@ -149,14 +158,14 @@ function TransactionsContent({
     if (saving) return;
     const paise = parseRupeeInput(amount);
     if (paise <= 0) {
-      setFormError("Enter an amount greater than zero.");
-      showToast("Enter an amount greater than zero.", { tone: "error" });
+      setFormError(copy.formErrors.amountRequired);
+      showToast(copy.validation.amountRequired, { tone: "error" });
       return;
     }
     const catId = Number(resolvedCategoryId || categories[0]?.id);
     if (!catId || !Number.isFinite(catId)) {
-      setFormError("Pick a category.");
-      showToast("Pick a category.", { tone: "error" });
+      setFormError(copy.formErrors.categoryRequired);
+      showToast(copy.validation.categoryRequired, { tone: "error" });
       return;
     }
     setFormError("");
@@ -176,7 +185,7 @@ function TransactionsContent({
           monthKey,
           isRecurring,
         });
-        showToast("Transaction updated", { tone: "success" });
+        showToast(copy.toast.transactionUpdated, { tone: "success" });
       } else {
         await addTransaction(
           {
@@ -192,7 +201,10 @@ function TransactionsContent({
           },
           { allowDuplicate: forceDuplicate },
         );
-        showToast(`${kind === "income" ? "Income" : "Expense"} saved`, { tone: "success" });
+        showToast(
+          kind === "income" ? toastCopy.recordedIncome(previewPaise) : toastCopy.recordedExpense(previewPaise),
+          { tone: "success" },
+        );
       }
 
       setLastPaymentMethod(paymentMethod);
@@ -202,17 +214,17 @@ function TransactionsContent({
       pagination.reset();
     } catch (err) {
       if (err instanceof DuplicateTransactionError) {
-        setFormError("Similar transaction found today.");
+        setFormError(copy.formErrors.duplicateToday);
         setForceDuplicate(true);
-        showToast("Similar transaction found today.", { tone: "error" });
+        showToast(copy.toast.duplicateToday, { tone: "error" });
       } else if (err instanceof OptimisticLockError) {
-        setFormError("Could not update — refresh and try again.");
-        showToast("Could not update — refresh and try again.", { tone: "error" });
+        setFormError(copy.formErrors.updateConflict);
+        showToast(copy.toast.updateConflict, { tone: "error" });
       } else if (err instanceof ReferentialIntegrityError) {
         setFormError(err.message);
         showToast(err.message, { tone: "error" });
       } else {
-        const message = err instanceof Error ? err.message : "Could not save transaction.";
+        const message = err instanceof Error ? err.message : copy.errors.saveTransaction;
         setFormError(message);
         showToast(message, { tone: "error" });
       }
@@ -224,15 +236,15 @@ function TransactionsContent({
   async function remove(id: number) {
     const txn = data.transactions.find((t) => t.id === id);
     const ok = await confirmAction({
-      title: "Delete transaction?",
-      description: txn ? `"${txn.title}" (${formatINR(txn.amountPaise)}) will be removed.` : undefined,
-      confirmLabel: "Delete",
+      title: copy.confirm.deleteTransaction,
+      description: txn ? copy.confirmDesc.removeTransaction(txn.title, formatINR(txn.amountPaise)) : undefined,
+      confirmLabel: copy.confirm.remove,
       destructive: true,
     });
     if (!ok) return;
     await softDeleteTransaction(id);
     await invalidate();
-    showToast("Transaction deleted", {
+    showToast(copy.toast.transactionDeleted, {
       tone: "default",
       undo: async () => {
         await restoreTransaction(id);
@@ -245,17 +257,22 @@ function TransactionsContent({
     <PageContainer className="max-w-5xl space-y-4 md:space-y-6">
       <FadeIn>
         <PageHeader
-          title="Transactions"
-          description="Every rupee in and out, beautifully organized."
+          title={copy.pages.transactions.title}
+          description={copy.pages.transactions.description}
+          mobileActions={
+            <Button size="sm" onClick={() => setQuickAddOpen(true, "expense")}>
+              {copy.buttons.add}
+            </Button>
+          }
           actions={
             <div className="flex flex-wrap gap-2">
               <Button variant="outline" onClick={() => setStatementImportOpen(true)}>
-                Import statement
+                {copy.forms.importStatement}
               </Button>
               <Button variant="outline" onClick={() => openNew("income")}>
-                Add income
+                {copy.forms.addIncome}
               </Button>
-              <Button onClick={() => openNew("expense")}>Add expense</Button>
+              <Button onClick={() => openNew("expense")}>{copy.forms.addExpense}</Button>
             </div>
           }
         />
@@ -264,31 +281,31 @@ function TransactionsContent({
       <TabBar
         className="md:hidden"
         options={[
-          { value: "all", label: "All" },
-          { value: "expense", label: "Spent" },
-          { value: "income", label: "Earned" },
+          { value: "all", label: copy.labels.all },
+          { value: "expense", label: copy.labels.spent },
+          { value: "income", label: copy.labels.earned },
         ]}
         value={filter}
         onChange={(f) => {
           setFilter(f);
           pagination.reset();
         }}
-        aria-label="Filter transactions"
+        aria-label={copy.forms.filterTransactions}
       />
 
       <SegmentedControl
         className="hidden md:flex"
         options={[
-          { value: "all", label: "All" },
-          { value: "expense", label: "Expense" },
-          { value: "income", label: "Income" },
+          { value: "all", label: copy.labels.all },
+          { value: "expense", label: copy.labels.expense },
+          { value: "income", label: copy.labels.income },
         ]}
         value={filter}
         onChange={(f) => {
           setFilter(f);
           pagination.reset();
         }}
-        aria-label="Filter transactions"
+        aria-label={copy.forms.filterTransactions}
       />
 
       {showForm && (
@@ -296,7 +313,7 @@ function TransactionsContent({
           <CardContent className="p-5 md:p-6">
             <div className="mb-4 flex items-center justify-between gap-2">
               <div className="flex items-center gap-2">
-                <h3 className="font-semibold">{edit ? "Edit transaction" : "New transaction"}</h3>
+                <h3 className="font-semibold">{edit ? copy.forms.editTransaction : copy.forms.newTransaction}</h3>
                 <Badge variant={kind === "income" ? "success" : "primary"}>{kind}</Badge>
               </div>
               {previewPaise > 0 && (
@@ -305,24 +322,24 @@ function TransactionsContent({
             </div>
             <form onSubmit={save} className="grid gap-4 md:grid-cols-2">
               <Input
-                label="Title"
+                label={copy.forms.title}
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
-                placeholder="Optional — uses category if blank"
-                hint="Leave blank to use the category name"
+                placeholder={copy.forms.titleOptional}
+                hint={copy.forms.titleHint}
                 autoFocus
               />
               <Input
-                label="Amount (INR)"
+                label={copy.forms.amountInr}
                 required
                 type="number"
                 inputMode="decimal"
                 value={amount}
                 onChange={(e) => setAmount(e.target.value)}
               />
-              <Select label="Type" value={kind} onChange={(e) => handleKindChange(e.target.value as "expense" | "income")}>
-                <option value="expense">Expense</option>
-                <option value="income">Income</option>
+              <Select label={copy.forms.type} value={kind} onChange={(e) => handleKindChange(e.target.value as "expense" | "income")}>
+                <option value="expense">{copy.labels.expense}</option>
+                <option value="income">{copy.labels.income}</option>
               </Select>
               <CategoryPicker
                 categories={activeCats}
@@ -330,7 +347,7 @@ function TransactionsContent({
                 onChange={setCategoryId}
                 kind={kind}
               />
-              <Select label="Payment" value={paymentMethod} onChange={(e) => setPaymentMethod(e.target.value)}>
+              <Select label={copy.forms.payment} value={paymentMethod} onChange={(e) => setPaymentMethod(e.target.value)}>
                 {PAYMENT_METHODS.map((m) => (
                   <option key={m} value={m}>
                     {m}
@@ -338,7 +355,7 @@ function TransactionsContent({
                 ))}
               </Select>
               <Checkbox
-                label="Recurring payment"
+                label={copy.forms.recurringPayment}
                 checked={isRecurring}
                 onChange={(e) => setIsRecurring(e.target.checked)}
                 className="self-end"
@@ -350,21 +367,21 @@ function TransactionsContent({
                   </p>
                 )}
                 <Button type="submit" disabled={saving} className="sm:w-auto">
-                  {saving ? "Saving…" : edit ? "Update" : "Save"}
+                  {saving ? copy.buttons.saving : edit ? copy.labels.update : copy.buttons.save}
                 </Button>
                 <Button type="button" variant="ghost" onClick={resetForm}>
-                  Cancel
+                  {copy.buttons.cancel}
                 </Button>
                 {forceDuplicate && !edit && (
                   <Button type="submit" variant="outline" size="sm">
-                    Save anyway
+                    {copy.buttons.saveAnyway}
                   </Button>
                 )}
               </div>
             </form>
             {!edit && (
               <Hint className="mt-4 md:col-span-2">
-                We remember your last category and payment method. Duplicates on the same day are flagged automatically.
+                {copy.forms.transactionHint}
               </Hint>
             )}
           </CardContent>
@@ -374,13 +391,18 @@ function TransactionsContent({
       {list.length === 0 ? (
         <EmptyState
           minimal
-          title="No data available."
-          description="Tap + to add your first transaction."
+          title={copy.empty.noTransactions.title}
+          description={copy.empty.noTransactions.description}
+          action={
+            <Button size="sm" onClick={() => setQuickAddOpen(true, "expense")}>
+              {copy.buttons.addTransaction}
+            </Button>
+          }
         />
       ) : (
         <Card className="border-border/60 shadow-none">
           <CardContent className="p-0">
-            <DataList>
+            <DataList inset>
               {pagination.items.map((t) => (
                 <TransactionRow
                   key={t.id}

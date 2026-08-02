@@ -47,6 +47,7 @@ function SalaryContent({ data }: { data: FinanceSnapshot }) {
       return;
     }
     setSaving(true);
+    try {
     const day = Math.min(28, Math.max(1, parseInt(salaryDay, 10) || 1));
     const now = new Date();
     await updateSettings({ salaryDay: day });
@@ -63,7 +64,11 @@ function SalaryContent({ data }: { data: FinanceSnapshot }) {
     }
     await createBudgetPlanForCycle(data.monthKey, paise);
     await invalidate();
-    setSaving(false);
+    } catch (err) {
+      setFormError(err instanceof Error ? err.message : "Couldn't save salary. Try again.");
+    } finally {
+      setSaving(false);
+    }
   }
 
   return (

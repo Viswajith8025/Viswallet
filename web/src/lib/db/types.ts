@@ -20,14 +20,14 @@ export type DashboardWidgetId =
   | "heatmap";
 
 export const DASHBOARD_WIDGET_LABELS: Record<DashboardWidgetId, string> = {
-  hero: "Hero balance card",
+  hero: "Balance overview",
   stats: "Summary stats",
-  insights: "Smart insights",
+  insights: "Cycle insights",
   recent: "Recent activity",
-  obligations: "Needs your attention",
+  obligations: "Needs attention",
   forecast: "Forecast preview",
   "net-worth": "Net worth snapshot",
-  achievements: "Achievements progress",
+  achievements: "Achievements",
   heatmap: "Spending heatmap",
 };
 

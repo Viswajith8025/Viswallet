@@ -19,6 +19,7 @@ import { bulkImportStatementRows, markDuplicateRows } from "@/lib/import/bulk-im
 import type { ParsedStatementRow } from "@/lib/import/types";
 import { STATEMENT_ACCEPT } from "@/lib/import/types";
 import { formatINR } from "@/lib/money";
+import { copy } from "@/lib/ux/copy";
 import { showToast } from "@/lib/store/toast-store";
 
 export function StatementImportModal() {
@@ -92,11 +93,11 @@ export function StatementImportModal() {
         skipDuplicates: true,
       });
       await invalidate();
-      showToast(`Imported ${result.imported} transactions`, {
+      showToast(copy.toast.importDone(result.imported), {
         tone: result.imported > 0 ? "success" : "default",
       });
       if (result.duplicates > 0) {
-        showToast(`Skipped ${result.duplicates} duplicates already in your ledger`, { tone: "default" });
+        showToast(copy.toast.duplicatesSkipped(result.duplicates), { tone: "default" });
       }
       close();
     } catch (err) {

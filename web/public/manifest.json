@@ -7,9 +7,9 @@
   "scope": "/",
   "display": "standalone",
   "display_override": ["standalone", "minimal-ui"],
-  "background_color": "#5F4A8B",
+  "background_color": "#FEFACD",
   "theme_color": "#5F4A8B",
-  "orientation": "portrait-primary",
+  "orientation": "any",
   "icons": [
     {
       "src": "/icons/icon-192.png",
@@ -53,7 +53,7 @@
   "shortcuts": [
     {
       "name": "Add expense",
-      "url": "/transactions?add=expense",
+      "url": "/?quickAdd=expense",
       "description": "Quick add a new expense"
     },
     {

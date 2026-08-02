@@ -22,15 +22,15 @@ export function generatePremiumInsights(data: FinanceSnapshot): InsightCard[] {
     id: "health",
     category: "savings",
     severity: data.healthScore >= 70 ? "success" : data.healthScore >= 40 ? "warning" : "critical",
-    title: `Financial health: ${data.healthScore}/100`,
+    title: `Financial health · ${data.healthScore}/100`,
     body:
       data.healthScore >= 70
-        ? "Strong position. Consider increasing investments or goal contributions."
+        ? "You're in a strong position this cycle. Consider nudging a bit more toward goals or investments."
         : data.healthScore >= 40
-          ? "Moderate health. Review discretionary categories for quick wins."
-          : "Critical zone. Pause non-essential spending and tackle due bills first.",
+          ? "Room to improve. A quick look at discretionary spending could free up breathing room."
+          : "This cycle is tight. Prioritize due bills and pause non-essential spending for now.",
     score: data.healthScore,
-    action: { label: "View forecast", href: "/forecast" },
+    action: { label: "See cash flow", href: "/forecast" },
   });
 
   if (topCategory && data.expensePaise > 0) {
@@ -39,9 +39,13 @@ export function generatePremiumInsights(data: FinanceSnapshot): InsightCard[] {
       id: "top-category",
       category: "spending",
       severity: pct > 40 ? "warning" : "info",
-      title: `${topCategory.name} leads spending`,
-      body: `${pct}% of expenses (${formatINR(topCategory.amount)}) went to ${topCategory.name}. ${pct > 35 ? "Consider setting a tighter bucket." : "Distribution looks balanced."}`,
-      action: { label: "Category analytics", href: "/analytics" },
+      title: `${topCategory.name} leads this cycle`,
+      body: `${pct}% of spending (${formatINR(topCategory.amount)}) went to ${topCategory.name}. ${
+        pct > 35
+          ? "A tighter budget bucket here could help balance the month."
+          : "Your spending spread looks fairly balanced."
+      }`,
+      action: { label: "View categories", href: "/analytics" },
     });
   }
 
@@ -51,8 +55,8 @@ export function generatePremiumInsights(data: FinanceSnapshot): InsightCard[] {
       id: "subscriptions",
       category: "subscriptions",
       severity: subPct > 12 ? "warning" : "info",
-      title: "Subscription load",
-      body: `Recurring services cost ${formatINR(data.subscriptionMonthlyPaise)}/mo (${Math.round(subPct)}% of salary). Audit unused subscriptions.`,
+      title: "Subscription footprint",
+      body: `Recurring services total ${formatINR(data.subscriptionMonthlyPaise)} a month (${Math.round(subPct)}% of salary). Worth a quick audit for anything unused.`,
       action: { label: "Review subscriptions", href: "/subscriptions" },
     });
   }
@@ -62,8 +66,8 @@ export function generatePremiumInsights(data: FinanceSnapshot): InsightCard[] {
       id: "budget-burn",
       category: "budget",
       severity: "critical",
-      title: "Budget nearly exhausted",
-      body: `${Math.round(budgetPct)}% of salary spent with ${data.daysLeft} days left. Daily cap: ${formatINR(data.safeSpendDaily)}.`,
+      title: "Budget running low",
+      body: `${Math.round(budgetPct)}% of salary spent with ${data.daysLeft} days left. Aim for about ${formatINR(data.safeSpendDaily)} per day.`,
       action: { label: "Adjust budgets", href: "/budgets" },
     });
   } else if (data.remainingPaise > 0 && data.daysLeft > 0) {
@@ -71,9 +75,9 @@ export function generatePremiumInsights(data: FinanceSnapshot): InsightCard[] {
       id: "safe-spend",
       category: "forecast",
       severity: "success",
-      title: "On-track spending pace",
-      body: `Safe daily spend: ${formatINR(data.safeSpendDaily)} for ${data.daysLeft} more days.`,
-      action: { label: "Cash flow forecast", href: "/forecast" },
+      title: "Pace looks healthy",
+      body: `You can spend about ${formatINR(data.safeSpendDaily)} per day for the next ${data.daysLeft} days.`,
+      action: { label: "See forecast", href: "/forecast" },
     });
   }
 
@@ -82,9 +86,9 @@ export function generatePremiumInsights(data: FinanceSnapshot): InsightCard[] {
       id: "debt",
       category: "debt",
       severity: "warning",
-      title: "Outstanding borrowings",
-      body: `You owe ${formatINR(data.borrowedBalance)}. A structured payoff plan can save interest and stress.`,
-      action: { label: "Debt planner", href: "/debt-planner" },
+      title: "Borrowed balance",
+      body: `You owe ${formatINR(data.borrowedBalance)}. A clear payoff plan can reduce interest and stress.`,
+      action: { label: "Plan repayments", href: "/debt-planner" },
     });
   }
 
@@ -94,9 +98,11 @@ export function generatePremiumInsights(data: FinanceSnapshot): InsightCard[] {
       id: "emi-ratio",
       category: "debt",
       severity: emiPct > 40 ? "critical" : emiPct > 25 ? "warning" : "info",
-      title: "EMI burden",
-      body: `EMIs total ${formatINR(data.emiMonthlyPaise)}/mo (${Math.round(emiPct)}% of salary). ${emiPct > 40 ? "Above recommended 40% threshold." : "Within manageable range."}`,
-      action: { label: "EMI tracker", href: "/emi" },
+      title: "EMI load",
+      body: `EMIs total ${formatINR(data.emiMonthlyPaise)} a month (${Math.round(emiPct)}% of salary). ${
+        emiPct > 40 ? "Above the usual 40% comfort zone." : "Within a manageable range."
+      }`,
+      action: { label: "View EMIs", href: "/emi" },
     });
   }
 
@@ -106,13 +112,13 @@ export function generatePremiumInsights(data: FinanceSnapshot): InsightCard[] {
     id: "savings-rate",
     category: "savings",
     severity: savingsRate >= 20 ? "success" : savingsRate >= 10 ? "info" : "warning",
-    title: `Savings rate: ${Math.round(savingsRate)}%`,
+    title: `Unspent · ${Math.round(savingsRate)}%`,
     body:
       savingsRate >= 20
-        ? "Excellent savings discipline this cycle."
+        ? "Strong savings discipline this cycle — well done."
         : savingsRate >= 10
-          ? "Decent savings. Push toward 20% for long-term wealth."
-          : "Low savings rate. Review top 3 expense categories.",
+          ? "You're saving some of each cycle. Moving toward 20% builds long-term stability."
+          : "Most of this cycle's income went out. Review your top categories for easy adjustments.",
     action: { label: "Savings goals", href: "/goals" },
   });
 

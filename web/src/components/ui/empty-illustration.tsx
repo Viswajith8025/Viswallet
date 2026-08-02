@@ -49,7 +49,7 @@ export function EmptyIllustration({
     return (
       <div
         className={cn(
-          "flex h-20 w-20 items-center justify-center rounded-xl border border-border-light bg-surface-secondary/80 p-2 shadow-xs animate-gentle-float",
+          "flex h-20 w-20 items-center justify-center rounded-2xl border border-border-light bg-card/80 p-2 shadow-[var(--shadow-xs)]",
           className,
         )}
         aria-hidden
@@ -62,7 +62,7 @@ export function EmptyIllustration({
   return (
     <div
       className={cn(
-        "flex h-20 w-20 items-center justify-center rounded-xl border border-border-light bg-surface-secondary shadow-xs animate-gentle-float",
+        "flex h-20 w-20 items-center justify-center rounded-2xl border border-border-light bg-card/80 shadow-[var(--shadow-xs)]",
         className,
       )}
       aria-hidden

@@ -40,7 +40,7 @@ export function buildFinancialReport(
       : 0;
 
   return {
-    title: period === "monthly" ? "Monthly Financial Report" : "Yearly Financial Report",
+    title: period === "monthly" ? "Salary cycle summary" : "Year overview",
     period,
     generatedAt: new Date(),
     cycleLabel: formatCycleLabel(data.monthKey),

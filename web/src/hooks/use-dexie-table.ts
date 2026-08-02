@@ -16,5 +16,8 @@ export function useDexieTable<T>(key: string, fetcher: DexieFetcher<T>) {
     queryKey: ["dexie", key, version],
     queryFn: fetcher,
     staleTime: 30_000,
+    gcTime: 10 * 60_000,
+    refetchOnWindowFocus: false,
+    placeholderData: (previousData) => previousData,
   });
 }

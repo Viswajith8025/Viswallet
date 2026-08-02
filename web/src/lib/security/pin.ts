@@ -6,6 +6,7 @@ import {
   MAX_PIN_ATTEMPTS,
   PIN_LOCKOUT_MS,
   SecureError,
+  pinSchema,
 } from "@/lib/security";
 import { extendSession, clearSession } from "@/lib/security/session";
 
@@ -18,6 +19,7 @@ export async function isPinLocked(): Promise<boolean> {
 }
 
 export async function enableAppLock(pin: string): Promise<void> {
+  pinSchema.parse(pin);
   const { hash, salt } = await hashPin(pin);
   await updateSettings({
     appLockEnabled: true,
@@ -41,6 +43,7 @@ export async function disableAppLock(pin: string): Promise<void> {
     });
     return;
   }
+  pinSchema.parse(pin);
   const valid = await verifyPin(pin, s.pinHash, s.pinSalt);
   if (!valid) throw new SecureError("PIN_INVALID");
   await updateSettings({
@@ -60,6 +63,7 @@ export async function unlockWithPin(pin: string): Promise<void> {
   const s = await getSettings();
   if (!s.pinHash || !s.pinSalt) throw new SecureError("PIN_INVALID");
 
+  pinSchema.parse(pin);
   const valid = await verifyPin(pin, s.pinHash, s.pinSalt);
   if (!valid) {
     const attempts = (s.failedPinAttempts ?? 0) + 1;

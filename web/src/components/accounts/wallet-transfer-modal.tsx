@@ -8,6 +8,7 @@ import { Dialog, Sheet } from "@/components/ui/dialog";
 import type { Account } from "@/lib/db/types";
 import { recordAccountTransfer } from "@/lib/accounts/record-account-transfer";
 import { parseRupeeInput, formatINR } from "@/lib/money";
+import { toastCopy } from "@/lib/ux/copy";
 import { showToast } from "@/lib/store/toast-store";
 import { ACCOUNT_ROLE_LABELS } from "@/lib/accounts/wallet-presets";
 
@@ -46,7 +47,7 @@ function TransferForm({
     try {
       const paise = parseRupeeInput(amount);
       await recordAccountTransfer(Number(fromId), Number(toId), paise, note);
-      showToast(`Moved ${formatINR(paise)}`, { tone: "success" });
+      showToast(toastCopy.transfer(paise), { tone: "success" });
       onSuccess();
       onClose();
     } catch (err) {

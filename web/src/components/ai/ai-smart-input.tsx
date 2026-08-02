@@ -5,6 +5,7 @@ import { Sparkles, Wand2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/design/cn";
 import { parseTransactionWithAi, type AiParseResult } from "@/lib/ai/client";
+import { copy } from "@/lib/ux/copy";
 import { showToast } from "@/lib/store/toast-store";
 
 type CategoryOption = { slug: string; name: string };
@@ -33,9 +34,9 @@ export function AiSmartInput({
       const result = await parseTransactionWithAi(text, categories, kind);
       onParsed(result);
       setLine("");
-      showToast(`Got it — ${result.title}`, { tone: "success" });
+      showToast(copy.toast.aiParsed(result.title), { tone: "success" });
     } catch (err) {
-      showToast(err instanceof Error ? err.message : "Could not understand that", { tone: "error" });
+      showToast(err instanceof Error ? err.message : copy.errors.understandAi, { tone: "error" });
     } finally {
       setParsing(false);
     }

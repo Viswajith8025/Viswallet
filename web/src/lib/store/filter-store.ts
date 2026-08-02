@@ -20,6 +20,18 @@ type FilterStore = GlobalFilters & {
   reset: () => void;
 };
 
+export type FilterState = GlobalFilters & Pick<FilterStore, "setCycleKey" | "setKind" | "setCategoryId" | "setAmountRange" | "setSearchQuery" | "reset">;
+
+/** Stable selectors — use with `useFilterStore(selectCycleKey)` to limit re-renders. */
+export const selectCycleKey = (s: FilterStore) => s.cycleKey;
+export const selectKind = (s: FilterStore) => s.kind;
+export const selectCategoryId = (s: FilterStore) => s.categoryId;
+export const selectAmountRange = (s: FilterStore) => ({
+  min: s.minAmountPaise,
+  max: s.maxAmountPaise,
+});
+export const selectSearchQuery = (s: FilterStore) => s.searchQuery;
+
 const defaults: GlobalFilters = {
   cycleKey: null,
   kind: "all",
@@ -42,12 +54,19 @@ export const useFilterStore = create<FilterStore>()(
     }),
     {
       name: "vw-filters",
-      version: 2,
+      version: 3,
+      partialize: (state) => ({
+        kind: state.kind,
+        categoryId: state.categoryId,
+        minAmountPaise: state.minAmountPaise,
+        maxAmountPaise: state.maxAmountPaise,
+        searchQuery: state.searchQuery,
+      }),
       migrate: (persisted) => {
         const p = persisted as Partial<GlobalFilters & { accountId?: number | null }>;
         return {
           ...defaults,
-          cycleKey: p.cycleKey ?? null,
+          cycleKey: null,
           kind: p.kind ?? "all",
           categoryId: p.categoryId ?? null,
           minAmountPaise: p.minAmountPaise ?? null,

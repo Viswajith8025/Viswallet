@@ -1,0 +1,581 @@
+/**
+ * visWallet voice — calm, helpful, premium financial companion.
+ * Product UI copy lives here; legal pages keep their own prose.
+ */
+
+import { formatINR } from "@/lib/money";
+
+export const copy = {
+  loading: {
+    default: "Just a moment…",
+    finances: "Opening your finances…",
+    settings: "Loading your preferences…",
+    setup: "Getting things ready…",
+    bills: "Loading your bills…",
+    subscriptions: "Loading subscriptions…",
+    emis: "Loading your EMIs…",
+    profile: "Loading your profile…",
+  },
+
+  validation: {
+    amountRequired: "Add an amount to continue.",
+    categoryRequired: "Pick a category so we can place this properly.",
+    billNameRequired: "What bill is this?",
+    walletAmountRequired: "Enter an amount to move.",
+  },
+
+  toast: {
+    remindTomorrow: "We'll remind you tomorrow.",
+    quickAddIncomeMode: "Adding income",
+    setupFailed: "We couldn't finish setup. Try once more.",
+    transactionUpdated: "Transaction updated.",
+    transactionDeleted: "Transaction removed.",
+    duplicateToday: "You already logged something similar today.",
+    updateConflict: "That didn't save — refresh and try again.",
+    actionFailed: "Something went wrong. Try again in a moment.",
+    billPaid: "Marked paid and added to your spending.",
+    billPayFailed: "Couldn't mark that bill paid.",
+    emiPaid: "EMI recorded in your spending.",
+    emiPayFailed: "Couldn't record that payment.",
+    paymentFailed: "Payment didn't go through. Try again.",
+    profileSaved: "Profile updated.",
+    profileSaveFailed: "Couldn't save your profile.",
+    profileLoadFailed: "Couldn't load your profile.",
+    photoUpdated: "Photo updated.",
+    photoUpdateFailed: "Couldn't update your photo.",
+    photoRemoved: "Photo removed.",
+    photoRemoveFailed: "Couldn't remove your photo.",
+    accountAdded: "Account added.",
+    walletAdded: "Wallet ready.",
+    categoryCreated: (name: string) => `"${name}" is ready to use.`,
+    categoryRemoved: "Category removed.",
+    categoryHidden: (name: string) => `"${name}" hidden from quick add.`,
+    categoryRestored: (name: string) => `"${name}" is back in quick add.`,
+    goalRemoved: "Goal removed.",
+    entryUpdated: "Entry updated.",
+    debtCleared: "You're clear on that debt.",
+    walletMoved: (amount: string, name: string) => `${amount} moved to ${name}.`,
+    transferDone: (amount: string) => `Moved ${amount}.`,
+    lentRecorded: (amount: string) => `Lent ${amount}. Mark returned when it comes back.`,
+    receivedBack: (amount: string) => `Received ${amount} — logged as income.`,
+    paidRecorded: (amount: string) => `Paid ${amount} — logged as spending.`,
+    billPaidNamed: (title: string) => `${title} marked paid.`,
+    emiPaidNamed: (title: string) => `${title} EMI recorded.`,
+    renewedNamed: (title: string) => `${title} renewal recorded.`,
+    importDone: (count: number) =>
+      count === 1 ? "1 transaction imported." : `${count} transactions imported.`,
+    duplicatesSkipped: (count: number) =>
+      `${count} duplicates skipped — already in your ledger.`,
+    aiParsed: (title: string) => `Got it — ${title}.`,
+    aiParseFailed: "Couldn't read that. Try a simpler phrase.",
+    updateReady: "Update ready — refresh for the latest version.",
+    recordedExpense: (amount: string) => `Recorded ${amount} as spending.`,
+    recordedIncome: (amount: string) => `Recorded ${amount} as income.`,
+    receivedAmount: (amount: string) => `Received ${amount}.`,
+    borrowedRecorded: (amount: string) => `Borrowed ${amount}. Mark as paid when you repay.`,
+    paidToPerson: (amount: string, name: string) => `Paid ${amount} to ${name} — logged as spending.`,
+  },
+
+  confirm: {
+    deleteTransaction: "Remove this transaction?",
+    deleteBill: "Remove this bill?",
+    deleteGoal: "Remove this goal?",
+    deleteCategory: "Remove this category?",
+    hideCategory: "Hide from quick add?",
+    removeCategory: "Remove this category?",
+    cancelSubscription: "Archive this subscription?",
+    removeEmi: "Archive this EMI?",
+    deleteInvestment: "Remove this investment?",
+    removeWishlist: "Remove from wishlist?",
+    deleteNote: "Delete this note?",
+    deleteLoan: "Remove this entry?",
+    removeBorrowed: "Remove this entry?",
+    replaceAllData: "Replace everything on this device?",
+    deleteEverything: "Erase all data on this device?",
+    cancel: "Cancel",
+    confirm: "Confirm",
+    remove: "Remove",
+    archive: "Archive",
+  },
+
+  empty: {
+    noActivity: {
+      title: "Nothing here yet",
+      description: "Log an expense or income — your cycle starts with one entry.",
+    },
+    noTransactions: {
+      title: "Your ledger is empty",
+      description: "Add your first expense or income to begin tracking.",
+    },
+    noBills: {
+      title: "No bills yet",
+      description: "Add a bill and we'll keep the due date on your radar.",
+    },
+    noSubscriptions: {
+      title: "No subscriptions yet",
+      description: "Track streaming, apps, and anything that renews automatically.",
+    },
+    noEmis: {
+      title: "No EMIs yet",
+      description: "Add a home, car, or personal loan to track payments.",
+    },
+    noInsights: {
+      title: "Insights need a little data",
+      description: "Log a few expenses and income entries — we'll surface patterns soon.",
+    },
+    noMatches: {
+      title: "No matches",
+      description: (query: string) => `Nothing found for "${query}". Try different words or filters.`,
+    },
+    startSearch: {
+      title: "Search your history",
+      description: "Type a title, note, or payment method to find transactions.",
+    },
+    actionCenterClear: {
+      title: "You're all caught up",
+      description: "No bills, renewals, or payments need attention right now.",
+    },
+    chart: {
+      title: "No data yet",
+      description: "Add expenses to see your spending breakdown.",
+    },
+  },
+
+  actionCenter: {
+    title: "Needs attention",
+    viewAll: "See all",
+    remindTomorrow: "Remind tomorrow",
+    markPaid: "Mark paid",
+    markReturned: "Mark returned",
+    payEmi: "Record payment",
+    markRenewed: "Record renewal",
+    moreItems: (n: number) => `+${n} more across Bills, Subscriptions, Borrowed, and EMI`,
+    urgent: (n: number) => `${n} urgent`,
+    itemCount: (n: number) => `${n} item${n === 1 ? "" : "s"}`,
+  },
+
+  gates: {
+    financesError: {
+      title: "Couldn't open your finances",
+      description: "Your data is safe on this device. Refresh and we'll try again.",
+      retry: "Try again",
+    },
+    dataError: {
+      title: "Couldn't load your data",
+      description: "Something interrupted the read. Try again.",
+      retry: "Try again",
+    },
+    boundary: {
+      title: "Something went wrong",
+      description: "An unexpected error occurred. Your data remains on this device.",
+      retry: "Try again",
+    },
+    globalError: {
+      title: "Something went wrong",
+      description: "We hit a snag. Your finances on this device are unaffected.",
+      retry: "Try again",
+      home: "Go home",
+    },
+  },
+
+  buttons: {
+    save: "Save",
+    saving: "Saving…",
+    cancel: "Cancel",
+    close: "Close",
+    add: "Add",
+    tryAgain: "Try again",
+    refresh: "Refresh",
+    undo: "Undo",
+    saveAnyway: "Save anyway",
+    saveAnywayDuplicate: "Save anyway — similar entry exists",
+    addTransaction: "Add transaction",
+    addBill: "Add bill",
+    addSubscription: "Add subscription",
+    addEmi: "Add EMI",
+    newTransaction: "New transaction",
+    allTransactions: "All transactions",
+    viewInsights: "View insights",
+    continue: "Continue",
+    back: "Back",
+    finishSetup: "Finish setup",
+    signIn: "Sign in",
+    signOut: "Sign out",
+    createAccount: "Create account",
+  },
+
+  success: {
+    saved: "Saved",
+    savedSuccessfully: "Saved successfully",
+    youreIn: "You're in.",
+    onboardingSubtitle: "Your salary cycle is set. Let's see where your money goes.",
+  },
+
+  appLock: {
+    title: "Enter your PIN",
+    wrongPin: "That PIN didn't match.",
+    locked: "Too many tries. Come back in a little while.",
+  },
+
+  filters: {
+    pastCycleNote: "You're viewing a previous salary cycle.",
+    pastCycleBanner: (label: string) => `Viewing ${label} — not your current cycle.`,
+    backToCurrent: "Back to current cycle",
+    change: "Change",
+    filtered: "filtered",
+    cycleLabel: (label: string) => `Cycle: ${label}`,
+  },
+
+  dashboard: {
+    recent: "Recent",
+    thisCycle: "This cycle",
+    cycleNarrativeHigh: "Spending is running high this cycle. Worth a look at recurring costs.",
+    cycleNarrativeComfortable: "Spending is in a comfortable range for this cycle.",
+    youOweHint: "See Needs attention below",
+    fixedCostsHint: "Subs · bills · EMI",
+    healthHint: "Out of 100",
+    daysInCycle: (n: number) => `${n} days in cycle`,
+    daysLeft: (n: number) => `${n} days left`,
+  },
+
+  quickAdd: {
+    addExpense: "Add expense",
+    addIncome: "Add income",
+    addTransaction: "Add transaction",
+    spent: "Spent",
+    earned: "Earned",
+    titlePlaceholder: "Coffee, Uber, groceries…",
+    titlePlaceholderDesktop: "Lunch, Uber, bonus…",
+    titleHint: "Uses the category name if you leave this blank",
+    amountLabel: "Amount in rupees",
+    paidWith: "Paid with",
+    monthly: "Monthly",
+    repeatsMonthly: "Repeats every month",
+  },
+
+  onboarding: {
+    nameTitle: "What should we call you?",
+    nameDescription: "Just for your dashboard — stored on this device.",
+    salaryTitle: "Set up your salary cycle",
+    salaryDescription: "We'll align budgets and reminders to when you get paid.",
+    salaryDayHint: "Day 1–28 when your pay cycle starts each month",
+    namePlaceholder: "Your name",
+    salaryPreview: (amount: string) => `About ${amount} per cycle`,
+    welcome: (name: string) => `Welcome, ${name}`,
+    openingDashboard: "Opening your dashboard…",
+    quickSelect: "Quick select",
+    salaryDescriptionWithName: (name: string) => `${name}, tell us when and how much you earn each month.`,
+    salaryDescriptionDefault: "Tell us when and how much you earn each month.",
+    perMonth: (amount: string) => `${amount} per month`,
+    loadingSetup: "Getting things ready…",
+  },
+
+  pages: {
+    transactions: {
+      title: "Transactions",
+      description: "Every rupee in and out, organized by your salary cycle.",
+    },
+    bills: {
+      title: "Bills",
+      description: "Due dates on a timeline. When you pay, we log it as spending.",
+    },
+    subscriptions: {
+      title: "Subscriptions",
+      description: "Recurring charges and how they shape your month.",
+    },
+    emi: {
+      title: "EMI tracker",
+      description: "Loan payments, balances, and what's due next.",
+    },
+    insights: {
+      title: "Insights",
+      description: "Patterns and gentle suggestions from your cycle.",
+    },
+    search: {
+      title: "Search",
+      description: "Find transactions across your history with filters.",
+    },
+    settings: {
+      title: "Settings",
+      description: "Appearance, security, and your data.",
+    },
+    analytics: {
+      title: "Analytics",
+      description: "Where your money went this cycle.",
+    },
+  },
+
+  greeting: (name?: string) => {
+    const hour = new Date().getHours();
+    const time = hour < 12 ? "Good morning" : hour < 17 ? "Good afternoon" : "Good evening";
+    return name?.trim() ? `${time}, ${name.trim()}` : time;
+  },
+
+  cycleNarrative: (remaining: string, daysLeft: number, daily: string) =>
+    `You have ${remaining} left with ${daysLeft} days to go — about ${daily} per day.`,
+
+  labels: {
+    dailyBudget: "Daily budget",
+    health: "Health",
+    netWorth: "Net worth",
+    fixedCosts: "Fixed costs",
+    youOwe: "You owe",
+    subscriptions: "Subscriptions",
+    billsDue: "Bills due",
+    emi: "EMI",
+    unpaidTotal: "Unpaid total",
+    openBills: "Open bills",
+    overdue: "Overdue",
+    monthlyOutflow: "Monthly outflow",
+    outstandingBalance: "Outstanding balance",
+    activeEmis: "Active EMIs",
+    activeSubscriptions: "Active subscriptions",
+    monthlyRunRate: "Monthly run rate",
+    uncategorized: "Uncategorized",
+    all: "All",
+    spent: "Spent",
+    earned: "Earned",
+    expense: "Expense",
+    income: "Income",
+    update: "Update",
+    hide: "Hide",
+    done: "Done",
+    edit: "Edit",
+    category: "Category",
+    close: "Close",
+    payEmi: "Record payment",
+    oneTime: "One-time",
+    recurring: "Recurring",
+    money: "Money",
+  },
+
+  forms: {
+    editTransaction: "Edit transaction",
+    newTransaction: "New transaction",
+    title: "Title",
+    titleOptional: "Optional — uses category if blank",
+    titleHint: "Leave blank to use the category name",
+    amountInr: "Amount (INR)",
+    amountRupee: "Amount in rupees",
+    type: "Type",
+    payment: "Payment",
+    recurringPayment: "Recurring payment",
+    billName: "Bill name",
+    dueDate: "Due date",
+    notes: "Notes",
+    loanName: "Loan name",
+    lender: "Lender",
+    principal: "Principal (INR)",
+    emiAmount: "EMI amount (INR)",
+    balanceRemaining: "Balance remaining (INR)",
+    balanceHint: "Defaults to principal if empty",
+    interestRate: "Interest rate (%)",
+    tenureMonths: "Tenure (months)",
+    nextDueDate: "Next due date",
+    billingCycle: "Billing cycle",
+    paymentMethod: "Payment method",
+    nextRenewal: "Next renewal",
+    displayName: "Display name",
+    monthlySalary: "Monthly salary (₹)",
+    salaryDay: "Salary day",
+    importStatement: "Import statement",
+    addIncome: "Add income",
+    addExpense: "Add expense",
+    transactionHint:
+      "We remember your last category and payment method. Duplicates on the same day are flagged automatically.",
+    billPlaceholder: "Electricity",
+    loanPlaceholder: "Home loan",
+    lenderPlaceholder: "HDFC Bank",
+    namePlaceholder: "Vacation pot, HDFC…",
+    institutionPlaceholder: "Bank or app name",
+    balancePlaceholder: "0",
+    searchPlaceholder: "Title, note, or payment method…",
+    minAmount: "Minimum amount (₹)",
+    minAmountPlaceholder: "Min amount (₹)",
+    filterTransactions: "Filter transactions",
+    filterByType: "Filter by type",
+    searchTransactions: "Search transactions",
+    minAmountAria: "Minimum amount in rupees",
+    monthsPaid: (paid: number, total: number) => `${paid}/${total} months paid`,
+    left: (amount: string) => `${amount} left`,
+    perMonth: (amount: string) => `${amount}/mo`,
+    dueOn: (date: string) => `Due ${date}`,
+  },
+
+  confirmDesc: {
+    removeTransaction: (title: string, amount: string) => `"${title}" (${amount}) will be removed.`,
+    removeLoanEntry: (name: string) => `"${name}" will be removed.`,
+    removeBill: (name: string, amount: string) => `"${name}" (${amount}) will be removed.`,
+    archiveEmi: (name: string) => `"${name}" will be archived.`,
+    archiveSubscription: (name: string, amount: string, cycle: string) =>
+      `"${name}" (${amount}/${cycle}) will be archived.`,
+    hideCategory: (name: string) =>
+      `"${name}" will be hidden from quick add. You can restore it from Categories.`,
+    removeCategory: (name: string) => `"${name}" will be permanently removed.`,
+    removeCategoryKeepTx: (name: string) => `"${name}" will be removed. Existing transactions keep this category.`,
+    importBackup: (fileName: string) =>
+      `Importing "${fileName}" replaces every transaction, budget, and setting on this device. Export a backup first if you need one.`,
+    deleteAllData:
+      "This permanently removes all transactions, goals, and settings from this device. This cannot be undone.",
+    importBackupLabel: "Import backup",
+    deleteEverythingLabel: "Erase everything",
+  },
+
+  settings: {
+    loadFailed: "Couldn't load your preferences.",
+    accentUpdated: "Accent color updated.",
+    biometricOn: "Biometric unlock enabled.",
+    biometricOff: "Biometric unlock disabled.",
+    aiOn: "AI features enabled.",
+    aiOff: "AI features disabled.",
+    passphraseShort: "Passphrase must be at least 8 characters for encrypted export.",
+    backupExported: "Backup exported.",
+    backupImported: "Backup imported.",
+    exportsDownloaded: "CSV and Excel exports downloaded.",
+    appLockOn: "App lock enabled.",
+    appLockOff: "App lock disabled.",
+    resetAttempts: "Too many reset attempts. Please wait.",
+    resetFailed: "Reset didn't complete. Try again.",
+    newPin: "New PIN (4–8 digits)",
+    confirmPin: "Confirm PIN",
+    autoLock: "Auto-lock after (minutes)",
+    pinToDisable: "PIN to disable lock",
+    aiFeatures: "AI features (natural-language add, smart categories, coach)",
+    accentColor: "Accent color",
+    biometricUnlock: "Unlock with Face ID or fingerprint",
+    passwordProtectExport: "Password-protect export file",
+    exportPassphrase: "Export passphrase (min 8 characters)",
+    importPassphrase: "Import passphrase (if backup is encrypted)",
+    resetting: "Resetting…",
+    resetAllData: "Erase all data",
+    dashboardWidgets: "Dashboard widgets",
+  },
+
+  widgets: {
+    hero: "Balance overview",
+    stats: "Summary stats",
+    insights: "Cycle insights",
+    recent: "Recent activity",
+    obligations: "Needs attention",
+    forecast: "Forecast preview",
+    "net-worth": "Net worth snapshot",
+    achievements: "Achievements",
+    heatmap: "Spending heatmap",
+  },
+
+  authShell: {
+    step1Title: "Start in seconds",
+    step1Body: "Set up your budget and track spending right away.",
+    step2Title: "Salary-aware cycles",
+    step2Body: "Budgets follow when you get paid — not calendar months.",
+    step3Title: "Private by design",
+    step3Body: "Your finances stay yours. Export or delete anytime.",
+  },
+
+  onboardingSteps: ["Your name", "Income setup"] as const,
+  validationOnboarding: {
+    nameRequired: "Enter your name to continue.",
+    salaryMin: "Enter a monthly salary of at least ₹1,000.",
+  },
+  onboardingSuccess: {
+    headline: "You're in.",
+    subcopy: "Your salary cycle is set. Let's see where your money goes.",
+  },
+
+  errors: {
+    saveTransaction: "Couldn't save that transaction.",
+    generic: "Something went wrong. Try again in a moment.",
+    understandAi: "Couldn't read that. Try a simpler phrase.",
+    paymentFailed: "Payment didn't go through. Try again.",
+  },
+
+  formErrors: {
+    amountRequired: "Add an amount to continue.",
+    categoryRequired: "Pick a category.",
+    duplicateToday: "You already logged something similar today.",
+    updateConflict: "That didn't save — refresh and try again.",
+    nameRequired: "Enter a name.",
+  },
+
+  accountUpdated: (name: string, amount: string) => `${name} updated to ${amount}.`,
+
+  subscriptionDetection: {
+    normalizedHint: "Normalized across billing cycles",
+    hint: "Mark expenses as recurring when logging — we also scan your history for subscriptions you may have missed.",
+    detectedTitle: "Detected from transactions",
+    confidence: (pct: number) => `${pct}% confidence`,
+  },
+
+  search: {
+    title: "Search",
+    description: "Find transactions across your history with filters.",
+    advancedTitle: "Search",
+    advancedDescription: "Find transactions across your history with filters.",
+    startTyping: "Start typing",
+    searchHistory: "Search your full transaction history.",
+  },
+
+  insights: {
+    notEnoughTitle: "Insights need a little data",
+    notEnoughDescription: "Log a few expenses and income entries — we'll surface patterns soon.",
+    pageDescription: "Patterns and gentle suggestions from your cycle — calculated on your device.",
+    smartAnalysis: "Smart analysis",
+    tipsCount: (n: number) => `${n} tips`,
+    budgetTweaks: "Budget tweaks",
+    topSpending: "Top spending",
+    allCharts: "All charts",
+    addFirstExpense: "Add your first expense",
+  },
+
+  searchPage: {
+    duplicatesTitle: "Possible duplicates",
+  },
+
+  categories: {
+    newIncome: "New income category",
+    newExpense: "New expense category",
+    mobileHint: "Appears right away when adding transactions.",
+    desktopHint: "Custom categories show up in quick add and transaction forms.",
+    createFailed: "Couldn't create that category.",
+    created: "Category created",
+  },
+
+  profile: {
+    title: "Profile",
+    description: "Your name and photo — account email comes from sign-in.",
+    loading: "Loading your profile…",
+    displayNameRequired: "Enter a display name.",
+    you: "You",
+    signInHint: "Sign in to sync across devices",
+    removePhoto: "Remove photo",
+    accountEmail: "Account email",
+    accountEmailHint: "From your sign-up — used to sign in, not editable here.",
+    saved: "Saved!",
+    saveProfile: "Save profile",
+  },
+
+  accounts: {
+    title: "Wallets & pots",
+    description: "Bank accounts, backup wallets, and savings pots. Add wallets from More on mobile.",
+    loading: "Loading accounts…",
+    emptyTitle: "No accounts yet",
+    emptyDescription: "Add a wallet or savings pot to track balances.",
+  },
+
+  globalError: {
+    title: (brand: string) => `${brand} hit a snag`,
+    description: "Your finances on this device are unaffected.",
+  },
+} as const;
+
+/** Toast helpers with consistent formatting */
+export const toastCopy = {
+  recordedExpense: (paise: number) => copy.toast.recordedExpense(formatINR(paise)),
+  recordedIncome: (paise: number) => copy.toast.recordedIncome(formatINR(paise)),
+  received: (paise: number) => copy.toast.receivedAmount(formatINR(paise)),
+  paid: (paise: number) => copy.toast.paidRecorded(formatINR(paise)),
+  lent: (paise: number) => copy.toast.lentRecorded(formatINR(paise)),
+  walletMoved: (paise: number, name: string) =>
+    copy.toast.walletMoved(formatINR(paise), name),
+  transfer: (paise: number) => copy.toast.transferDone(formatINR(paise)),
+};

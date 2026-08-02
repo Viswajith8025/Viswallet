@@ -2,6 +2,7 @@
 
 import { useCallback, useRef, useState } from "react";
 import { reportError } from "@/lib/monitoring/report";
+import { copy } from "@/lib/ux/copy";
 import { showToast } from "@/lib/store/toast-store";
 import { errorFeedback } from "@/lib/ux/feedback";
 
@@ -27,7 +28,7 @@ export function useAsyncAction() {
         reportError(error, "async-action");
         if (!options?.silent) {
           errorFeedback();
-          showToast(options?.errorMessage ?? "Something went wrong. Please try again.", {
+          showToast(options?.errorMessage ?? copy.errors.generic, {
             tone: "error",
           });
         }

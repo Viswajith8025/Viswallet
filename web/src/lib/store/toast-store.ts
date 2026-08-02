@@ -4,7 +4,7 @@ import { successFeedback, errorFeedback } from "@/lib/ux/feedback";
 export type ToastItem = {
   id: string;
   message: string;
-  tone?: "default" | "success" | "warning" | "error";
+  tone?: "default" | "success" | "warning" | "error" | "info";
   undo?: () => void | Promise<void>;
   action?: { label: string; onClick: () => void | Promise<void> };
 };

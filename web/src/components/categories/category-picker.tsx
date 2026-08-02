@@ -13,6 +13,7 @@ import {
   sortCategoriesForDisplay,
 } from "@/lib/categories/manage-category";
 import { useInvalidateFinance } from "@/hooks";
+import { copy } from "@/lib/ux/copy";
 import { confirmAction } from "@/lib/store/confirm-store";
 import { showToast } from "@/lib/store/toast-store";
 
@@ -20,7 +21,7 @@ export function CategoryPicker({
   categories,
   value,
   onChange,
-  label = "Category",
+  label = copy.labels.category,
   kind = "expense",
 }: {
   categories: Category[];
@@ -42,11 +43,11 @@ export function CategoryPicker({
   async function handleRemove(cat: Category) {
     const isSystem = cat.isSystem;
     const ok = await confirmAction({
-      title: isSystem ? "Hide category?" : "Remove category?",
+      title: isSystem ? copy.confirm.hideCategory : copy.confirm.removeCategory,
       description: isSystem
-        ? `"${cat.name}" will be hidden from quick add.`
-        : `"${cat.name}" will be removed. Existing transactions keep this category.`,
-      confirmLabel: isSystem ? "Hide" : "Remove",
+        ? copy.confirmDesc.hideCategory(cat.name)
+        : copy.confirmDesc.removeCategoryKeepTx(cat.name),
+      confirmLabel: isSystem ? copy.labels.hide : copy.confirm.remove,
       destructive: true,
     });
     if (!ok || cat.id == null) return;
@@ -60,7 +61,7 @@ export function CategoryPicker({
     }
 
     showToast(
-      result === "hidden" ? `"${cat.name}" hidden` : `"${cat.name}" removed`,
+      result === "hidden" ? copy.toast.categoryHidden(cat.name) : copy.toast.categoryRemoved,
       { tone: "default" },
     );
   }
@@ -69,7 +70,7 @@ export function CategoryPicker({
     if (cat.id == null) return;
     await showCategoryInQuickAdd(cat.id);
     await invalidate();
-    showToast(`"${cat.name}" restored`, { tone: "success" });
+    showToast(copy.toast.categoryRestored(cat.name), { tone: "success" });
   }
 
   return (
@@ -82,7 +83,7 @@ export function CategoryPicker({
             onClick={() => setEditMode((v) => !v)}
             className="text-xs font-medium text-primary"
           >
-            {editMode ? "Done" : "Edit"}
+            {editMode ? copy.labels.done : copy.labels.edit}
           </button>
         </div>
         <div className="scroll-premium grid max-h-52 grid-cols-3 gap-2 overflow-y-auto sm:grid-cols-4 md:grid-cols-5">

@@ -23,9 +23,9 @@
   --card: #ffffff;
   --card-foreground: var(--foreground);
   --elevated: #ffffff;
-  --primary: #ffffff;
-  --primary-hover: #f3f2f6;
-  --primary-foreground: var(--violet);
+  --primary: var(--violet);
+  --primary-hover: var(--violet-hover);
+  --primary-foreground: var(--cream-elevated);
   --primary-muted: #ede9f4;
   --secondary: var(--violet);
   --secondary-foreground: #ffffff;
@@ -63,20 +63,20 @@
   --chart-5: #b7aad4;
   --chart-6: #cdc3e4;
 
-  /* ── Radius — restrained ── */
-  --radius-sm: 0.25rem;
-  --radius-md: 0.375rem;
-  --radius-lg: 0.5rem;
-  --radius-xl: 0.625rem;
-  --radius-2xl: 0.75rem;
+  /* ── Radius — refined, not bubbly ── */
+  --radius-sm: 0.375rem;
+  --radius-md: 0.5rem;
+  --radius-lg: 0.625rem;
+  --radius-xl: 0.75rem;
+  --radius-2xl: 1rem;
 
-  /* ── Shadow — flat, editorial ── */
-  --shadow-xs: 0 1px 0 rgba(45, 37, 64, 0.04);
-  --shadow-sm: 0 1px 2px rgba(45, 37, 64, 0.05);
-  --shadow-md: 0 4px 16px -6px rgba(45, 37, 64, 0.08);
-  --shadow-lg: 0 8px 24px -8px rgba(45, 37, 64, 0.1);
-  --shadow-xl: 0 16px 40px -12px rgba(45, 37, 64, 0.12);
-  --shadow-glow: 0 1px 0 rgba(95, 74, 139, 0.06), 0 8px 24px -10px rgba(45, 37, 64, 0.12);
+  /* ── Shadow — layered, soft (Linear-style) ── */
+  --shadow-xs: 0 1px 2px rgba(45, 37, 64, 0.04);
+  --shadow-sm: 0 1px 3px rgba(45, 37, 64, 0.06), 0 1px 2px rgba(45, 37, 64, 0.04);
+  --shadow-md: 0 4px 20px -8px rgba(45, 37, 64, 0.1);
+  --shadow-lg: 0 12px 32px -12px rgba(45, 37, 64, 0.12);
+  --shadow-xl: 0 20px 48px -16px rgba(45, 37, 64, 0.14);
+  --shadow-glow: 0 1px 0 rgba(95, 74, 139, 0.05), 0 8px 28px -12px rgba(45, 37, 64, 0.14);
 
   /* ── Motion ── */
   --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
@@ -245,21 +245,21 @@
 
 [data-theme="light"] {
   color-scheme: light;
-  --background: #ffffff;
+  --background: #fffef2;
   --foreground: #2d2540;
-  --surface: #ffffff;
-  --surface-secondary: #f7f6fa;
-  --surface-hover: #f0eef4;
+  --surface: #fffef2;
+  --surface-secondary: #fdf9d4;
+  --surface-hover: #f9f5c8;
   --card: #ffffff;
   --card-foreground: #2d2540;
   --elevated: #ffffff;
-  --primary: #ffffff;
-  --primary-hover: #f3f2f6;
-  --primary-foreground: #5f4a8b;
+  --primary: #5f4a8b;
+  --primary-hover: #4f3d77;
+  --primary-foreground: #fffef2;
   --primary-muted: #ede9f4;
   --secondary: #5f4a8b;
   --secondary-foreground: #ffffff;
-  --muted: #f5f4f8;
+  --muted: #f5f0d8;
   --muted-foreground: #6b6080;
   --accent: #ede9f4;
   --accent-foreground: #5f4a8b;
@@ -291,11 +291,6 @@
   --chart-4: #a191c4;
   --chart-5: #b7aad4;
   --chart-6: #cdc3e4;
-}
-
-[data-theme="light"] .bg-primary.text-primary-foreground {
-  border: 1px solid var(--border-strong);
-  box-shadow: var(--shadow-xs);
 }
 
 [data-theme="light"] .hero-balance-card,
@@ -337,7 +332,9 @@ body::before {
   position: fixed;
   inset: 0;
   z-index: -1;
-  background: var(--background);
+  background:
+    radial-gradient(ellipse 100% 60% at 50% -10%, color-mix(in srgb, var(--violet) 7%, transparent), transparent 55%),
+    var(--background);
   pointer-events: none;
 }
 
@@ -349,10 +346,10 @@ h1, h2, h3, h4, h5 {
 }
 
 .text-eyebrow {
-  font-size: 0.75rem;
-  font-weight: 500;
-  letter-spacing: 0.04em;
-  text-transform: none;
+  font-size: 0.6875rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
   line-height: 1.4;
   color: var(--muted-foreground);
 }
@@ -470,9 +467,6 @@ h1, h2, h3, h4, h5 {
   border-color: color-mix(in srgb, var(--cream) 50%, var(--violet) 25%);
 }
 
-.surface-interactive {
-  cursor: pointer;
-}
 
 .surface-card {
   background: var(--card);
@@ -481,19 +475,17 @@ h1, h2, h3, h4, h5 {
   box-shadow: var(--shadow-xs);
   transition:
     border-color var(--duration-normal) var(--ease-out-expo),
-    background-color var(--duration-normal) var(--ease-out-expo),
     box-shadow var(--duration-normal) var(--ease-out-expo);
 }
 
 .surface-card:hover {
   border-color: var(--border);
-  box-shadow: var(--shadow-sm);
 }
 
 .surface-card.surface-interactive:hover {
-  box-shadow: var(--shadow-xs);
+  box-shadow: var(--shadow-sm);
+  border-color: var(--border);
   background: var(--elevated);
-  transform: translateY(-1px);
 }
 
 @keyframes shimmer {
@@ -506,27 +498,12 @@ h1, h2, h3, h4, h5 {
 }
 
 @keyframes fade-in {
-  from { opacity: 0; transform: translateY(6px); }
+  from { opacity: 0; transform: translateY(4px); }
   to { opacity: 1; transform: translateY(0); }
 }
 
 .animate-spin { animation: spin 1s linear infinite; }
 .animate-fade-in { animation: fade-in var(--duration-normal) var(--ease-out-expo) both; }
-
-@keyframes gentle-float {
-  0%, 100% { transform: translateY(0); }
-  50% { transform: translateY(-3px); }
-}
-
-.animate-gentle-float { animation: gentle-float 5s var(--ease-out-expo) infinite; }
-
-@keyframes success-pop {
-  0% { transform: scale(0.92); opacity: 0; }
-  60% { transform: scale(1.02); }
-  100% { transform: scale(1); opacity: 1; }
-}
-
-.animate-success-pop { animation: success-pop 0.4s var(--ease-spring) both; }
 
 @keyframes shimmer-pulse {
   0%, 100% { opacity: 0.5; }
@@ -547,12 +524,12 @@ h1, h2, h3, h4, h5 {
 .skeleton {
   background: linear-gradient(
     90deg,
-    var(--muted) 0%,
-    color-mix(in srgb, var(--muted) 50%, var(--elevated)) 50%,
-    var(--muted) 100%
+    color-mix(in srgb, var(--muted) 88%, var(--elevated)) 0%,
+    color-mix(in srgb, var(--muted) 55%, var(--elevated)) 50%,
+    color-mix(in srgb, var(--muted) 88%, var(--elevated)) 100%
   );
   background-size: 200% 100%;
-  animation: shimmer 1.6s ease-in-out infinite;
+  animation: shimmer 2s ease-in-out infinite;
   border-radius: var(--radius-md);
 }
 

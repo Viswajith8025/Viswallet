@@ -13,7 +13,7 @@ function balanceDeltaForTransaction(
   return reverse ? -sign * amountPaise : sign * amountPaise;
 }
 
-async function applyTransactionAccountDelta(
+export async function applyTransactionAccountDelta(
   accountId: number,
   kind: TransactionKind,
   amountPaise: number,

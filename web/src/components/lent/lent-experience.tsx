@@ -4,6 +4,7 @@ import { useState } from "react";
 import { format } from "date-fns";
 import { ArrowUpRight, Pencil, Plus, Trash2, HandCoins } from "lucide-react";
 import { PageHeader, PageContainer } from "@/components/ui/page";
+import { DexiePageGate } from "@/components/layout/dexie-page-gate";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input, Textarea } from "@/components/ui/input";
@@ -14,6 +15,7 @@ import { formatINR, parseRupeeInput } from "@/lib/money";
 import { useDexieTable, useInvalidateFinance, useAsyncAction } from "@/hooks";
 import { confirmAction } from "@/lib/store/confirm-store";
 import { markLentFullyReturned, loanProgress, recordLoanPayment } from "@/lib/loans/record-loan-payment";
+import { copy, toastCopy } from "@/lib/ux/copy";
 import { showToast } from "@/lib/store/toast-store";
 import { notifyDataMutation } from "@/lib/db/notify-mutation";
 import { LoanDueBadge } from "@/components/loans/loan-due-badge";
@@ -23,7 +25,7 @@ import { cn } from "@/lib/design/cn";
 export function LentExperience() {
   const invalidate = useInvalidateFinance();
   const { loading: saving, run } = useAsyncAction();
-  const { data: loans = [] } = useDexieTable("loans-lent", () =>
+  const { data: loans = [], isPending, isError, refetch } = useDexieTable("loans-lent", () =>
     db.loans.filter((l) => !l.isDeleted && l.direction === "lent_by_me").toArray(),
   );
 
@@ -97,7 +99,7 @@ export function LentExperience() {
           createdAt: now,
           updatedAt: now,
         });
-        showToast(`Lent ${formatINR(paise)} — mark returned when they pay you back`, { tone: "success" });
+        showToast(toastCopy.lent(paise), { tone: "success" });
       }
       resetForm();
       notifyDataMutation();
@@ -110,10 +112,10 @@ export function LentExperience() {
     setPayingId(loan.id);
     try {
       await markLentFullyReturned(loan.id);
-      showToast(`Received ${formatINR(loan.balancePaise)} — logged as income`, { tone: "success" });
+      showToast(toastCopy.received(loan.balancePaise), { tone: "success" });
       await invalidate();
     } catch (err) {
-      showToast(err instanceof Error ? err.message : "Failed", { tone: "error" });
+      showToast(err instanceof Error ? err.message : copy.errors.generic, { tone: "error" });
     } finally {
       setPayingId(null);
     }
@@ -126,10 +128,10 @@ export function LentExperience() {
     setPayingId(loan.id);
     try {
       await recordLoanPayment(loan.id, paise, { linkTransaction: true });
-      showToast(`Received ${formatINR(paise)} — logged as income`, { tone: "success" });
+      showToast(toastCopy.received(paise), { tone: "success" });
       await invalidate();
     } catch (err) {
-      showToast(err instanceof Error ? err.message : "Failed", { tone: "error" });
+      showToast(err instanceof Error ? err.message : copy.errors.generic, { tone: "error" });
     } finally {
       setPayingId(null);
     }
@@ -137,8 +139,8 @@ export function LentExperience() {
 
   async function remove(id: number) {
     const ok = await confirmAction({
-      title: "Remove entry?",
-      confirmLabel: "Delete",
+      title: copy.confirm.deleteLoan,
+      confirmLabel: copy.confirm.remove,
       destructive: true,
     });
     if (!ok) return;
@@ -148,6 +150,7 @@ export function LentExperience() {
   }
 
   return (
+    <DexiePageGate isPending={isPending} isError={isError} onRetry={() => refetch()}>
     <PageContainer className="max-w-3xl">
       <PageHeader
         eyebrow="Credit"
@@ -284,5 +287,6 @@ export function LentExperience() {
         </div>
       )}
     </PageContainer>
+    </DexiePageGate>
   );
 }

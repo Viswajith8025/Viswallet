@@ -42,7 +42,7 @@ export default function AnalyticsPage() {
                   description="Category analytics, spending heatmaps, and budget intelligence."
                 />
               </FadeIn>
-              <GlobalFilterBar />
+              <GlobalFilterBar collapsible />
               <EmptyState
                 title="No spending data yet"
                 description="Add transactions to unlock charts, heatmaps, and budget recommendations."

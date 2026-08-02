@@ -9,6 +9,7 @@ import { createCustomCategory } from "@/lib/categories/create-category";
 import { DEFAULT_CATEGORY_COLOR } from "@/lib/categories-default";
 import { CATEGORY_ICON_NAMES } from "@/lib/category-icons";
 import { cn } from "@/lib/design/cn";
+import { copy } from "@/lib/ux/copy";
 import { showToast } from "@/lib/store/toast-store";
 import { useInvalidateFinance } from "@/hooks";
 import { useMobileLayout } from "@/hooks/use-mobile-layout";
@@ -28,7 +29,7 @@ export function CreateCategoryDialog({
 }: CreateCategoryDialogProps) {
   const isMobileLayout = useMobileLayout();
 
-  const title = kind === "income" ? "New income category" : "New expense category";
+  const title = kind === "income" ? copy.categories.newIncome : copy.categories.newExpense;
   const form = open ? (
     <CreateCategoryForm key={kind} kind={kind} onClose={onClose} onCreated={onCreated} />
   ) : null;
@@ -39,7 +40,7 @@ export function CreateCategoryDialog({
         <div className="px-5 pb-[max(1rem,env(safe-area-inset-bottom))] pt-2">
           <h2 id="create-category-title" className="text-lg font-semibold">{title}</h2>
           <p className="mt-1 text-sm text-muted-foreground">
-            Appears right away when adding transactions.
+            {copy.categories.mobileHint}
           </p>
           <div className="mt-4">{form}</div>
         </div>
@@ -52,7 +53,7 @@ export function CreateCategoryDialog({
       <div className="p-6">
         <h2 id="create-category-title-desktop" className="text-lg font-semibold">{title}</h2>
         <p className="mt-1 text-sm text-muted-foreground">
-          Custom categories show up in quick add and transaction forms.
+          {copy.categories.desktopHint}
         </p>
         <div className="mt-4">{form}</div>
       </div>
@@ -89,11 +90,11 @@ function CreateCategoryForm({
         kind,
       });
       await invalidate();
-      showToast(`Category "${created.name}" created`, { tone: "success" });
+      showToast(copy.toast.categoryCreated(created.name), { tone: "success" });
       if (created.id != null) onCreated?.(created.id);
       onClose();
     } catch (err) {
-      const message = err instanceof Error ? err.message : "Could not create category.";
+      const message = err instanceof Error ? err.message : copy.categories.createFailed;
       setError(message);
       showToast(message, { tone: "error" });
     } finally {

@@ -31,10 +31,24 @@ export type AiInsightsContext = {
   topCategories: Array<{ name: string; amountPaise: number }>;
 };
 
+async function aiAuthHeaders(): Promise<Record<string, string>> {
+  const headers: Record<string, string> = { "Content-Type": "application/json" };
+  try {
+    const { getAuthSession } = await import("@/lib/supabase/auth");
+    const session = await getAuthSession();
+    if (session?.access_token) {
+      headers.Authorization = `Bearer ${session.access_token}`;
+    }
+  } catch {
+    // Offline or auth unavailable — server may still allow same-origin requests.
+  }
+  return headers;
+}
+
 async function postJson<T>(path: string, body: unknown): Promise<T> {
   const res = await fetch(path, {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
+    headers: await aiAuthHeaders(),
     body: JSON.stringify(body),
   });
   if (!res.ok) {

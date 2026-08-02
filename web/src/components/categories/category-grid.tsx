@@ -13,6 +13,7 @@ import {
   sortCategoriesForDisplay,
 } from "@/lib/categories/manage-category";
 import { useInvalidateFinance } from "@/hooks";
+import { copy } from "@/lib/ux/copy";
 import { confirmAction } from "@/lib/store/confirm-store";
 import { showToast } from "@/lib/store/toast-store";
 
@@ -50,11 +51,11 @@ export function CategoryGrid({
   async function handleRemove(cat: Category) {
     const isSystem = cat.isSystem;
     const ok = await confirmAction({
-      title: isSystem ? "Hide category?" : "Remove category?",
+      title: isSystem ? copy.confirm.hideCategory : copy.confirm.removeCategory,
       description: isSystem
-        ? `"${cat.name}" will be hidden from quick add. You can restore it from Edit categories.`
-        : `"${cat.name}" will be removed. Existing transactions keep this category.`,
-      confirmLabel: isSystem ? "Hide" : "Remove",
+        ? copy.confirmDesc.hideCategory(cat.name)
+        : copy.confirmDesc.removeCategoryKeepTx(cat.name),
+      confirmLabel: isSystem ? copy.labels.hide : copy.confirm.remove,
       destructive: true,
     });
     if (!ok || cat.id == null) return;
@@ -68,7 +69,7 @@ export function CategoryGrid({
     }
 
     showToast(
-      result === "hidden" ? `"${cat.name}" hidden` : `"${cat.name}" removed`,
+      result === "hidden" ? copy.toast.categoryHidden(cat.name) : copy.toast.categoryRemoved,
       { tone: "default" },
     );
   }
@@ -77,7 +78,7 @@ export function CategoryGrid({
     if (cat.id == null) return;
     await showCategoryInQuickAdd(cat.id);
     await invalidate();
-    showToast(`"${cat.name}" restored`, { tone: "success" });
+    showToast(copy.toast.categoryRestored(cat.name), { tone: "success" });
   }
 
   function renderCategoryButton(c: Category) {

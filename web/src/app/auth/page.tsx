@@ -45,6 +45,11 @@ export default function AuthPage() {
       return;
     }
 
+    if (password.length > 128) {
+      setError("Password must be 128 characters or fewer.");
+      return;
+    }
+
     setLoading(true);
     submittingRef.current = true;
     try {

@@ -2,7 +2,8 @@
 
 import Link from "next/link";
 import { Sparkles, ArrowRight } from "lucide-react";
-import { PageContainer, EmptyState } from "@/components/ui/page";
+import { PageHeader, EmptyState, PageContainer } from "@/components/ui/page";
+import { Button } from "@/components/ui/button";
 import { FinanceGate } from "@/components/layout/finance-gate";
 import { GlobalFilterBar } from "@/components/filters/global-filter-bar";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -18,6 +19,7 @@ import { InsightsHero } from "@/components/insights/insights-hero";
 import { InsightFeedItem } from "@/components/insights/insight-feed-item";
 import { useAiFeatures } from "@/hooks/use-ai-features";
 import type { FinanceSnapshot } from "@/lib/engines/finance-snapshot";
+import { copy } from "@/lib/ux/copy";
 
 function InsightsBody({ data }: { data: FinanceSnapshot }) {
   const { active: showAi } = useAiFeatures();
@@ -31,20 +33,14 @@ function InsightsBody({ data }: { data: FinanceSnapshot }) {
   const topSpending = breakdown.slice(0, 6);
 
   return (
-    <PageContainer className="max-w-5xl space-y-5 lg:space-y-6">
-      <header className="space-y-1">
-        <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
-          {formatCycleLabel(data.monthKey)}
-        </p>
-        <h1 className="font-display text-2xl font-semibold tracking-tight text-foreground lg:text-3xl">
-          Insights
-        </h1>
-        <p className="text-sm text-muted-foreground lg:max-w-xl">
-          Smart tips from your spending this cycle — calculated on your device.
-        </p>
-      </header>
+    <PageContainer>
+      <PageHeader
+        eyebrow={formatCycleLabel(data.monthKey)}
+        title={copy.pages.insights.title}
+        description={copy.insights.pageDescription}
+      />
 
-      <GlobalFilterBar collapsible className="border-b-0 pb-0" />
+      <GlobalFilterBar collapsible showCategoryFilter={false} className="border-b-0 pb-0" />
 
       <InsightsHero
         healthScore={data.healthScore}
@@ -64,9 +60,9 @@ function InsightsBody({ data }: { data: FinanceSnapshot }) {
         <div className="flex items-center justify-between gap-2 px-0.5">
           <h2 className="flex items-center gap-2 text-base font-semibold">
             <Sparkles size={18} className="text-primary" />
-            Smart analysis
+            {copy.insights.smartAnalysis}
           </h2>
-          <span className="text-xs text-muted-foreground">{feedInsights.length} tips</span>
+          <span className="text-xs text-muted-foreground">{copy.insights.tipsCount(feedInsights.length)}</span>
         </div>
         <div className="space-y-3">
           {feedInsights.map((insight) => (
@@ -78,7 +74,7 @@ function InsightsBody({ data }: { data: FinanceSnapshot }) {
       {recommendations.length > 0 && (
         <Card className="border-border/60">
           <CardHeader className="pb-2">
-            <CardTitle className="text-base font-semibold">Budget tweaks</CardTitle>
+            <CardTitle className="text-base font-semibold">{copy.insights.budgetTweaks}</CardTitle>
           </CardHeader>
           <CardContent className="space-y-2 pt-0">
             {recommendations.map((r) => (
@@ -111,16 +107,21 @@ function InsightsBody({ data }: { data: FinanceSnapshot }) {
 
       <Card className="border-border/60">
         <CardHeader className="flex-row items-center justify-between space-y-0 pb-2">
-          <CardTitle className="text-base font-semibold">Top spending</CardTitle>
+          <CardTitle className="text-base font-semibold">{copy.insights.topSpending}</CardTitle>
           <Link
             href="/analytics"
             className="inline-flex items-center gap-1 text-xs font-medium text-primary"
           >
-            All charts
+            {copy.insights.allCharts}
             <ArrowRight size={13} />
           </Link>
         </CardHeader>
         <CardContent className="pt-0">
+          {topSpending.length === 0 ? (
+            <p className="py-6 text-center text-sm text-muted-foreground">
+              {copy.empty.chart.description}
+            </p>
+          ) : (
           <div className="space-y-4">
             {topSpending.map((item) => {
               const pct = totalSpent > 0 ? (item.amount / totalSpent) * 100 : 0;
@@ -135,6 +136,7 @@ function InsightsBody({ data }: { data: FinanceSnapshot }) {
               );
             })}
           </div>
+          )}
         </CardContent>
       </Card>
     </PageContainer>
@@ -147,22 +149,20 @@ export default function InsightsPage() {
       {(data) => {
         if (data.transactions.length === 0) {
           return (
-            <PageContainer className="max-w-5xl">
-              <header className="mb-6 space-y-1">
-                <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
-                  {formatCycleLabel(data.monthKey)}
-                </p>
-                <h1 className="font-display text-2xl font-semibold tracking-tight">Insights</h1>
-              </header>
+            <PageContainer>
+              <PageHeader
+                eyebrow={formatCycleLabel(data.monthKey)}
+                title={copy.pages.insights.title}
+                description={copy.insights.pageDescription}
+              />
+              <GlobalFilterBar collapsible showCategoryFilter={false} className="border-b-0 pb-0" />
               <EmptyState
-                title="Not enough data yet"
-                description="Add expenses and income to unlock personalized insights and budget recommendations."
+                title={copy.insights.notEnoughTitle}
+                description={copy.insights.notEnoughDescription}
                 illustration="transactions"
                 action={
-                  <Link href="/transactions?add=expense" className="inline-flex">
-                    <span className="inline-flex h-11 items-center justify-center rounded-xl bg-primary px-5 text-sm font-medium text-primary-foreground">
-                      Add your first expense
-                    </span>
+                  <Link href="/transactions?add=expense">
+                    <Button size="sm">{copy.insights.addFirstExpense}</Button>
                   </Link>
                 }
               />

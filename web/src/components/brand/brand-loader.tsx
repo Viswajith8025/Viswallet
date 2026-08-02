@@ -27,9 +27,7 @@ export function BrandLoader({ className, size = 44, label, fullScreen = false }:
         <LogoMark size={size} />
       </div>
       {label && (
-        <p className="mt-5 text-sm text-muted-foreground" aria-hidden>
-          {label}
-        </p>
+        <p className="mt-5 text-sm text-muted-foreground/90 animate-shimmer-pulse">{label}</p>
       )}
       <span className="sr-only">{label ?? "Loading"}</span>
     </div>

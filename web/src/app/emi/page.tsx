@@ -16,6 +16,7 @@ import { useInvalidateFinance, useDexieTable } from "@/hooks";
 import { confirmAction } from "@/lib/store/confirm-store";
 import { notifyDataMutation } from "@/lib/db/notify-mutation";
 import { markEmiPaid } from "@/lib/obligations/mark-emi-paid";
+import { copy } from "@/lib/ux/copy";
 import { showToast } from "@/lib/store/toast-store";
 
 export default function EmiPage() {
@@ -71,7 +72,11 @@ export default function EmiPage() {
     const principalPaise = parseRupeeInput(principal);
     const emiAmountPaise = parseRupeeInput(emiAmount);
     const bal = balance.trim() ? parseRupeeInput(balance) : principalPaise;
-    if (!name.trim() || !lender.trim() || emiAmountPaise <= 0) return;
+    if (!name.trim() || !lender.trim() || emiAmountPaise <= 0) {
+      if (emiAmountPaise <= 0) showToast(copy.validation.amountRequired, { tone: "error" });
+      else if (!name.trim() || !lender.trim()) showToast(copy.formErrors.nameRequired, { tone: "error" });
+      return;
+    }
     setSaving(true);
     try {
     const now = new Date();
@@ -95,6 +100,8 @@ export default function EmiPage() {
     resetForm();
     notifyDataMutation();
     await invalidate();
+    } catch (err) {
+      showToast(err instanceof Error ? err.message : copy.toast.actionFailed, { tone: "error" });
     } finally {
       setSaving(false);
     }
@@ -103,19 +110,19 @@ export default function EmiPage() {
   async function recordPayment(id: number) {
     try {
       await markEmiPaid(id);
-      showToast("EMI paid — logged as expense", { tone: "success" });
+      showToast(copy.toast.emiPaid, { tone: "success" });
       await invalidate();
     } catch (err) {
-      showToast(err instanceof Error ? err.message : "Payment failed", { tone: "error" });
+      showToast(err instanceof Error ? err.message : copy.toast.paymentFailed, { tone: "error" });
     }
   }
 
   async function remove(id: number) {
     const emi = emis.find((e) => e.id === id);
     const ok = await confirmAction({
-      title: "Remove EMI?",
-      description: emi ? `"${emi.name}" will be archived.` : undefined,
-      confirmLabel: "Remove",
+      title: copy.confirm.removeEmi,
+      description: emi ? copy.confirmDesc.archiveEmi(emi.name) : undefined,
+      confirmLabel: copy.confirm.archive,
       destructive: true,
     });
     if (!ok) return;
@@ -127,37 +134,42 @@ export default function EmiPage() {
   return (
     <PageContainer className="max-w-5xl">
       <PageHeader
-        title="EMI Tracker"
-        description="Monitor loan EMIs, balances, and upcoming due dates."
-        actions={<Button onClick={() => { resetForm(); setShowForm(true); }}>Add EMI</Button>}
+        title={copy.pages.emi.title}
+        description={copy.pages.emi.description}
+        actions={<Button onClick={() => { resetForm(); setShowForm(true); }}>{copy.buttons.addEmi}</Button>}
+        mobileActions={
+          <Button size="sm" onClick={() => { resetForm(); setShowForm(true); }}>
+            {copy.buttons.add}
+          </Button>
+        }
       />
 
-      <DexiePageGate isPending={isPending} isError={isError} onRetry={() => refetch()} label="Loading EMIs…">
+      <DexiePageGate isPending={isPending} isError={isError} onRetry={() => refetch()} label={copy.loading.emis}>
       <div className="space-y-8">
 
       <div className="grid gap-4 md:grid-cols-3">
-        <StatCard label="Monthly outflow" value={formatINR(monthlyTotal)} tone="negative" />
-        <StatCard label="Outstanding balance" value={formatINR(totalBalance)} />
-        <StatCard label="Active EMIs" value={emis.length} />
+        <StatCard label={copy.labels.monthlyOutflow} value={formatINR(monthlyTotal)} tone="negative" />
+        <StatCard label={copy.labels.outstandingBalance} value={formatINR(totalBalance)} />
+        <StatCard label={copy.labels.activeEmis} value={emis.length} />
       </div>
 
       {showForm && (
         <Card>
           <CardContent className="p-5">
             <form onSubmit={save} className="grid gap-4 md:grid-cols-2">
-              <Input label="Loan name" required value={name} onChange={(e) => setName(e.target.value)} placeholder="Home loan" />
-              <Input label="Lender" required value={lender} onChange={(e) => setLender(e.target.value)} placeholder="HDFC Bank" />
-              <Input label="Principal (INR)" type="number" value={principal} onChange={(e) => setPrincipal(e.target.value)} />
-              <Input label="EMI amount (INR)" required type="number" value={emiAmount} onChange={(e) => setEmiAmount(e.target.value)} />
-              <Input label="Balance remaining (INR)" type="number" value={balance} onChange={(e) => setBalance(e.target.value)} hint="Defaults to principal if empty" />
-              <Input label="Interest rate (%)" type="number" step="0.1" value={rate} onChange={(e) => setRate(e.target.value)} />
-              <Input label="Tenure (months)" type="number" value={tenure} onChange={(e) => setTenure(e.target.value)} />
-              <Input label="Next due date" type="date" value={nextDue} onChange={(e) => setNextDue(e.target.value)} />
+              <Input label={copy.forms.loanName} required value={name} onChange={(e) => setName(e.target.value)} placeholder={copy.forms.loanPlaceholder} />
+              <Input label={copy.forms.lender} required value={lender} onChange={(e) => setLender(e.target.value)} placeholder={copy.forms.lenderPlaceholder} />
+              <Input label={copy.forms.principal} type="number" value={principal} onChange={(e) => setPrincipal(e.target.value)} />
+              <Input label={copy.forms.emiAmount} required type="number" value={emiAmount} onChange={(e) => setEmiAmount(e.target.value)} />
+              <Input label={copy.forms.balanceRemaining} type="number" value={balance} onChange={(e) => setBalance(e.target.value)} hint={copy.forms.balanceHint} />
+              <Input label={copy.forms.interestRate} type="number" step="0.1" value={rate} onChange={(e) => setRate(e.target.value)} />
+              <Input label={copy.forms.tenureMonths} type="number" value={tenure} onChange={(e) => setTenure(e.target.value)} />
+              <Input label={copy.forms.nextDueDate} type="date" value={nextDue} onChange={(e) => setNextDue(e.target.value)} />
               <div className="flex gap-2 md:col-span-2">
                 <Button type="submit" disabled={saving}>
-                  {saving ? "Saving…" : edit ? "Update" : "Save"}
+                  {saving ? copy.buttons.saving : edit ? copy.labels.update : copy.buttons.save}
                 </Button>
-                <Button type="button" variant="ghost" onClick={resetForm}>Cancel</Button>
+                <Button type="button" variant="ghost" onClick={resetForm}>{copy.buttons.cancel}</Button>
               </div>
             </form>
           </CardContent>
@@ -165,7 +177,7 @@ export default function EmiPage() {
       )}
 
       {emis.length === 0 ? (
-        <EmptyState title="No EMIs tracked" description="Add your home, car, or personal loan EMIs." action={<Button onClick={() => setShowForm(true)}>Add EMI</Button>} />
+        <EmptyState title={copy.empty.noEmis.title} description={copy.empty.noEmis.description} action={<Button onClick={() => setShowForm(true)}>{copy.buttons.addEmi}</Button>} />
       ) : (
         <Card>
           <CardContent className="p-0">
@@ -187,7 +199,7 @@ export default function EmiPage() {
                           <p className="text-xs text-muted-foreground">{formatINR(e.balancePaise)} left</p>
                         </div>
                         <div className="flex flex-wrap items-center justify-end gap-1">
-                        <Button size="sm" variant="outline" onClick={() => e.id && recordPayment(e.id)}>Pay EMI</Button>
+                        <Button size="sm" variant="outline" onClick={() => e.id && recordPayment(e.id)}>{copy.actionCenter.payEmi}</Button>
                         <Button size="icon" variant="ghost" onClick={() => startEdit(e)} aria-label={`Edit ${e.name}`}><Pencil size={14} /></Button>
                         <Button size="icon" variant="ghost" onClick={() => e.id && remove(e.id)} aria-label={`Delete ${e.name}`}><Trash2 size={14} className="text-destructive" /></Button>
                         </div>

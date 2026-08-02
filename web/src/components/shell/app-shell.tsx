@@ -1,6 +1,7 @@
 "use client";
 
-import { usePathname } from "next/navigation";
+import { Suspense, useEffect } from "react";
+import { usePathname, useSearchParams } from "next/navigation";
 import { TopBar } from "./top-bar";
 import { OfflineBanner } from "./offline-banner";
 import { MobileNav } from "./mobile-nav";
@@ -16,6 +17,24 @@ import { CommandPalette } from "@/components/command/command-palette";
 import { QuickAddModal } from "@/components/quick-add/quick-add-modal";
 import { StatementImportModal } from "@/components/import/statement-import-modal";
 import { SalaryCreditModal } from "@/components/salary/salary-credit-modal";
+import { useUIStore } from "@/lib/store/ui-store";
+
+function QuickAddDeepLink() {
+  const searchParams = useSearchParams();
+  const setQuickAddOpen = useUIStore((s) => s.setQuickAddOpen);
+
+  useEffect(() => {
+    const quickAdd = searchParams.get("quickAdd");
+    if (quickAdd === "expense" || quickAdd === "income") {
+      setQuickAddOpen(true, quickAdd);
+      const url = new URL(window.location.href);
+      url.searchParams.delete("quickAdd");
+      window.history.replaceState(null, "", `${url.pathname}${url.search}${url.hash}`);
+    }
+  }, [searchParams, setQuickAddOpen]);
+
+  return null;
+}
 
 export function AppShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
@@ -35,7 +54,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             <TopBar />
             <main
               id="main-content"
-              className="scroll-premium min-h-0 flex-1 overflow-y-auto overscroll-y-contain px-4 py-4 pb-[calc(4.5rem+env(safe-area-inset-bottom))] lg:px-8 lg:py-8 lg:pb-8"
+              className="scroll-premium min-h-0 flex-1 overflow-y-auto overscroll-y-contain px-4 py-4 pb-[calc(3.5rem+3.5rem+env(safe-area-inset-bottom))] lg:px-8 lg:py-8 lg:pb-8"
               tabIndex={-1}
             >
               {children}
@@ -44,6 +63,9 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           <MobileFab />
           <MobileNav />
           <MobileMoreSheet />
+          <Suspense fallback={null}>
+            <QuickAddDeepLink />
+          </Suspense>
           <CommandPalette />
           <QuickAddModal />
           <StatementImportModal />

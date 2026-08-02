@@ -1,6 +1,6 @@
 "use client";
 
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { QueryClientProvider } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
 import { ErrorBoundary } from "@/components/error-boundary";
 import { DbProvider } from "@/components/providers/db-provider";
@@ -10,18 +10,8 @@ import { kickstartDb } from "@/lib/db/boot";
 import { ensureDbSeeded, getSettings, peekBootCache } from "@/lib/db";
 import { applyAccentColor } from "@/lib/theme/accent";
 import { applyThemeMode } from "@/lib/theme/resolve";
+import { createQueryClient } from "@/lib/react-query/create-query-client";
 import type { AccentColor } from "@/lib/db/types";
-
-function makeQueryClient() {
-  return new QueryClient({
-    defaultOptions: {
-      queries: {
-        staleTime: 30_000,
-        refetchOnWindowFocus: false,
-      },
-    },
-  });
-}
 
 function applyBootTheme() {
   const boot = peekBootCache();
@@ -31,7 +21,7 @@ function applyBootTheme() {
 }
 
 export function AppProviders({ children }: { children: React.ReactNode }) {
-  const [queryClient] = useState(makeQueryClient);
+  const [queryClient] = useState(createQueryClient);
 
   useEffect(() => {
     kickstartDb();

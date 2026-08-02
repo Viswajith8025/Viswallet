@@ -25,6 +25,7 @@ import {
   ACCOUNT_ROLE_LABELS,
 } from "@/lib/accounts/wallet-presets";
 import { reconcileAccountBalance } from "@/lib/accounts/reconcile-account-balance";
+import { copy } from "@/lib/ux/copy";
 import { showToast } from "@/lib/store/toast-store";
 import { useInvalidateFinance } from "@/hooks/use-invalidate-finance";
 
@@ -133,7 +134,7 @@ export default function AccountsPage() {
     e.preventDefault();
     setFormError(null);
     if (!name.trim()) {
-      setFormError("Enter a name.");
+      setFormError(copy.formErrors.nameRequired);
       return;
     }
     await run(async () => {
@@ -157,7 +158,7 @@ export default function AccountsPage() {
       setBalance("");
       setShowForm(false);
       await refresh();
-      showToast("Account added", { tone: "success" });
+      showToast(copy.toast.accountAdded, { tone: "success" });
     });
   }
 
@@ -181,7 +182,7 @@ export default function AccountsPage() {
     await run(async () => {
       await reconcileAccountBalance(account.id!, paise);
       await refresh();
-      showToast(`${account.name} updated to ${formatINR(paise)}`, { tone: "success" });
+      showToast(copy.accountUpdated(account.name, formatINR(paise)), { tone: "success" });
     });
   }
 

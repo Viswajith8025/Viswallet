@@ -446,7 +446,9 @@ export default function SettingsPage() {
             label="Unlock with Face ID or fingerprint"
             checked={biometricEnabled}
             onChange={(e) => handleBiometricToggle(e.target.checked)}
+            disabled
           />
+          <p className="text-sm text-muted-foreground">Biometric unlock is coming in a future update. PIN lock is available in Security.</p>
         </CardContent>
       </Card>
 

@@ -13,11 +13,12 @@ import { syncProfileFromAuthUser } from "@/lib/supabase/profile-sync";
 import { parseRupeeInput, formatINR } from "@/lib/money";
 import { SALARY_PRESETS } from "@/lib/ux/defaults";
 import { successFeedback, tapFeedback } from "@/lib/ux/feedback";
+import { copy } from "@/lib/ux/copy";
 import { showToast } from "@/lib/store/toast-store";
 import { cn } from "@/lib/design/cn";
 
 const MIN_SALARY_PAISE = 1_000_00;
-const STEPS = ["Your name", "Income setup"] as const;
+const STEPS = copy.onboardingSteps;
 
 export default function OnboardingPage() {
   const router = useRouter();
@@ -64,12 +65,12 @@ export default function OnboardingPage() {
     const day = Math.min(28, Math.max(1, parseInt(salaryDay, 10) || 1));
     const paise = parseRupeeInput(salary);
     if (!displayName.trim()) {
-      setFormError("Enter your name to continue.");
+      setFormError(copy.validationOnboarding.nameRequired);
       setLoading(false);
       return;
     }
     if (paise < MIN_SALARY_PAISE) {
-      setFormError("Enter a monthly salary of at least ₹1,000.");
+      setFormError(copy.validationOnboarding.salaryMin);
       setLoading(false);
       return;
     }
@@ -82,7 +83,7 @@ export default function OnboardingPage() {
         router.refresh();
       }, 1400);
     } catch {
-      showToast("Setup failed. Please try again.", { tone: "error" });
+      showToast(copy.toast.setupFailed, { tone: "error" });
       setLoading(false);
     }
   }
@@ -91,7 +92,7 @@ export default function OnboardingPage() {
     e.preventDefault();
     setFormError(null);
     if (!displayName.trim()) {
-      setFormError("Enter your name to continue.");
+      setFormError(copy.validationOnboarding.nameRequired);
       return;
     }
     tapFeedback();
@@ -101,7 +102,7 @@ export default function OnboardingPage() {
   if (!bootstrapped) {
     return (
       <AuthShell features={[]}>
-        <p className="text-sm text-muted-foreground">Loading setup…</p>
+        <p className="text-sm text-muted-foreground">{copy.onboarding.loadingSetup}</p>
       </AuthShell>
     );
   }
@@ -109,8 +110,8 @@ export default function OnboardingPage() {
   if (done) {
     return (
       <AuthShell
-        headline="You're in."
-        subcopy="Your ledger is configured. We'll take you to the dashboard."
+        headline={copy.onboardingSuccess.headline}
+        subcopy={copy.success.onboardingSubtitle}
         features={[]}
       >
         <div className="flex flex-col items-start py-8">
@@ -118,9 +119,9 @@ export default function OnboardingPage() {
             <Check size={22} strokeWidth={2.25} />
           </div>
           <p className="mt-6 font-display text-xl font-semibold tracking-tight">
-            Welcome, {displayName.trim()}
+            {copy.onboarding.welcome(displayName.trim())}
           </p>
-          <p className="mt-2 text-sm text-muted-foreground">Opening your dashboard…</p>
+          <p className="mt-2 text-sm text-muted-foreground">{copy.onboarding.openingDashboard}</p>
         </div>
       </AuthShell>
     );
@@ -131,13 +132,13 @@ export default function OnboardingPage() {
       <StepHeader
         step={step}
         total={STEPS.length}
-        title={step === 0 ? "What should we call you?" : "Set up your salary cycle"}
+        title={step === 0 ? copy.onboarding.nameTitle : copy.onboarding.salaryTitle}
         description={
           step === 0
-            ? "This is how visWallet greets you — only stored on your device."
+            ? copy.onboarding.nameDescription
             : displayName.trim()
-              ? `${displayName.trim()}, tell us when and how much you earn each month.`
-              : "Tell us when and how much you earn each month."
+              ? copy.onboarding.salaryDescriptionWithName(displayName.trim())
+              : copy.onboarding.salaryDescriptionDefault
         }
       />
 
@@ -148,8 +149,8 @@ export default function OnboardingPage() {
       >
         {step === 0 ? (
           <Input
-            label="Display name"
-            placeholder="Vishwajit"
+            label={copy.forms.displayName}
+            placeholder={copy.onboarding.namePlaceholder}
             value={displayName}
             onChange={(e) => {
               setDisplayName(e.target.value);
@@ -161,7 +162,7 @@ export default function OnboardingPage() {
         ) : (
           <>
             <Input
-              label="Monthly salary (₹)"
+              label={copy.forms.monthlySalary}
               type="text"
               inputMode="numeric"
               placeholder="50,000"
@@ -174,7 +175,7 @@ export default function OnboardingPage() {
             />
 
             <div className="space-y-2.5">
-              <span className="text-xs font-medium text-foreground/80">Quick select</span>
+              <span className="text-xs font-medium text-foreground/80">{copy.onboarding.quickSelect}</span>
               <div className="grid grid-cols-4 gap-1.5 sm:grid-cols-4">
                 {SALARY_PRESETS.map((p) => {
                   const active = salary === String(p.value);
@@ -201,19 +202,19 @@ export default function OnboardingPage() {
               </div>
               {salary && parseRupeeInput(salary) >= MIN_SALARY_PAISE && (
                 <p className="text-xs text-muted-foreground">
-                  {formatINR(parseRupeeInput(salary))} per month
+                  {copy.onboarding.perMonth(formatINR(parseRupeeInput(salary)))}
                 </p>
               )}
             </div>
 
             <Input
-              label="Salary day"
+              label={copy.forms.salaryDay}
               type="number"
               min="1"
               max="28"
               value={salaryDay}
               onChange={(e) => setSalaryDay(e.target.value)}
-              hint="Day 1–28 when your pay cycle starts."
+              hint={copy.onboarding.salaryDayHint}
               inputMode="numeric"
             />
           </>
@@ -228,7 +229,7 @@ export default function OnboardingPage() {
         <div className={cn("flex gap-2 pt-2", step === 0 && "flex-col")}>
           {step === 1 && (
             <Button type="button" variant="outline" className="flex-1" onClick={() => setStep(0)}>
-              Back
+              {copy.buttons.back}
             </Button>
           )}
           <Button
@@ -237,7 +238,7 @@ export default function OnboardingPage() {
             size="lg"
             disabled={loading}
           >
-            {loading ? "Saving…" : step === 0 ? "Continue" : "Finish setup"}
+            {loading ? copy.buttons.saving : step === 0 ? copy.buttons.continue : copy.buttons.finishSetup}
             {!loading && step === 0 && <ArrowRight size={15} />}
           </Button>
         </div>

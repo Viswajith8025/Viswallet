@@ -56,8 +56,8 @@ export const TransactionRow = memo(function TransactionRow({
           }}
         />
         <div className="min-w-0">
-          <p className="truncate font-medium">{t.title}</p>
-          <p className="text-xs text-muted-foreground">{metaParts.join(" · ")}</p>
+          <p className="truncate text-[15px] font-medium tracking-[-0.01em]">{t.title}</p>
+          <p className="text-xs text-muted-foreground/90">{metaParts.join(" · ")}</p>
         </div>
       </div>
       <div className="flex shrink-0 items-center gap-1">
@@ -76,7 +76,7 @@ export const TransactionRow = memo(function TransactionRow({
             <Button
               size="icon"
               variant="ghost"
-              className="opacity-100 sm:opacity-0 sm:transition-opacity sm:group-hover:opacity-100"
+              className="opacity-100 sm:opacity-0 sm:group-focus-within:opacity-100 sm:transition-opacity sm:group-hover:opacity-100"
               onClick={() => onEdit?.(t)}
               aria-label={`Edit ${t.title}`}
             >
@@ -85,7 +85,7 @@ export const TransactionRow = memo(function TransactionRow({
             <Button
               size="icon"
               variant="ghost"
-              className="opacity-100 sm:opacity-0 sm:transition-opacity sm:group-hover:opacity-100"
+              className="opacity-100 sm:opacity-0 sm:group-focus-within:opacity-100 sm:transition-opacity sm:group-hover:opacity-100"
               onClick={() => t.id && onDelete?.(t.id)}
               aria-label={`Delete ${t.title}`}
             >
@@ -98,8 +98,8 @@ export const TransactionRow = memo(function TransactionRow({
   );
 
   const className = cn(
-    "group flex items-center justify-between gap-4 py-3.5 transition-colors",
-    href && "hover:bg-muted/30 -mx-2 rounded-xl px-2",
+    "group flex items-center justify-between gap-4 py-3.5 transition-colors duration-[var(--duration-fast)]",
+    href && "hover:bg-surface-hover/60 -mx-2 rounded-xl px-2",
     showActions && "px-4 py-4 sm:px-5",
   );
 

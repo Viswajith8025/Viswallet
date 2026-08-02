@@ -18,6 +18,7 @@ import { hideCategoryFromQuickAdd, showCategoryInQuickAdd } from "@/lib/categori
 import { createCustomCategory } from "@/lib/categories/create-category";
 import { notifyDataMutation } from "@/lib/db/notify-mutation";
 import { cn } from "@/lib/design/cn";
+import { copy } from "@/lib/ux/copy";
 import { showToast } from "@/lib/store/toast-store";
 
 export default function CategoriesPage() {
@@ -48,38 +49,38 @@ export default function CategoriesPage() {
       setIconName("circle-dot");
       setKind("expense");
       setShowForm(false);
-      showToast("Category created", { tone: "success" });
+      showToast(copy.categories.created, { tone: "success" });
       await invalidate();
-    }, { errorMessage: "Could not create category. Try a different name." });
+    }, { errorMessage: copy.categories.createFailed });
   }
 
   async function hideFromQuickAdd(cat: Category) {
     if (cat.id == null) return;
     await hideCategoryFromQuickAdd(cat.id);
     await invalidate();
-    showToast(`"${cat.name}" hidden from quick add`, { tone: "default" });
+    showToast(copy.toast.categoryHidden(cat.name), { tone: "default" });
   }
 
   async function restoreQuickAdd(cat: Category) {
     if (cat.id == null) return;
     await showCategoryInQuickAdd(cat.id);
     await invalidate();
-    showToast(`"${cat.name}" restored`, { tone: "success" });
+    showToast(copy.toast.categoryRestored(cat.name), { tone: "success" });
   }
 
   async function remove(cat: Category) {
     if (cat.isSystem) return;
     const ok = await confirmAction({
-      title: "Delete category?",
-      description: `"${cat.name}" will be archived. Existing transactions keep this category.`,
-      confirmLabel: "Delete",
+      title: copy.confirm.deleteCategory,
+      description: copy.confirmDesc.removeCategoryKeepTx(cat.name),
+      confirmLabel: copy.confirm.remove,
       destructive: true,
     });
     if (!ok) return;
     await db.categories.update(cat.id!, { isDeleted: true });
     notifyDataMutation();
     await invalidate();
-    showToast("Category removed", { tone: "default" });
+    showToast(copy.toast.categoryRemoved, { tone: "default" });
   }
 
   const system = categories.filter((c) => c.isSystem);

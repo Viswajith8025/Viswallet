@@ -22,10 +22,10 @@ export function MobileNav() {
 
   return (
     <nav
-      className="fixed bottom-0 left-0 right-0 z-40 border-t border-border/80 bg-background pb-[env(safe-area-inset-bottom)] lg:hidden"
+      className="fixed bottom-0 left-0 right-0 z-40 border-t border-border-light bg-background/92 pb-[env(safe-area-inset-bottom)] shadow-[0_-1px_0_rgba(45,37,64,0.04)] backdrop-blur-xl backdrop-saturate-150 lg:hidden"
       aria-label="Main navigation"
     >
-      <div className="mx-auto flex h-14 max-w-lg items-center justify-around px-1">
+      <div className="mx-auto flex h-[3.5rem] max-w-lg items-center justify-around px-1">
         {TABS.map((tab) => {
           if (tab.href === "__more__") {
             return (
@@ -34,8 +34,8 @@ export function MobileNav() {
                 type="button"
                 onClick={() => setMobileMenuOpen(true)}
                 className={cn(
-                  "flex min-w-[4rem] flex-col items-center gap-0.5 py-1 text-[11px] font-medium transition-colors",
-                  moreActive ? "text-primary" : "text-muted-foreground",
+                  "flex min-w-[4rem] flex-col items-center gap-0.5 py-1 text-[11px] font-medium transition-colors duration-[var(--duration-fast)]",
+                  moreActive ? "text-[var(--violet)] dark:text-[var(--cream)]" : "text-muted-foreground",
                 )}
                 aria-label="More pages"
                 aria-expanded={mobileMenuOpen}
@@ -52,8 +52,8 @@ export function MobileNav() {
               key={tab.href}
               href={tab.href}
               className={cn(
-                "flex min-w-[4rem] flex-col items-center gap-0.5 py-1 text-[11px] font-medium transition-colors",
-                active ? "text-primary" : "text-muted-foreground",
+                "flex min-w-[4rem] flex-col items-center gap-0.5 py-1 text-[11px] font-medium transition-colors duration-[var(--duration-fast)]",
+                active ? "text-[var(--violet)] dark:text-[var(--cream)]" : "text-muted-foreground",
               )}
             >
               <tab.icon size={22} strokeWidth={active ? 2 : 1.75} />
