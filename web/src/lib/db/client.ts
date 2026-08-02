@@ -410,7 +410,10 @@ export async function ensureDbSeeded(): Promise<void> {
 
     const latestSettings = await db.settings.get(1);
     if (latestSettings) writeBootCache(latestSettings);
-  })();
+  })().catch((err) => {
+    seedPromise = null;
+    throw err;
+  });
   return seedPromise;
 }
 

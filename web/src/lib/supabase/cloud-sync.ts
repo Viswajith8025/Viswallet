@@ -11,12 +11,33 @@ import {
 const LAST_SYNC_KEY = "vw_cloud_last_sync_at";
 const USER_ID_KEY = "vw_cloud_user_id";
 const VAULT_UNAVAILABLE_KEY = "vw_vault_unavailable";
+const CLOUD_SYNC_TIMEOUT_MS = 12_000;
 
 let syncInFlight: Promise<void> | null = null;
 let loginSyncInFlight: Promise<"pulled" | "pushed" | "noop"> | null = null;
 let debounceTimer: ReturnType<typeof setTimeout> | null = null;
 let vaultUnavailableMemory =
   typeof window !== "undefined" && localStorage.getItem(VAULT_UNAVAILABLE_KEY) === "1";
+
+function withCloudTimeout<T>(promise: Promise<T>, label: string): Promise<T> {
+  if (typeof window === "undefined") return promise;
+  return new Promise<T>((resolve, reject) => {
+    const timer = window.setTimeout(() => {
+      console.warn(`[Viswallet] Cloud sync timed out: ${label}`);
+      reject(new Error(`Cloud sync timed out: ${label}`));
+    }, CLOUD_SYNC_TIMEOUT_MS);
+
+    promise
+      .then((value) => {
+        window.clearTimeout(timer);
+        resolve(value);
+      })
+      .catch((err) => {
+        window.clearTimeout(timer);
+        reject(err);
+      });
+  });
+}
 
 function isCloudVaultEnvEnabled(): boolean {
   return process.env.NEXT_PUBLIC_CLOUD_VAULT === "true";
@@ -215,42 +236,45 @@ export async function syncCloudOnLogin(): Promise<"pulled" | "pushed" | "noop"> 
   if (loginSyncInFlight) return loginSyncInFlight;
   if (!isCloudVaultEnvEnabled()) return "noop";
 
-  loginSyncInFlight = (async () => {
-    const sb = getSupabase();
-    const user = await getAuthUser();
-    if (!sb || !user) return "noop";
+  loginSyncInFlight = withCloudTimeout(
+    (async () => {
+      const sb = getSupabase();
+      const user = await getAuthUser();
+      if (!sb || !user) return "noop";
 
-    await ensureAccountScopedLocalData(user.id);
+      await ensureAccountScopedLocalData(user.id);
 
-    const { data, error } = await sb
-      .from("user_data_vaults")
-      .select("updated_at")
-      .eq("user_id", user.id)
-      .maybeSingle();
+      const { data, error } = await sb
+        .from("user_data_vaults")
+        .select("updated_at")
+        .eq("user_id", user.id)
+        .maybeSingle();
 
-    if (error) {
-      if (isMissingVaultTable(error)) {
-        markVaultUnavailable();
+      if (error) {
+        if (isMissingVaultTable(error)) {
+          markVaultUnavailable();
+          return "noop";
+        }
+        throw new Error(error.message);
+      }
+
+      if (data?.updated_at) {
+        const pulled = await pullCloudVault();
+        if (pulled) clearVaultUnavailable();
+        return pulled ? "pulled" : "noop";
+      }
+
+      const settings = await getSettings();
+      if (!settings.onboardingComplete) {
         return "noop";
       }
-      throw new Error(error.message);
-    }
 
-    if (data?.updated_at) {
-      const pulled = await pullCloudVault();
-      if (pulled) clearVaultUnavailable();
-      return pulled ? "pulled" : "noop";
-    }
-
-    const settings = await getSettings();
-    if (!settings.onboardingComplete) {
-      return "noop";
-    }
-
-    await pushCloudVault();
-    clearVaultUnavailable();
-    return "pushed";
-  })().finally(() => {
+      await pushCloudVault();
+      clearVaultUnavailable();
+      return "pushed";
+    })(),
+    "login-sync",
+  ).finally(() => {
     loginSyncInFlight = null;
   });
 
@@ -261,16 +285,19 @@ export async function syncCloudNow(): Promise<void> {
   if (syncInFlight) return syncInFlight;
   if (!shouldAutoCloudSync()) return;
 
-  syncInFlight = (async () => {
-    emitCloudSyncActive(true);
-    try {
-      const user = await getAuthUser();
-      if (!user) return;
-      await pushCloudVault();
-    } finally {
-      emitCloudSyncActive(false);
-    }
-  })().finally(() => {
+  syncInFlight = withCloudTimeout(
+    (async () => {
+      emitCloudSyncActive(true);
+      try {
+        const user = await getAuthUser();
+        if (!user) return;
+        await pushCloudVault();
+      } finally {
+        emitCloudSyncActive(false);
+      }
+    })(),
+    "background-sync",
+  ).finally(() => {
     syncInFlight = null;
   });
 

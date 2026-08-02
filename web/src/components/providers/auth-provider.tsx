@@ -37,6 +37,7 @@ type AuthContextValue = {
 };
 
 const AuthContext = createContext<AuthContextValue | null>(null);
+const SESSION_READY_TIMEOUT_MS = 5000;
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const configured = cloudAuthEnabled();
@@ -55,7 +56,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     try {
       await syncCloudOnLogin();
     } catch (err) {
-      // Never block sign-in / sign-up when cloud backup isn't ready yet.
       console.warn("[Viswallet] Cloud sync skipped:", err);
     } finally {
       setLoginSyncing(false);
@@ -70,23 +70,32 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     if (!configured) return;
 
     let mounted = true;
-    const authTimeout = window.setTimeout(() => {
-      if (mounted) setSessionReady(true);
-    }, 2500);
+    let resolved = false;
 
-    getAuthSession().then(async (session) => {
+    const markSessionReady = () => {
+      if (!mounted || resolved) return;
+      resolved = true;
+      setSessionReady(true);
+    };
+
+    const authTimeout = window.setTimeout(markSessionReady, SESSION_READY_TIMEOUT_MS);
+
+    getAuthSession().then((session) => {
       if (!mounted) return;
       const sessionUser = session?.user ?? null;
       setUser(sessionUser);
+      markSessionReady();
       if (sessionUser && shouldAutoCloudSync()) {
-        await runCloudSync();
+        void runCloudSync();
       }
-      if (mounted) setSessionReady(true);
     });
 
-    const unsubscribe = onAuthStateChange((_event, session) => {
+    const unsubscribe = onAuthStateChange((event, session) => {
       if (!mounted) return;
       setUser(session?.user ?? null);
+      if (event === "INITIAL_SESSION" || event === "SIGNED_IN" || event === "TOKEN_REFRESHED") {
+        markSessionReady();
+      }
     });
 
     return () => {
@@ -100,6 +109,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const signedInUser = await signInWithEmail(email, password);
     await syncProfileFromAuthUser(signedInUser);
     setUser(signedInUser);
+    setSessionReady(true);
     await runCloudSync();
   }, [runCloudSync]);
 
@@ -108,6 +118,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     if (outcome.status === "signed_in") {
       await syncProfileFromAuthUser(outcome.user);
       setUser(outcome.user);
+      setSessionReady(true);
       await runCloudSync();
       return { signedIn: true as const };
     }

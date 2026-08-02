@@ -8,6 +8,7 @@ import { PageSkeleton } from "@/components/ui/skeleton";
 
 const ALWAYS_PUBLIC_ROUTES = ["/auth", "/privacy", "/terms", "/licenses"];
 const ONBOARDING_ROUTE = "/onboarding";
+const SETTINGS_READY_TIMEOUT_MS = 6000;
 
 function canRenderImmediately(pathname: string, configured: boolean): boolean {
   if (ALWAYS_PUBLIC_ROUTES.includes(pathname)) return true;
@@ -18,7 +19,7 @@ function canRenderImmediately(pathname: string, configured: boolean): boolean {
 export function RouteGuard({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const router = useRouter();
-  const { configured, user, loading: authLoading, syncing } = useAuth();
+  const { configured, user, loading: authLoading } = useAuth();
   const isOnboarding = pathname === ONBOARDING_ROUTE;
   const isPublic =
     ALWAYS_PUBLIC_ROUTES.includes(pathname) ||
@@ -36,10 +37,15 @@ export function RouteGuard({ children }: { children: React.ReactNode }) {
       return;
     }
 
-    // Wait for cloud restore before deciding onboarding vs dashboard.
-    if (configured && syncing) return;
-
     let cancelled = false;
+    const settingsTimeout = window.setTimeout(() => {
+      if (cancelled) return;
+      const boot = peekBootCache();
+      if (boot?.onboardingComplete && !isOnboarding) {
+        setAppReady(true);
+      }
+    }, SETTINGS_READY_TIMEOUT_MS);
+
     getSettings()
       .then((s) => {
         if (cancelled) return;
@@ -61,15 +67,19 @@ export function RouteGuard({ children }: { children: React.ReactNode }) {
         } else {
           router.replace(ONBOARDING_ROUTE);
         }
+      })
+      .finally(() => {
+        window.clearTimeout(settingsTimeout);
       });
 
     return () => {
       cancelled = true;
+      window.clearTimeout(settingsTimeout);
     };
-  }, [pathname, router, isPublic, configured, user, authLoading, syncing, isOnboarding]);
+  }, [pathname, router, isPublic, configured, user, authLoading, isOnboarding]);
 
   if (isPublic) return <>{children}</>;
-  if (!appReady || (configured && (authLoading || !user || syncing))) {
+  if (!appReady || (configured && (authLoading || !user))) {
     return <PageSkeleton />;
   }
 

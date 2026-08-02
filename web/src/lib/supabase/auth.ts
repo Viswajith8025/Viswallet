@@ -31,7 +31,7 @@ export async function getAuthSession(): Promise<Session | null> {
   return Promise.race([
     sessionPromise,
     new Promise<Session | null>((resolve) => {
-      window.setTimeout(() => resolve(null), 2000);
+      window.setTimeout(() => resolve(null), 5000);
     }),
   ]);
 }
