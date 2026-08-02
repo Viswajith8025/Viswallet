@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { groqChat } from "@/lib/ai/groq-server";
+import { enforceAiRateLimit } from "@/lib/api/ai-rate-limit";
 
 const bodySchema = z.object({
   monthLabel: z.string().max(40),
@@ -23,6 +24,9 @@ function formatRupees(paise: number): string {
 }
 
 export async function POST(request: Request) {
+  const limited = enforceAiRateLimit(request);
+  if (limited) return limited;
+
   try {
     const parsed = bodySchema.safeParse(await request.json());
     if (!parsed.success) {

@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { groqChat } from "@/lib/ai/groq-server";
+import { enforceAiRateLimit } from "@/lib/api/ai-rate-limit";
 
 const bodySchema = z.object({
   title: z.string().min(1).max(200),
@@ -12,6 +13,9 @@ const bodySchema = z.object({
 });
 
 export async function POST(request: Request) {
+  const limited = enforceAiRateLimit(request);
+  if (limited) return limited;
+
   try {
     const parsed = bodySchema.safeParse(await request.json());
     if (!parsed.success) {

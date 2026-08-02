@@ -41,21 +41,44 @@ export async function createCustomCategory(input: CreateCategoryInput): Promise<
   const sortOrder = (maxOrder?.sortOrder ?? 0) + 1;
   const kind = input.kind ?? "expense";
 
-  const id = (await db.categories.add({
-    name,
-    slug,
-    iconName: input.iconName ?? "circle-dot",
-    color: input.color ?? DEFAULT_CATEGORY_COLOR,
-    isSystem: false,
-    countsTowardSpending: kind === "expense",
-    sortOrder,
-    isDeleted: false,
-    rowVersion: 1,
-  })) as number;
+  try {
+    const id = (await db.categories.add({
+      name,
+      slug,
+      iconName: input.iconName ?? "circle-dot",
+      color: input.color ?? DEFAULT_CATEGORY_COLOR,
+      isSystem: false,
+      countsTowardSpending: kind === "expense",
+      sortOrder,
+      isDeleted: false,
+      rowVersion: 1,
+    })) as number;
 
-  const created = await db.categories.get(id);
-  if (!created) throw new Error("Category was not saved.");
+    const created = await db.categories.get(id);
+    if (!created) throw new Error("Category was not saved.");
 
-  notifyDataMutation();
-  return created;
+    notifyDataMutation();
+    return created;
+  } catch (err) {
+    const errName = err instanceof Error ? err.name : "";
+    if (errName === "ConstraintError") {
+      const retrySlug = await ensureUniqueCategorySlug(`${slug}-2`);
+      const id = (await db.categories.add({
+        name,
+        slug: retrySlug,
+        iconName: input.iconName ?? "circle-dot",
+        color: input.color ?? DEFAULT_CATEGORY_COLOR,
+        isSystem: false,
+        countsTowardSpending: kind === "expense",
+        sortOrder,
+        isDeleted: false,
+        rowVersion: 1,
+      })) as number;
+      const created = await db.categories.get(id);
+      if (!created) throw new Error("Category was not saved.");
+      notifyDataMutation();
+      return created;
+    }
+    throw err;
+  }
 }

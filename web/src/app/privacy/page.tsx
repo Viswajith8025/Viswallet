@@ -35,9 +35,10 @@ export default function PrivacyPage() {
       <section className="space-y-3">
         <h2 className="text-lg font-semibold">Cloud sync (optional)</h2>
         <p>
-          If you configure Supabase credentials, account authentication may use Supabase. Financial
-          records remain in local IndexedDB unless you explicitly enable future sync features. When
-          enabled, Supabase Row Level Security restricts access to your own records.
+          When you sign in, Viswallet can back up your encrypted finance vault to Supabase
+          (<code className="text-xs">user_data_vaults</code>). Data stays on your device first;
+          cloud sync runs in the background. Row Level Security keeps each account&apos;s vault
+          private. You can use the app offline; changes sync when you&apos;re back online.
         </p>
       </section>
 

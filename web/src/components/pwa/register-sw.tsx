@@ -53,7 +53,9 @@ export function RegisterSW() {
           watchWorker(reg.installing);
         });
       })
-      .catch(() => {});
+      .catch((err) => {
+        console.warn("[Viswallet] Service worker registration failed:", err);
+      });
 
     const onVisible = () => {
       if (document.visibilityState === "visible") {

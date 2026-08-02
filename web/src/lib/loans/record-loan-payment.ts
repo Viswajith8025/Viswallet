@@ -1,8 +1,10 @@
-import { db } from "@/lib/db";
+import { db, getSettings } from "@/lib/db";
 import type { Loan } from "@/lib/db/types";
 import { emitDbDataChanged } from "@/lib/notifications/bus";
 import { getCategoryIdBySlug } from "@/lib/obligations/category-lookup";
-import { saveQuickTransaction } from "@/lib/transactions/save-quick-transaction";
+import { resolveTransactionTitle } from "@/lib/transactions/resolve-title";
+import { getMonthKey } from "@/lib/salary-cycle";
+import { setLastCategoryId, setLastPaymentMethod } from "@/lib/ux/defaults";
 
 export type RecordLoanPaymentResult = {
   paymentId: number;
@@ -30,57 +32,84 @@ export async function recordLoanPayment(
   if (payPaise <= 0) throw new Error("Payment amount must be greater than zero.");
 
   const now = new Date();
-  const newBalance = Math.max(0, loan.balancePaise - payPaise);
-  const fullyPaid = newBalance === 0;
+  const settings = await getSettings();
+  const monthKey = getMonthKey(now, settings.salaryDay);
 
+  let paymentId!: number;
   let transactionId: number | undefined;
+  let newBalance = 0;
+  let fullyPaid = false;
 
-  if (options.linkTransaction) {
-    if (loan.direction === "borrowed_by_me") {
-      const categoryId = await getCategoryIdBySlug("misc");
-      transactionId = await saveQuickTransaction(
-        {
+  await db.transaction("rw", [db.loans, db.loanPayments, db.transactions], async () => {
+    const live = await db.loans.get(loanId);
+    if (!live || live.isDeleted) throw new Error("Loan not found.");
+
+    const pay = Math.min(Math.max(0, amountPaise), live.balancePaise);
+    if (pay <= 0) throw new Error("Payment amount must be greater than zero.");
+
+    newBalance = Math.max(0, live.balancePaise - pay);
+    fullyPaid = newBalance === 0;
+
+    if (options.linkTransaction) {
+      if (live.direction === "borrowed_by_me") {
+        const categoryId = await getCategoryIdBySlug("misc");
+        const title = resolveTransactionTitle(`Paid back ${live.personName}`, undefined, "expense");
+        transactionId = (await db.transactions.add({
           kind: "expense",
-          title: `Paid back ${loan.personName}`,
-          amountPaise: payPaise,
+          title,
+          amountPaise: pay,
           categoryId,
           paymentMethod: "UPI",
           occurredAt: now,
-        },
-        { allowDuplicate: options.allowDuplicate ?? true },
-      );
-    } else if (loan.direction === "lent_by_me") {
-      const categoryId = await getCategoryIdBySlug("savings");
-      transactionId = await saveQuickTransaction(
-        {
+          monthKey,
+          tags: [],
+          isRecurring: false,
+          isDeleted: false,
+          rowVersion: 1,
+          createdAt: now,
+          updatedAt: now,
+        })) as number;
+        setLastPaymentMethod("UPI");
+        setLastCategoryId("expense", categoryId);
+      } else if (live.direction === "lent_by_me") {
+        const categoryId = await getCategoryIdBySlug("savings");
+        const title = resolveTransactionTitle(`Returned by ${live.personName}`, undefined, "income");
+        transactionId = (await db.transactions.add({
           kind: "income",
-          title: `Returned by ${loan.personName}`,
-          amountPaise: payPaise,
+          title,
+          amountPaise: pay,
           categoryId,
           paymentMethod: "UPI",
           occurredAt: now,
-        },
-        { allowDuplicate: options.allowDuplicate ?? true },
-      );
+          monthKey,
+          tags: [],
+          isRecurring: false,
+          isDeleted: false,
+          rowVersion: 1,
+          createdAt: now,
+          updatedAt: now,
+        })) as number;
+        setLastPaymentMethod("UPI");
+        setLastCategoryId("income", categoryId);
+      }
     }
-  }
 
-  const paymentId = (await db.loanPayments.add({
-    loanId,
-    amountPaise: payPaise,
-    paidAt: now,
-    transactionId,
-    createdAt: now,
-  })) as number;
+    paymentId = (await db.loanPayments.add({
+      loanId,
+      amountPaise: pay,
+      paidAt: now,
+      transactionId,
+      createdAt: now,
+    })) as number;
 
-  await db.loans.update(loanId, {
-    balancePaise: newBalance,
-    status: fullyPaid ? "returned" : "partial",
-    updatedAt: now,
+    await db.loans.update(loanId, {
+      balancePaise: newBalance,
+      status: fullyPaid ? "returned" : "partial",
+      updatedAt: now,
+    });
   });
 
   emitDbDataChanged();
-
   return { paymentId, transactionId, newBalance, fullyPaid };
 }
 

@@ -110,7 +110,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     await syncProfileFromAuthUser(signedInUser);
     setUser(signedInUser);
     setSessionReady(true);
-    await runCloudSync();
+    void runCloudSync();
   }, [runCloudSync]);
 
   const signUp = useCallback(async (email: string, password: string, displayName?: string) => {
@@ -119,7 +119,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       await syncProfileFromAuthUser(outcome.user);
       setUser(outcome.user);
       setSessionReady(true);
-      await runCloudSync();
+      void runCloudSync();
       return { signedIn: true as const };
     }
     return { signedIn: false as const, message: outcome.message };
