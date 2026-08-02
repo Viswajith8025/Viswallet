@@ -23,10 +23,8 @@ export function GlobalFilterBar({
   const isMobileLayout = useMobileLayout();
   const [expanded, setExpanded] = useState(false);
   const cycleKey = useFilterStore((s) => s.cycleKey);
-  const kind = useFilterStore((s) => s.kind);
   const categoryId = useFilterStore((s) => s.categoryId);
   const setCycleKey = useFilterStore((s) => s.setCycleKey);
-  const setKind = useFilterStore((s) => s.setKind);
   const setCategoryId = useFilterStore((s) => s.setCategoryId);
   const reset = useFilterStore((s) => s.reset);
 
@@ -49,8 +47,7 @@ export function GlobalFilterBar({
 
   if (!settings) return null;
 
-  const hasFilters =
-    cycleKey !== currentKey || kind !== "all" || categoryId;
+  const hasFilters = cycleKey !== currentKey || categoryId;
 
   const showCollapsed = collapsible && isMobileLayout && !expanded;
 
@@ -101,17 +98,6 @@ export function GlobalFilterBar({
             {formatCycleLabel(k)}
           </option>
         ))}
-      </Select>
-      <Select
-        tone="filter"
-        value={kind}
-        onChange={(e) => setKind(e.target.value as "all" | "expense" | "income")}
-        className="w-auto min-w-[6.75rem] shrink-0"
-        aria-label="Transaction type"
-      >
-        <option value="all">All types</option>
-        <option value="expense">Expenses</option>
-        <option value="income">Income</option>
       </Select>
       <Select
         tone="filter"

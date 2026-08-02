@@ -68,7 +68,7 @@ export default function DashboardPage() {
               }
             />
 
-            <GlobalFilterBar />
+            <GlobalFilterBar collapsible className="border-b-0 pb-0" />
 
             {show("hero") && (
               <section className="space-y-4">

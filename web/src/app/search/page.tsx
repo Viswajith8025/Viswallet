@@ -14,15 +14,16 @@ import { categoryMap } from "@/lib/engines/finance-snapshot";
 import { findDuplicateTransactions } from "@/lib/engines/premium/duplicate-detector";
 import { getActiveTransactions } from "@/lib/db";
 import { useDexieTable, useDebounce, usePagination } from "@/hooks";
+import { TabBar } from "@/components/ui/tab-bar";
 import { useFilterStore } from "@/lib/store/filter-store";
 import { formatINR, parseRupeeInput } from "@/lib/money";
 
 export default function SearchPage() {
   const [query, setQuery] = useState("");
+  const [kindFilter, setKindFilter] = useState<"all" | "expense" | "income">("all");
   const debouncedQuery = useDebounce(query, 250);
   const categories = useCategories();
   const cats = categoryMap(categories);
-  const kind = useFilterStore((s) => s.kind);
   const categoryId = useFilterStore((s) => s.categoryId);
   const minAmount = useFilterStore((s) => s.minAmountPaise);
   const maxAmount = useFilterStore((s) => s.maxAmountPaise);
@@ -42,7 +43,7 @@ export default function SearchPage() {
 
   const filtered = useMemo(() => {
     let base = transactions;
-    if (kind !== "all") base = base.filter((t) => t.kind === kind);
+    if (kindFilter !== "all") base = base.filter((t) => t.kind === kindFilter);
     if (categoryId) base = base.filter((t) => t.categoryId === categoryId);
     if (minAmount != null) base = base.filter((t) => t.amountPaise >= minAmount);
     if (maxAmount != null) base = base.filter((t) => t.amountPaise <= maxAmount);
@@ -52,7 +53,7 @@ export default function SearchPage() {
       .search(debouncedQuery.trim())
       .map((r) => r.item)
       .filter((t) => ids.has(t.id));
-  }, [transactions, kind, categoryId, minAmount, maxAmount, debouncedQuery, fuse]);
+  }, [transactions, kindFilter, categoryId, minAmount, maxAmount, debouncedQuery, fuse]);
 
   const duplicates = useMemo(() => findDuplicateTransactions(transactions).slice(0, 5), [transactions]);
   const pagination = usePagination(filtered, 25);
@@ -61,6 +62,21 @@ export default function SearchPage() {
     <PageContainer className="max-w-5xl">
       <PageHeader title="Advanced Search" description="Full-text search with global filters and duplicate detection." />
       <GlobalFilterBar />
+
+      <TabBar
+        className="lg:hidden"
+        options={[
+          { value: "all", label: "All" },
+          { value: "expense", label: "Spent" },
+          { value: "income", label: "Earned" },
+        ]}
+        value={kindFilter}
+        onChange={(v) => {
+          setKindFilter(v as "all" | "expense" | "income");
+          pagination.reset();
+        }}
+        aria-label="Filter by type"
+      />
 
       <div className="grid gap-3 sm:grid-cols-3">
         <div className="relative sm:col-span-2">
