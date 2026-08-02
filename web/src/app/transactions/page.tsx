@@ -328,6 +328,7 @@ function TransactionsContent({
                 categories={activeCats}
                 value={resolvedCategoryId}
                 onChange={setCategoryId}
+                kind={kind}
               />
               <Select label="Payment" value={paymentMethod} onChange={(e) => setPaymentMethod(e.target.value)}>
                 {PAYMENT_METHODS.map((m) => (

@@ -14,8 +14,10 @@ import { useInvalidateFinance, useAsyncAction, useDexieTable } from "@/hooks";
 import { confirmAction } from "@/lib/store/confirm-store";
 import { DEFAULT_CATEGORY_COLOR } from "@/lib/categories-default";
 import { CATEGORY_ICON_NAMES } from "@/lib/category-icons";
+import { createCustomCategory } from "@/lib/categories/create-category";
+import { notifyDataMutation } from "@/lib/db/notify-mutation";
 import { cn } from "@/lib/design/cn";
-import { sanitizeName } from "@/lib/security";
+import { showToast } from "@/lib/store/toast-store";
 
 export default function CategoriesPage() {
   const invalidate = useInvalidateFinance();
@@ -28,29 +30,26 @@ export default function CategoriesPage() {
   const [name, setName] = useState("");
   const [color, setColor] = useState<string>(DEFAULT_CATEGORY_COLOR);
   const [iconName, setIconName] = useState("circle-dot");
+  const [kind, setKind] = useState<"expense" | "income">("expense");
 
   async function addCategory(e: React.FormEvent) {
     e.preventDefault();
     if (!name.trim()) return;
     await run(async () => {
-      const slug = name.trim().toLowerCase().replace(/\s+/g, "-").replace(/[^a-z0-9-]/g, "");
-      const maxOrder = categories.reduce((m, c) => Math.max(m, c.sortOrder), 0);
-      await db.categories.add({
-        name: sanitizeName(name),
-        slug: slug || `custom-${Date.now()}`,
+      await createCustomCategory({
+        name,
         iconName,
         color,
-        isSystem: false,
-        countsTowardSpending: true,
-        sortOrder: maxOrder + 1,
-        isDeleted: false,
+        kind,
       });
       setName("");
       setColor(DEFAULT_CATEGORY_COLOR);
       setIconName("circle-dot");
+      setKind("expense");
       setShowForm(false);
+      showToast("Category created", { tone: "success" });
       await invalidate();
-    });
+    }, { errorMessage: "Could not create category. Try a different name." });
   }
 
   async function remove(cat: Category) {
@@ -63,7 +62,9 @@ export default function CategoriesPage() {
     });
     if (!ok) return;
     await db.categories.update(cat.id!, { isDeleted: true });
+    notifyDataMutation();
     await invalidate();
+    showToast("Category removed", { tone: "default" });
   }
 
   const system = categories.filter((c) => c.isSystem);
@@ -73,7 +74,7 @@ export default function CategoriesPage() {
     <PageContainer className="max-w-5xl">
       <PageHeader
         title="Categories"
-        description="System categories are read-only. Add custom ones for your spending."
+        description="Add custom categories for spending or income. They appear in quick add and transactions."
         actions={<Button onClick={() => setShowForm(!showForm)}>Add category</Button>}
       />
 
@@ -85,7 +86,18 @@ export default function CategoriesPage() {
           <CardContent className="p-5">
             <form onSubmit={addCategory} className="space-y-4">
               <div className="flex flex-wrap items-end gap-4">
-                <Input label="Category name" required value={name} onChange={(e) => setName(e.target.value)} className="min-w-[200px] flex-1" />
+                <Input label="Category name" required value={name} onChange={(e) => setName(e.target.value)} className="min-w-[200px] flex-1" placeholder="Pet care, side hustle…" />
+                <label className="block space-y-1.5">
+                  <span className="text-sm font-medium text-muted-foreground">Type</span>
+                  <select
+                    value={kind}
+                    onChange={(e) => setKind(e.target.value as "expense" | "income")}
+                    className="h-10 rounded-xl border border-input bg-background px-3 text-sm"
+                  >
+                    <option value="expense">Expense</option>
+                    <option value="income">Income</option>
+                  </select>
+                </label>
                 <label className="block space-y-1.5">
                   <span className="text-sm font-medium text-muted-foreground">Color</span>
                   <input type="color" value={color} onChange={(e) => setColor(e.target.value)} className="h-10 w-14 cursor-pointer rounded-xl border border-input" />
@@ -139,15 +151,24 @@ export default function CategoriesPage() {
 
       <Card>
         <CardContent className="p-5">
-          <h2 className="mb-4 font-semibold">Custom categories</h2>
+          <h2 className="mb-4 font-semibold">Your custom categories</h2>
           {custom.length === 0 ? (
-            <EmptyState title="No custom categories" description="Create one to organize unique spending." />
+            <EmptyState
+              title="No custom categories yet"
+              description="Tap Add category or use Custom when adding a transaction."
+              action={<Button onClick={() => setShowForm(true)}>Add category</Button>}
+            />
           ) : (
             <ul className="divide-y divide-border">
               {custom.map((c) => (
                 <li key={c.id} className="flex items-center gap-3 py-3">
                   <CategoryIconBadge category={c} size="sm" />
-                  <span className="flex-1 font-medium">{c.name}</span>
+                  <div className="min-w-0 flex-1">
+                    <p className="font-medium">{c.name}</p>
+                    <p className="text-xs text-muted-foreground">
+                      {c.countsTowardSpending ? "Expense" : "Income"}
+                    </p>
+                  </div>
                   <Button size="icon" variant="ghost" onClick={() => remove(c)} aria-label={`Delete ${c.name}`}><Trash2 size={14} className="text-destructive" /></Button>
                 </li>
               ))}

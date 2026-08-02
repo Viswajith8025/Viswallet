@@ -213,6 +213,7 @@ export function QuickAddModal() {
           categories={pool}
           value={categoryId || String(pool[0]?.id ?? "")}
           onChange={setCategoryId}
+          kind={kind}
         />
       </div>
 
