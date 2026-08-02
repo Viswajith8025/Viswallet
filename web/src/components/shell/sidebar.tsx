@@ -4,11 +4,12 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { PanelLeft } from "lucide-react";
 import { cn } from "@/lib/design/cn";
-import { LogoMark } from "@/components/brand/logo-mark";
+import { BrandLockup } from "@/components/brand/brand-lockup";
 import { LegalFooter } from "@/components/legal/legal-footer";
 import { useUIStore } from "@/lib/store/ui-store";
 import { Button } from "@/components/ui/button";
 import { APP_NAV } from "@/lib/navigation/app-nav";
+import { BRAND_NAME } from "@/lib/brand/constants";
 
 export function Sidebar() {
   const pathname = usePathname();
@@ -25,20 +26,21 @@ export function Sidebar() {
       <div
         className={cn(
           "relative flex border-b border-border/60 px-3",
-          collapsed ? "h-[4.25rem] flex-col items-center justify-center gap-0.5 py-2" : "h-14 items-center justify-between",
+          collapsed
+            ? "h-[4.25rem] flex-col items-center justify-center gap-0.5 py-2"
+            : "h-[4.5rem] items-center justify-between",
         )}
       >
         {collapsed ? (
-          <Link href="/" className="transition-opacity hover:opacity-80" aria-label="Viswallet home">
-            <LogoMark size={28} />
+          <Link
+            href="/"
+            className="transition-opacity hover:opacity-85"
+            aria-label={`${BRAND_NAME} home`}
+          >
+            <BrandLockup markSize={28} markOnly />
           </Link>
         ) : (
-          <Link href="/" className="flex min-w-0 items-center gap-2.5 px-1 transition-opacity hover:opacity-80">
-            <LogoMark size={30} />
-            <p className="truncate font-display text-[15px] font-semibold tracking-[-0.035em]">
-              Viswallet
-            </p>
-          </Link>
+          <BrandLockup href="/" markSize={30} showTagline taglineClassName="text-[10px]" />
         )}
         <Button
           variant="ghost"

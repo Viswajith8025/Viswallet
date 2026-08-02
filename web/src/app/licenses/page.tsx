@@ -3,7 +3,7 @@ import { LegalPage } from "@/components/legal/legal-page";
 
 export const metadata: Metadata = {
   title: "Open Source Licenses",
-  description: "Third-party open source licenses used by Viswallet.",
+  description: "Third-party open source licenses used by visWallet.",
 };
 
 const DEPENDENCIES = [
@@ -31,9 +31,9 @@ export default function LicensesPage() {
   return (
     <LegalPage title="Open Source Licenses" lastUpdated="July 2026">
       <section className="space-y-3">
-        <h2 className="text-lg font-semibold">Viswallet</h2>
+        <h2 className="text-lg font-semibold">visWallet</h2>
         <p>
-          Viswallet web app version <strong>{version}</strong>. Application source is provided under
+          visWallet web app version <strong>{version}</strong>. Application source is provided under
           the MIT License (see repository <code>LICENSE</code> file).
         </p>
       </section>

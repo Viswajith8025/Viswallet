@@ -3,24 +3,29 @@
 import Link from "next/link";
 import { Plus, Search } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { LogoMark } from "@/components/brand/logo-mark";
+import { BrandLockup } from "@/components/brand/brand-lockup";
 import { NotificationBell } from "@/components/shell/notification-bell";
 import { ThemeToggle } from "@/components/shell/theme-toggle";
 import { useUIStore } from "@/lib/store/ui-store";
+import { BRAND_NAME } from "@/lib/brand/constants";
 
 export function TopBar() {
   const setCommandOpen = useUIStore((s) => s.setCommandOpen);
   const setQuickAddOpen = useUIStore((s) => s.setQuickAddOpen);
 
   return (
-    <header className="sticky top-0 z-30 flex h-12 shrink-0 items-center gap-2 border-b border-border/50 bg-background px-4 pt-[env(safe-area-inset-top)] lg:h-14 lg:gap-3 lg:border-border/60 lg:px-6">
+    <header className="sticky top-0 z-30 flex h-12 shrink-0 items-center gap-2 border-b border-border/50 bg-background/95 px-4 pt-[env(safe-area-inset-top)] backdrop-blur-sm lg:h-14 lg:gap-3 lg:border-border/60 lg:px-6">
       <Link
         href="/"
-        className="flex shrink-0 items-center gap-2 lg:hidden"
-        aria-label="Viswallet home"
+        className="flex shrink-0 items-center lg:hidden"
+        aria-label={`${BRAND_NAME} home`}
       >
-        <LogoMark size={26} />
+        <BrandLockup markSize={26} markOnly />
       </Link>
+
+      <div className="hidden shrink-0 lg:flex">
+        <BrandLockup href="/" markSize={28} showTagline taglineClassName="hidden xl:block" />
+      </div>
 
       <button
         type="button"
@@ -46,11 +51,7 @@ export function TopBar() {
         </button>
         <NotificationBell />
         <ThemeToggle />
-        <Button
-          onClick={() => setQuickAddOpen(true, "expense")}
-          size="sm"
-          className="hidden lg:inline-flex"
-        >
+        <Button onClick={() => setQuickAddOpen(true, "expense")} size="sm" className="hidden lg:inline-flex">
           <Plus size={15} />
           Add
         </Button>

@@ -4,9 +4,9 @@ import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { getSettings, peekBootCache } from "@/lib/db";
 import { useAuth } from "@/components/providers/auth-provider";
-import { PageSkeleton } from "@/components/ui/skeleton";
+import { BrandLoader } from "@/components/brand/brand-loader";
 
-const ALWAYS_PUBLIC_ROUTES = ["/auth", "/privacy", "/terms", "/licenses"];
+const ALWAYS_PUBLIC_ROUTES = ["/auth", "/privacy", "/terms", "/licenses", "/about"];
 const ONBOARDING_ROUTE = "/onboarding";
 const SETTINGS_READY_TIMEOUT_MS = 6000;
 
@@ -80,7 +80,7 @@ export function RouteGuard({ children }: { children: React.ReactNode }) {
 
   if (isPublic) return <>{children}</>;
   if (!appReady || (configured && (authLoading || !user))) {
-    return <PageSkeleton />;
+    return <BrandLoader fullScreen />;
   }
 
   return <>{children}</>;

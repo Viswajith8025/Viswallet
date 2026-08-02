@@ -18,44 +18,48 @@ const body = Inter({
   display: "swap",
 });
 
-const APP_NAME = "Viswallet";
-const APP_DESCRIPTION =
-  "Premium personal finance tracker. Track expenses, budgets, loans, and net worth — private, offline-first.";
+import { BRAND_NAME, BRAND_TAGLINE, BRAND_CREAM, BRAND_PURPLE_DEEP } from "@/lib/brand/constants";
+
+const APP_DESCRIPTION = `${BRAND_TAGLINE}. Track expenses, budgets, loans, and net worth — private, offline-first.`;
 
 export const metadata: Metadata = {
   metadataBase: new URL(process.env.NEXT_PUBLIC_APP_URL ?? "https://viswallet.app"),
-  title: { default: `${APP_NAME} — Personal Finance`, template: `%s · ${APP_NAME}` },
+  title: { default: `${BRAND_NAME} — Personal Finance`, template: `%s · ${BRAND_NAME}` },
   description: APP_DESCRIPTION,
-  applicationName: APP_NAME,
+  applicationName: BRAND_NAME,
   manifest: "/manifest.json",
-  appleWebApp: { capable: true, title: APP_NAME, statusBarStyle: "black-translucent" },
+  appleWebApp: { capable: true, title: BRAND_NAME, statusBarStyle: "black-translucent" },
   keywords: ["personal finance", "budget tracker", "expense tracker", "India", "offline", "PWA"],
-  authors: [{ name: "Viswallet" }],
-  creator: "Viswallet",
+  authors: [{ name: BRAND_NAME }],
+  creator: BRAND_NAME,
   openGraph: {
     type: "website",
     locale: "en_IN",
-    siteName: APP_NAME,
-    title: APP_NAME,
+    siteName: BRAND_NAME,
+    title: BRAND_NAME,
     description: APP_DESCRIPTION,
   },
   twitter: {
     card: "summary",
-    title: APP_NAME,
+    title: BRAND_NAME,
     description: APP_DESCRIPTION,
   },
   robots: { index: true, follow: true },
   formatDetection: { telephone: false },
   icons: {
-    icon: [{ url: "/icons/favicon-32.png", sizes: "32x32", type: "image/png" }],
+    icon: [
+      { url: "/favicon.svg", type: "image/svg+xml" },
+      { url: "/icons/favicon-32.png", sizes: "32x32", type: "image/png" },
+      { url: "/favicon.ico", sizes: "48x48" },
+    ],
     apple: [{ url: "/icons/apple-touch-icon.png", sizes: "180x180", type: "image/png" }],
   },
 };
 
 export const viewport: Viewport = {
   themeColor: [
-    { media: "(prefers-color-scheme: light)", color: "#ffffff" },
-    { media: "(prefers-color-scheme: dark)", color: "#14111c" },
+    { media: "(prefers-color-scheme: light)", color: BRAND_CREAM },
+    { media: "(prefers-color-scheme: dark)", color: BRAND_PURPLE_DEEP },
   ],
   width: "device-width",
   initialScale: 1,

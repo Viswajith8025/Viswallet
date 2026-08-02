@@ -1,8 +1,7 @@
-import { ImageResponse } from "next/og";
-import { OgLogoMark } from "@/lib/brand/logo-og";
-
-export const runtime = "edge";
+import { readFile } from "node:fs/promises";
+import { join } from "node:path";
 
 export async function GET() {
-  return new ImageResponse(<OgLogoMark size={512} />, { width: 512, height: 512 });
+  const buffer = await readFile(join(process.cwd(), "public/icons/icon-512.png"));
+  return new Response(buffer, { headers: { "Content-Type": "image/png" } });
 }

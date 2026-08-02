@@ -4,7 +4,9 @@ import { Download, Share, X } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { usePathname } from "next/navigation";
 import { Button } from "@/components/ui/button";
+import { BrandLockup } from "@/components/brand/brand-lockup";
 import { usePwaInstall } from "@/hooks/use-pwa-install";
+import { BRAND_NAME } from "@/lib/brand/constants";
 
 export function InstallPrompt() {
   const pathname = usePathname();
@@ -27,16 +29,14 @@ export function InstallPrompt() {
         >
           <div className="surface-card border border-primary/15 p-4 shadow-glow">
             <div className="flex items-start gap-3">
-              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-primary text-primary-foreground">
-                <span className="text-sm font-semibold">V</span>
-              </div>
+              <BrandLockup markSize={40} markOnly className="shrink-0" />
               <div className="min-w-0 flex-1">
                 <p id="pwa-install-title" className="text-sm font-semibold text-foreground">
-                  Install Viswallet
+                  Install {BRAND_NAME}
                 </p>
                 <p id="pwa-install-desc" className="mt-1 text-xs leading-relaxed text-muted-foreground">
                   {ios
-                    ? "Add Viswallet to your Home Screen for quick access."
+                    ? `Add ${BRAND_NAME} to your Home Screen for quick access.`
                     : "Install for a faster, full-screen experience on your phone."}
                 </p>
                 {ios && (

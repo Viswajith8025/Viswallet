@@ -2,6 +2,8 @@
 
 import { useEffect } from "react";
 import { Button } from "@/components/ui/button";
+import { BrandLockup } from "@/components/brand/brand-lockup";
+import { BRAND_NAME } from "@/lib/brand/constants";
 import { reportError } from "@/lib/monitoring/report";
 
 export default function GlobalError({
@@ -19,11 +21,9 @@ export default function GlobalError({
     <html lang="en">
       <body className="min-h-screen bg-background font-sans antialiased">
         <div className="flex min-h-screen flex-col items-center justify-center gap-6 p-8 text-center">
-          <div className="flex h-14 w-14 items-center justify-center rounded-xl bg-destructive-muted text-destructive">
-            <span className="text-2xl font-bold">!</span>
-          </div>
+          <BrandLockup markSize={56} layout="vertical" showTagline />
           <div className="space-y-2">
-            <h1 className="text-xl font-semibold tracking-tight">Viswallet encountered an error</h1>
+            <h1 className="text-xl font-semibold tracking-tight">{BRAND_NAME} encountered an error</h1>
             <p className="max-w-md text-sm text-muted-foreground">
               Your financial data remains safe in local storage on this device.
             </p>

@@ -5,6 +5,7 @@ import { PageHeader, PageContainer, SuccessBanner } from "@/components/ui/page";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input, Select } from "@/components/ui/input";
+import { BRAND_NAME } from "@/lib/brand/constants";
 import { useDb } from "@/components/providers/db-provider";
 import {
   db,
@@ -534,7 +535,7 @@ export default function SettingsPage() {
         </CardHeader>
         <CardContent className="space-y-4 pt-0">
           <p className="text-sm text-muted-foreground">
-            Permanently delete all Viswallet data on this device.
+            Permanently delete all {BRAND_NAME} data on this device.
           </p>
           <Button variant="destructive" onClick={handleReset} disabled={resetting}>
             {resetting ? "Resetting..." : "Reset all data"}
@@ -548,9 +549,12 @@ export default function SettingsPage() {
         </CardHeader>
         <CardContent className="space-y-3 pt-0 text-sm text-muted-foreground">
           <p>
-            Viswallet v{process.env.NEXT_PUBLIC_APP_VERSION ?? "1.0.0"} — personal finance, built to stay private.
+            {BRAND_NAME} v{process.env.NEXT_PUBLIC_APP_VERSION ?? "1.0.0"} — personal finance, built to stay private.
           </p>
           <div className="flex flex-wrap gap-3">
+            <a href="/about" className="text-primary hover:underline">
+              About
+            </a>
             <a href="/privacy" className="text-primary hover:underline">
               Privacy Policy
             </a>

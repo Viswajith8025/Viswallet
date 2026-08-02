@@ -134,7 +134,7 @@ export default function OnboardingPage() {
         title={step === 0 ? "What should we call you?" : "Set up your salary cycle"}
         description={
           step === 0
-            ? "This is how Viswallet greets you — only stored on your device."
+            ? "This is how visWallet greets you — only stored on your device."
             : displayName.trim()
               ? `${displayName.trim()}, tell us when and how much you earn each month.`
               : "Tell us when and how much you earn each month."

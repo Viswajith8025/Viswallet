@@ -14,12 +14,12 @@
   --violet-muted: #ebe6f4;
   --violet-deep: #3d3058;
 
-  /* ── Semantic tokens — light: white primary, violet secondary ── */
-  --background: #ffffff;
+  /* ── Semantic tokens — light: cream surfaces, violet brand ── */
+  --background: #fffef2;
   --foreground: #2d2540;
-  --surface: #ffffff;
-  --surface-secondary: #f7f6fa;
-  --surface-hover: #f0eef4;
+  --surface: #fffef2;
+  --surface-secondary: #fdf9d4;
+  --surface-hover: #f9f5c8;
   --card: #ffffff;
   --card-foreground: var(--foreground);
   --elevated: #ffffff;
@@ -29,7 +29,7 @@
   --primary-muted: #ede9f4;
   --secondary: var(--violet);
   --secondary-foreground: #ffffff;
-  --muted: #f5f4f8;
+  --muted: #f5f0d8;
   --muted-foreground: #6b6080;
   --accent: #ede9f4;
   --accent-foreground: var(--violet);
@@ -534,6 +534,15 @@ h1, h2, h3, h4, h5 {
 }
 
 .animate-shimmer-pulse { animation: shimmer-pulse 1.8s ease-in-out infinite; }
+
+@keyframes brand-logo-pulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.9; transform: scale(0.97); }
+}
+
+.brand-logo-pulse {
+  animation: brand-logo-pulse 2.4s var(--ease-out-expo) infinite;
+}
 
 .skeleton {
   background: linear-gradient(

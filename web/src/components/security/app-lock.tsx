@@ -1,7 +1,8 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Lock } from "lucide-react";
+import { BrandLockup } from "@/components/brand/brand-lockup";
+import { BRAND_NAME } from "@/lib/brand/constants";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { unlockWithPin, isPinLocked } from "@/lib/security/pin";
@@ -42,10 +43,10 @@ export function AppLockScreen() {
     <div className="fixed inset-0 z-[200] flex items-center justify-center bg-background/95 backdrop-blur-md">
       <div className="w-full max-w-sm px-6">
         <div className="mb-8 text-center">
-          <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-xl bg-primary-muted text-primary">
-            <Lock size={28} />
+          <div className="mx-auto mb-5 flex justify-center">
+            <BrandLockup markSize={48} layout="vertical" showTagline />
           </div>
-          <h1 className="text-xl font-semibold tracking-tight">Viswallet is locked</h1>
+          <h1 className="text-xl font-semibold tracking-tight">{BRAND_NAME} is locked</h1>
           <p className="mt-2 text-sm text-muted-foreground">
             Enter your PIN to access your financial data.
           </p>

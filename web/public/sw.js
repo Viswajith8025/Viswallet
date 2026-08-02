@@ -1,7 +1,10 @@
-const CACHE = "viswallet-v11";
+const CACHE = "viswallet-v13";
 const ASSETS = [
   "/offline.html",
-  "/brand/logo-mark.svg",
+  "/brand/logo.png",
+  "/brand/logo@2x.png",
+  "/favicon.svg",
+  "/favicon.ico",
   "/manifest.json",
   "/icons/icon-192.png",
   "/icons/icon-512.png",

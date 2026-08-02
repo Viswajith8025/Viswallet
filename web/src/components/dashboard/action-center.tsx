@@ -7,18 +7,21 @@ import {
   Check,
   CreditCard,
   Receipt,
+  Repeat,
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { formatINR } from "@/lib/money";
 import { cn } from "@/lib/design/cn";
 import { loadActionItems, type ActionItem, type ActionItemKind } from "@/lib/dashboard/load-action-items";
+import { snoozeActionItem } from "@/lib/dashboard/action-snooze";
 import { markBorrowedFullyPaid, markLentFullyReturned } from "@/lib/loans/record-loan-payment";
 import { markBillPaid } from "@/lib/obligations/mark-bill-paid";
 import { markEmiPaid } from "@/lib/obligations/mark-emi-paid";
+import { markSubscriptionRenewed } from "@/lib/obligations/mark-subscription-renewed";
 import { useInvalidateFinance, useDexieTable } from "@/hooks";
 import { showToast } from "@/lib/store/toast-store";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 
 const KIND_META: Record<
   ActionItemKind,
@@ -44,16 +47,23 @@ const KIND_META: Record<
     accent: "text-primary bg-primary/10",
     actionLabel: "Pay EMI",
   },
+  subscription: {
+    icon: Repeat,
+    accent: "text-primary bg-primary/10",
+    actionLabel: "Mark paid",
+  },
 };
 
 function ActionRow({
   item,
   busy,
   onAction,
+  onPayLater,
 }: {
   item: ActionItem;
   busy: boolean;
   onAction: (item: ActionItem) => void;
+  onPayLater: (item: ActionItem) => void;
 }) {
   const meta = KIND_META[item.kind];
   const Icon = meta.icon;
@@ -72,31 +82,29 @@ function ActionRow({
         <p className="truncate font-medium text-sm">{item.title}</p>
         <p className="text-xs text-muted-foreground">{item.subtitle}</p>
       </div>
-      <div className="flex shrink-0 items-center gap-2">
+      <div className="flex shrink-0 flex-col items-end gap-1.5 sm:flex-row sm:items-center sm:gap-2">
         <span className="text-sm font-semibold tabular-nums">{formatINR(item.amountPaise)}</span>
-        {item.kind === "emi" ? (
+        <div className="flex gap-1">
+          <Button
+            size="sm"
+            variant="ghost"
+            disabled={busy}
+            onClick={() => onPayLater(item)}
+            className="shrink-0 text-xs"
+          >
+            Pay later
+          </Button>
           <Button
             size="sm"
             variant={item.urgency === "high" ? "primary" : "outline"}
             disabled={busy}
             onClick={() => onAction(item)}
-            className="shrink-0"
+            className="shrink-0 text-xs"
           >
             <Check size={14} className="mr-1" />
             {meta.actionLabel}
           </Button>
-        ) : (
-          <Button
-            size="sm"
-            variant={item.urgency === "high" ? "primary" : "outline"}
-            disabled={busy}
-            onClick={() => onAction(item)}
-            className="shrink-0"
-          >
-            <Check size={14} className="mr-1" />
-            {meta.actionLabel}
-          </Button>
-        )}
+        </div>
       </div>
     </li>
   );
@@ -106,6 +114,18 @@ export function ActionCenter() {
   const invalidate = useInvalidateFinance();
   const { data: items = [], isPending } = useDexieTable("action-items", loadActionItems);
   const [busyId, setBusyId] = useState<string | null>(null);
+  const [hiddenIds, setHiddenIds] = useState<Set<string>>(() => new Set());
+
+  const visibleItems = useMemo(
+    () => items.filter((item) => !hiddenIds.has(item.id)),
+    [items, hiddenIds],
+  );
+
+  function handlePayLater(item: ActionItem) {
+    snoozeActionItem(item.id);
+    setHiddenIds((prev) => new Set(prev).add(item.id));
+    showToast("Reminder postponed until tomorrow", { tone: "info" });
+  }
 
   async function handleAction(item: ActionItem) {
     setBusyId(item.id);
@@ -122,6 +142,9 @@ export function ActionCenter() {
       } else if (item.kind === "emi") {
         await markEmiPaid(item.entityId);
         showToast(`${item.title} EMI paid — logged as expense`, { tone: "success" });
+      } else if (item.kind === "subscription") {
+        await markSubscriptionRenewed(item.entityId);
+        showToast(`${item.title} renewed — logged as expense`, { tone: "success" });
       }
       await invalidate();
     } catch (err) {
@@ -141,7 +164,7 @@ export function ActionCenter() {
     );
   }
 
-  if (items.length === 0) {
+  if (visibleItems.length === 0) {
     return (
       <Card className="border-primary/20 bg-primary/[0.03]">
         <CardContent className="flex items-center gap-3 p-5">
@@ -150,14 +173,16 @@ export function ActionCenter() {
           </div>
           <div>
             <p className="font-medium text-sm">All clear</p>
-            <p className="text-xs text-muted-foreground">No bills, borrowed money, or EMI due right now.</p>
+            <p className="text-xs text-muted-foreground">
+              No bills, subscriptions, borrowed money, or EMI due right now.
+            </p>
           </div>
         </CardContent>
       </Card>
     );
   }
 
-  const highCount = items.filter((i) => i.urgency === "high").length;
+  const highCount = visibleItems.filter((i) => i.urgency === "high").length;
 
   return (
     <Card className="overflow-hidden">
@@ -165,7 +190,7 @@ export function ActionCenter() {
         <div>
           <CardTitle className="text-base">Needs attention</CardTitle>
           <p className="text-xs text-muted-foreground mt-0.5">
-            {items.length} item{items.length !== 1 ? "s" : ""}
+            {visibleItems.length} item{visibleItems.length !== 1 ? "s" : ""}
             {highCount > 0 && ` · ${highCount} urgent`}
           </p>
         </div>
@@ -178,18 +203,19 @@ export function ActionCenter() {
       </CardHeader>
       <CardContent className="pt-0">
         <ul className="space-y-2">
-          {items.slice(0, 5).map((item) => (
+          {visibleItems.slice(0, 5).map((item) => (
             <ActionRow
               key={item.id}
               item={item}
               busy={busyId === item.id}
               onAction={handleAction}
+              onPayLater={handlePayLater}
             />
           ))}
         </ul>
-        {items.length > 5 && (
+        {visibleItems.length > 5 && (
           <p className="mt-3 text-center text-xs text-muted-foreground">
-            +{items.length - 5} more in Bills, Borrowed, or EMI
+            +{visibleItems.length - 5} more in Bills, Subscriptions, Borrowed, or EMI
           </p>
         )}
       </CardContent>

@@ -2,8 +2,9 @@ import { addDays, isBefore, startOfDay } from "date-fns";
 import { db } from "@/lib/db";
 import { computeBillStatus } from "@/lib/bills/status";
 import { formatLoanDueLabel, getLoanDueStatus } from "@/lib/loans/loan-due";
+import { isActionItemSnoozed } from "@/lib/dashboard/action-snooze";
 
-export type ActionItemKind = "borrowed" | "bill" | "emi" | "lent";
+export type ActionItemKind = "borrowed" | "bill" | "emi" | "lent" | "subscription";
 
 export type ActionItem = {
   id: string;
@@ -17,10 +18,11 @@ export type ActionItem = {
 };
 
 export async function loadActionItems(): Promise<ActionItem[]> {
-  const [loans, bills, emis] = await Promise.all([
+  const [loans, bills, emis, subscriptions] = await Promise.all([
     db.loans.filter((l) => !l.isDeleted && l.status !== "returned").toArray(),
     db.bills.toArray(),
     db.emis.filter((e) => e.isActive).toArray(),
+    db.subscriptions.filter((s) => s.isActive && Boolean(s.nextRenewalAt)).toArray(),
   ]);
 
   const items: ActionItem[] = [];
@@ -97,6 +99,25 @@ export async function loadActionItems(): Promise<ActionItem[]> {
     });
   }
 
+  for (const sub of subscriptions) {
+    if (!sub.nextRenewalAt) continue;
+    const renew = startOfDay(new Date(sub.nextRenewalAt));
+    const overdue = isBefore(renew, today);
+    if (!overdue && !isBefore(renew, weekOut)) continue;
+    items.push({
+      id: `subscription-${sub.id}`,
+      kind: "subscription",
+      entityId: sub.id!,
+      title: sub.name,
+      subtitle: overdue ? "Renewal overdue" : "Renews soon",
+      amountPaise: sub.amountPaise,
+      href: "/subscriptions",
+      urgency: overdue ? "high" : "medium",
+    });
+  }
+
   const urgencyOrder = { high: 0, medium: 1, low: 2 };
-  return items.sort((a, b) => urgencyOrder[a.urgency] - urgencyOrder[b.urgency]);
+  return items
+    .filter((item) => !isActionItemSnoozed(item.id))
+    .sort((a, b) => urgencyOrder[a.urgency] - urgencyOrder[b.urgency]);
 }

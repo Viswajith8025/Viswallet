@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { BRAND_NAME } from "@/lib/brand/constants";
 
 const APP_VERSION = process.env.NEXT_PUBLIC_APP_VERSION ?? "1.0.0";
 
@@ -6,7 +7,11 @@ export function LegalFooter({ className }: { className?: string }) {
   return (
     <footer className={className}>
       <p className="text-xs text-muted-foreground">
-        Viswallet v{APP_VERSION} ·{" "}
+        {BRAND_NAME} v{APP_VERSION} ·{" "}
+        <Link href="/about" className="hover:text-foreground">
+          About
+        </Link>
+        {" · "}
         <Link href="/privacy" className="hover:text-foreground">
           Privacy
         </Link>

@@ -102,7 +102,7 @@ export function EmptyState({
   description,
   action,
   icon: IconComponent = Inbox,
-  illustration,
+  illustration = "wallet",
   minimal = false,
 }: {
   title: string;

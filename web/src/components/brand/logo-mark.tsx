@@ -1,44 +1,29 @@
-"use client";
-
-import { useId } from "react";
 import { cn } from "@/lib/design/cn";
-import {
-  LogoMarkContent,
-  logoMarkClipRadius,
-  logoMarkSvgProps,
-  type LogoMarkVariant,
-} from "@/lib/brand/logo-mark-content";
+import { LOGO_PATH, LOGO_PATH_2X } from "@/lib/brand/constants";
 
 type LogoMarkProps = {
   size?: number;
   className?: string;
-  /** Violet vault tile with cream mark (default) */
-  variant?: LogoMarkVariant;
+  /** Kept for compatibility with existing call sites */
+  variant?: "default" | "inverse" | "mark-only";
 };
 
 /**
- * Viswallet premium mark — vault seal with geometric V facets.
+ * Official visWallet logo mark — raster artwork, never stretched or distorted.
  */
-export function LogoMark({ size = 36, className, variant = "default" }: LogoMarkProps) {
-  const clipId = useId();
-  const rx = logoMarkClipRadius();
-
+export function LogoMark({ size = 36, className }: LogoMarkProps) {
   return (
-    <svg
+    // eslint-disable-next-line @next/next/no-img-element -- official brand raster; sized per context
+    <img
+      src={LOGO_PATH}
+      srcSet={`${LOGO_PATH} 1x, ${LOGO_PATH_2X} 2x`}
+      alt=""
       width={size}
       height={size}
-      {...logoMarkSvgProps()}
-      className={cn("shrink-0", className)}
+      className={cn("shrink-0 select-none rounded-[22%]", className)}
+      style={{ width: size, height: size }}
       aria-hidden
-    >
-      <defs>
-        <clipPath id={clipId}>
-          <rect width={48} height={48} rx={rx} />
-        </clipPath>
-      </defs>
-      <g clipPath={`url(#${clipId})`}>
-        <LogoMarkContent variant={variant} />
-      </g>
-    </svg>
+      decoding="async"
+    />
   );
 }
