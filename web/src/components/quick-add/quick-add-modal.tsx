@@ -5,8 +5,7 @@ import { SuccessMark } from "@/components/ui/success-mark";
 import { successFeedback } from "@/lib/ux/feedback";
 import { useUIStore } from "@/lib/store/ui-store";
 import { Button } from "@/components/ui/button";
-import { CategoryPicker } from "@/components/categories/category-picker";
-import { CategoryGrid } from "@/components/categories/category-grid";
+import { CategoryCollapsiblePicker } from "@/components/categories/category-collapsible-picker";
 import { Input, Select } from "@/components/ui/input";
 import { Dialog, Sheet } from "@/components/ui/dialog";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -19,6 +18,7 @@ import { getLastPaymentMethod, pickDefaultCategoryId } from "@/lib/ux/defaults";
 import { filterQuickAddCategories } from "@/lib/categories/manage-category";
 import { saveQuickTransaction } from "@/lib/transactions/save-quick-transaction";
 import { useInvalidateFinance } from "@/hooks/use-invalidate-finance";
+import { useMobileLayout } from "@/hooks/use-mobile-layout";
 import { showToast } from "@/lib/store/toast-store";
 import { useAiFeatures } from "@/hooks/use-ai-features";
 import { suggestCategoryWithAi, type AiParseResult } from "@/lib/ai/client";
@@ -47,7 +47,7 @@ function TypePills({
           type="button"
           onClick={() => onChange(opt.value)}
           className={cn(
-            "flex-1 rounded-md py-2.5 text-sm font-medium transition-colors",
+            "flex-1 rounded-md py-3 text-sm font-medium transition-colors active:scale-[0.98]",
             kind === opt.value
               ? "bg-background text-foreground shadow-sm"
               : "text-muted-foreground hover:text-foreground",
@@ -65,6 +65,7 @@ export function QuickAddModal() {
   const kind = useUIStore((s) => s.quickAddKind);
   const setOpen = useUIStore((s) => s.setQuickAddOpen);
   const invalidate = useInvalidateFinance();
+  const isMobileLayout = useMobileLayout();
   const categories = useCategories();
   const expenseCats = useMemo(() => categories.filter((c) => c.countsTowardSpending), [categories]);
   const incomeCats = useMemo(
@@ -85,20 +86,14 @@ export function QuickAddModal() {
   const { active: aiActive } = useAiFeatures();
   const wasOpen = useRef(false);
   const debouncedTitle = useDebounce(title, 700);
-  const [isMobile, setIsMobile] = useState(false);
-
-  useEffect(() => {
-    const mq = window.matchMedia("(max-width: 767px)");
-    const update = () => setIsMobile(mq.matches);
-    update();
-    mq.addEventListener("change", update);
-    return () => mq.removeEventListener("change", update);
-  }, []);
 
   const categoryOptions = useMemo(
     () => pool.map((c) => ({ slug: c.slug, name: c.name })),
     [pool],
   );
+
+  const resolvedCategoryId =
+    categoryId || String(visiblePool[0]?.id ?? pool[0]?.id ?? "");
 
   useEffect(() => {
     if (open && !wasOpen.current) {
@@ -156,7 +151,7 @@ export function QuickAddModal() {
     setSaving(true);
     setDupError(false);
     try {
-      const catId = Number(categoryId || visiblePool[0]?.id || pool[0]?.id);
+      const catId = Number(resolvedCategoryId);
       await saveQuickTransaction(
         {
           kind,
@@ -196,7 +191,7 @@ export function QuickAddModal() {
     </div>
   ) : (
     <div className="flex min-h-0 flex-1 flex-col">
-      <div className="px-4 py-3 space-y-3">
+      <div className="space-y-3 px-4 py-3">
         <TypePills kind={kind} onChange={handleKindChange} />
         {aiActive && (
           <AiSmartInput
@@ -210,29 +205,24 @@ export function QuickAddModal() {
           type="text"
           value={title}
           onChange={(e) => setTitle(e.target.value)}
-          placeholder="Title — e.g. Lunch, Uber, Amazon"
-          className="w-full rounded-xl border border-border/60 bg-muted/40 px-4 py-3 text-sm outline-none placeholder:text-muted-foreground/60 focus:border-primary/40 focus:ring-2 focus:ring-primary/10"
+          placeholder="Title — Lunch, Uber, Amazon…"
+          className="w-full rounded-xl border border-border/60 bg-muted/40 px-4 py-3.5 text-base outline-none placeholder:text-muted-foreground/60 focus:border-primary/40 focus:ring-2 focus:ring-primary/10"
           aria-label="Title"
         />
-        <p className="text-center text-xs text-muted-foreground">
-          Pick a category, enter title and amount
-        </p>
       </div>
 
-      <div className="scroll-premium min-h-0 flex-1 overflow-y-auto">
-        <CategoryGrid
-          categories={pool}
-          value={categoryId || String(visiblePool[0]?.id ?? pool[0]?.id ?? "")}
-          onChange={setCategoryId}
-          kind={kind}
-        />
-      </div>
+      <CategoryCollapsiblePicker
+        categories={pool}
+        value={resolvedCategoryId}
+        onChange={setCategoryId}
+        kind={kind}
+      />
 
       <form
         onSubmit={handleSubmit}
-        className="shrink-0 border-t border-border/50 bg-background px-4 py-4 pb-[max(1rem,env(safe-area-inset-bottom))]"
+        className="mt-auto shrink-0 border-t border-border/50 bg-background px-4 py-4 pb-[max(1rem,env(safe-area-inset-bottom))]"
       >
-        <div className="flex items-center gap-2 rounded-xl bg-muted/50 px-4 py-3">
+        <div className="flex items-center gap-2 rounded-xl bg-muted/50 px-4 py-3.5">
           <span className="text-lg font-medium text-muted-foreground">₹</span>
           <input
             type="text"
@@ -240,10 +230,35 @@ export function QuickAddModal() {
             value={amount}
             onChange={(e) => setAmount(e.target.value)}
             placeholder="0"
-            className="min-w-0 flex-1 bg-transparent text-2xl font-semibold tabular-nums outline-none placeholder:text-muted-foreground/40"
+            className="min-w-0 flex-1 bg-transparent text-3xl font-semibold tabular-nums outline-none placeholder:text-muted-foreground/40"
             aria-label="Amount in rupees"
           />
         </div>
+
+        <div className="mt-3 grid grid-cols-2 gap-2">
+          <label className="space-y-1">
+            <span className="text-xs text-muted-foreground">Paid with</span>
+            <select
+              value={paymentMethod}
+              onChange={(e) => setPaymentMethod(e.target.value)}
+              className="h-11 w-full rounded-xl border border-border bg-background px-3 text-sm outline-none focus:border-primary/40"
+            >
+              {PAYMENT_METHODS.map((m) => (
+                <option key={m} value={m}>{m}</option>
+              ))}
+            </select>
+          </label>
+          <label className="flex h-11 items-end gap-2 rounded-xl border border-border/60 px-3 pb-2.5">
+            <input
+              type="checkbox"
+              checked={isRecurring}
+              onChange={(e) => setIsRecurring(e.target.checked)}
+              className="h-4 w-4 accent-primary"
+            />
+            <span className="text-sm">Monthly</span>
+          </label>
+        </div>
+
         {dupError && (
           <Button type="button" variant="outline" size="sm" className="mt-3 w-full" onClick={() => submit(true)}>
             Save anyway (similar entry exists)
@@ -290,12 +305,12 @@ export function QuickAddModal() {
           onChange={(e) => setAmount(e.target.value)}
           placeholder="0"
         />
-        <CategoryPicker
+        <CategoryCollapsiblePicker
           categories={pool}
-          value={categoryId || String(visiblePool[0]?.id ?? pool[0]?.id ?? "")}
+          value={resolvedCategoryId}
           onChange={setCategoryId}
-          label="Category"
           kind={kind}
+          className="px-0"
         />
         <Select label="Paid with" value={paymentMethod} onChange={(e) => setPaymentMethod(e.target.value)}>
           {PAYMENT_METHODS.map((m) => (
@@ -318,11 +333,11 @@ export function QuickAddModal() {
 
   return (
     <>
-      {isMobile && (
+      {isMobileLayout && (
         <Sheet open={open} onClose={handleClose} labelledBy="quick-add-title" fullScreen>
           <div className="flex h-full flex-col bg-background">
             <header className="flex shrink-0 items-center justify-between border-b border-border/50 px-4 py-3 pt-[max(0.75rem,env(safe-area-inset-top))]">
-              <button type="button" onClick={handleClose} className="text-sm text-muted-foreground">
+              <button type="button" onClick={handleClose} className="min-h-11 px-1 text-sm text-muted-foreground">
                 Cancel
               </button>
               <h2 id="quick-add-title" className="text-base font-semibold">{mobileTitle}</h2>
@@ -333,7 +348,7 @@ export function QuickAddModal() {
         </Sheet>
       )}
 
-      {!isMobile && (
+      {!isMobileLayout && (
         <Dialog open={open} onClose={handleClose} labelledBy="quick-add-title-desktop" size="lg">
           <div className="p-6">
             <div className="mb-4 flex items-center justify-between">

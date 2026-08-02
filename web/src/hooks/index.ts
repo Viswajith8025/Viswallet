@@ -4,7 +4,7 @@ export { useInvalidateFinance } from "./use-invalidate-finance";
 export { useAiStatus } from "./use-ai-status";
 export { useAiFeatures } from "./use-ai-features";
 export { useDexieTable } from "./use-dexie-table";
-export { useCategories, useCategoriesQuery } from "./use-categories";
+export { useMobileLayout, MOBILE_LAYOUT_MAX_PX } from "./use-mobile-layout";
 export { useAsyncAction } from "./use-async-action";
 export { usePwaInstall } from "./use-pwa-install";
 export {

@@ -13,10 +13,10 @@ export function TopBar() {
   const setQuickAddOpen = useUIStore((s) => s.setQuickAddOpen);
 
   return (
-    <header className="sticky top-0 z-30 flex h-12 shrink-0 items-center gap-2 border-b border-border/50 bg-background px-4 pt-[env(safe-area-inset-top)] md:h-14 md:gap-3 md:border-border/60 md:px-6">
+    <header className="sticky top-0 z-30 flex h-12 shrink-0 items-center gap-2 border-b border-border/50 bg-background px-4 pt-[env(safe-area-inset-top)] lg:h-14 lg:gap-3 lg:border-border/60 lg:px-6">
       <Link
         href="/"
-        className="flex shrink-0 items-center gap-2 md:hidden"
+        className="flex shrink-0 items-center gap-2 lg:hidden"
         aria-label="Viswallet home"
       >
         <LogoMark size={26} />
@@ -25,7 +25,7 @@ export function TopBar() {
       <button
         type="button"
         onClick={() => setCommandOpen(true)}
-        className="hidden h-9 min-w-0 flex-1 items-center gap-2 rounded-md border border-border-light bg-surface-secondary/50 px-3 text-sm text-muted-foreground transition-colors hover:border-border hover:text-foreground md:flex md:max-w-sm"
+        className="hidden h-9 min-w-0 flex-1 items-center gap-2 rounded-md border border-border-light bg-surface-secondary/50 px-3 text-sm text-muted-foreground transition-colors hover:border-border hover:text-foreground lg:flex lg:max-w-sm"
         aria-label="Open command palette"
       >
         <Search size={15} className="shrink-0 opacity-60" />
@@ -35,11 +35,11 @@ export function TopBar() {
         </kbd>
       </button>
 
-      <div className="ml-auto flex items-center gap-0.5 md:gap-2">
+      <div className="ml-auto flex items-center gap-0.5 lg:gap-2">
         <button
           type="button"
           onClick={() => setCommandOpen(true)}
-          className="flex h-9 w-9 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:text-foreground md:hidden"
+          className="flex h-9 w-9 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:text-foreground lg:hidden"
           aria-label="Search"
         >
           <Search size={20} strokeWidth={1.75} />
@@ -49,7 +49,7 @@ export function TopBar() {
         <Button
           onClick={() => setQuickAddOpen(true, "expense")}
           size="sm"
-          className="hidden md:inline-flex"
+          className="hidden lg:inline-flex"
         >
           <Plus size={15} />
           Add

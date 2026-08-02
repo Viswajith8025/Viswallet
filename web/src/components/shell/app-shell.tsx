@@ -35,7 +35,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             <TopBar />
             <main
               id="main-content"
-              className="scroll-premium min-h-0 flex-1 overflow-y-auto overscroll-y-contain px-4 py-4 pb-[calc(4.5rem+env(safe-area-inset-bottom))] md:px-8 md:py-8 md:pb-8"
+              className="scroll-premium min-h-0 flex-1 overflow-y-auto overscroll-y-contain px-4 py-4 pb-[calc(4.5rem+env(safe-area-inset-bottom))] lg:px-8 lg:py-8 lg:pb-8"
               tabIndex={-1}
             >
               {children}

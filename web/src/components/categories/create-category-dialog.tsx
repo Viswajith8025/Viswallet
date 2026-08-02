@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Dialog, Sheet } from "@/components/ui/dialog";
@@ -11,8 +11,7 @@ import { CATEGORY_ICON_NAMES } from "@/lib/category-icons";
 import { cn } from "@/lib/design/cn";
 import { showToast } from "@/lib/store/toast-store";
 import { useInvalidateFinance } from "@/hooks";
-import { useQueryClient } from "@tanstack/react-query";
-import { financeKeys } from "@/lib/queries/use-finance";
+import { useMobileLayout } from "@/hooks/use-mobile-layout";
 
 type CreateCategoryDialogProps = {
   open: boolean;
@@ -27,22 +26,14 @@ export function CreateCategoryDialog({
   kind = "expense",
   onCreated,
 }: CreateCategoryDialogProps) {
-  const [isMobile, setIsMobile] = useState(false);
-
-  useEffect(() => {
-    const mq = window.matchMedia("(max-width: 767px)");
-    const update = () => setIsMobile(mq.matches);
-    update();
-    mq.addEventListener("change", update);
-    return () => mq.removeEventListener("change", update);
-  }, []);
+  const isMobileLayout = useMobileLayout();
 
   const title = kind === "income" ? "New income category" : "New expense category";
   const form = open ? (
     <CreateCategoryForm key={kind} kind={kind} onClose={onClose} onCreated={onCreated} />
   ) : null;
 
-  if (isMobile) {
+  if (isMobileLayout) {
     return (
       <Sheet open={open} onClose={onClose} labelledBy="create-category-title" layer="overlay">
         <div className="px-5 pb-[max(1rem,env(safe-area-inset-bottom))] pt-2">
@@ -79,7 +70,6 @@ function CreateCategoryForm({
   onCreated?: (categoryId: number) => void;
 }) {
   const invalidate = useInvalidateFinance();
-  const queryClient = useQueryClient();
   const [name, setName] = useState("");
   const [color, setColor] = useState<string>(DEFAULT_CATEGORY_COLOR);
   const [iconName, setIconName] = useState("circle-dot");
@@ -99,8 +89,6 @@ function CreateCategoryForm({
         kind,
       });
       await invalidate();
-      await queryClient.refetchQueries({ queryKey: financeKeys.all });
-      await queryClient.refetchQueries({ queryKey: ["categories"] });
       showToast(`Category "${created.name}" created`, { tone: "success" });
       if (created.id != null) onCreated?.(created.id);
       onClose();
