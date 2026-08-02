@@ -46,12 +46,16 @@ export const metadata: Metadata = {
   },
   robots: { index: true, follow: true },
   formatDetection: { telephone: false },
+  icons: {
+    icon: [{ url: "/icons/favicon-32.png", sizes: "32x32", type: "image/png" }],
+    apple: [{ url: "/icons/apple-touch-icon.png", sizes: "180x180", type: "image/png" }],
+  },
 };
 
 export const viewport: Viewport = {
   themeColor: [
-    { media: "(prefers-color-scheme: light)", color: "#5f4a8b" },
-    { media: "(prefers-color-scheme: dark)", color: "#14111c" },
+    { media: "(prefers-color-scheme: light)", color: "#3d3058" },
+    { media: "(prefers-color-scheme: dark)", color: "#3d3058" },
   ],
   width: "device-width",
   initialScale: 1,

@@ -1,12 +1,13 @@
-const CACHE = "viswallet-v7";
+const CACHE = "viswallet-v8";
 const ASSETS = [
   "/offline.html",
-  "/brand/mark.svg",
+  "/brand/logo-mark.svg",
   "/manifest.json",
-  "/icon",
-  "/apple-icon",
-  "/icon-192",
-  "/icon-512",
+  "/icons/icon-192.png",
+  "/icons/icon-512.png",
+  "/icons/icon-maskable-512.png",
+  "/icons/apple-touch-icon.png",
+  "/icons/favicon-32.png",
 ];
 
 self.addEventListener("install", (event) => {
