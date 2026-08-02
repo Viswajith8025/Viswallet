@@ -30,6 +30,19 @@ export function ToastHost() {
             role="status"
           >
             <span className="flex-1">{t.message}</span>
+            {t.action && (
+              <Button
+                size="sm"
+                variant="ghost"
+                className="h-8 shrink-0"
+                onClick={async () => {
+                  await t.action?.onClick();
+                  dismiss(t.id);
+                }}
+              >
+                {t.action.label}
+              </Button>
+            )}
             {t.undo && (
               <Button
                 size="sm"
