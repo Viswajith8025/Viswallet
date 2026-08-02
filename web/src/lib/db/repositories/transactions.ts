@@ -100,20 +100,23 @@ export async function updateTransactionWithLock(
   id: number,
   patch: Partial<Transaction>,
 ): Promise<void> {
+  const current = await db.transactions.get(id);
+  if (!current || current.isDeleted) throw new OptimisticLockError();
+
+  if (patch.categoryId) await assertCategoryExists(patch.categoryId);
+  if (patch.accountId) await assertAccountExists(patch.accountId);
+
+  const categoryId = patch.categoryId ?? current.categoryId;
+  const category = categoryId ? await db.categories.get(categoryId) : undefined;
+  const resolvedTitle =
+    patch.title !== undefined
+      ? resolveTransactionTitle(patch.title, category?.name, patch.kind ?? current.kind)
+      : undefined;
+
   await db.transaction("rw", db.transactions, async () => {
-    const current = await db.transactions.get(id);
-    if (!current || current.isDeleted) throw new OptimisticLockError();
-
-    if (patch.categoryId) await assertCategoryExists(patch.categoryId);
-    if (patch.accountId) await assertAccountExists(patch.accountId);
-
-    const categoryId = patch.categoryId ?? current.categoryId;
-    const category = categoryId ? await db.categories.get(categoryId) : undefined;
-    const resolvedTitle =
-      patch.title !== undefined
-        ? resolveTransactionTitle(patch.title, category?.name, patch.kind ?? current.kind)
-        : undefined;
-    const version = current.rowVersion ?? 1;
+    const live = await db.transactions.get(id);
+    if (!live || live.isDeleted) throw new OptimisticLockError();
+    const version = live.rowVersion ?? 1;
 
     await db.transactions.update(id, {
       ...patch,
