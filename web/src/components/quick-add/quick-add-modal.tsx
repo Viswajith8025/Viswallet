@@ -19,7 +19,6 @@ import { getLastPaymentMethod, pickDefaultCategoryId } from "@/lib/ux/defaults";
 import { filterQuickAddCategories } from "@/lib/categories/manage-category";
 import { saveQuickTransaction } from "@/lib/transactions/save-quick-transaction";
 import { useInvalidateFinance } from "@/hooks/use-invalidate-finance";
-import { useFilterStore } from "@/lib/store/filter-store";
 import { showToast } from "@/lib/store/toast-store";
 import { useAiFeatures } from "@/hooks/use-ai-features";
 import { suggestCategoryWithAi, type AiParseResult } from "@/lib/ai/client";
@@ -66,7 +65,6 @@ export function QuickAddModal() {
   const kind = useUIStore((s) => s.quickAddKind);
   const setOpen = useUIStore((s) => s.setQuickAddOpen);
   const invalidate = useInvalidateFinance();
-  const dashboardAccountId = useFilterStore((s) => s.accountId);
   const categories = useCategories();
   const expenseCats = useMemo(() => categories.filter((c) => c.countsTowardSpending), [categories]);
   const incomeCats = useMemo(
@@ -166,7 +164,6 @@ export function QuickAddModal() {
           amountPaise: paise,
           categoryId: catId,
           paymentMethod,
-          accountId: dashboardAccountId ?? undefined,
           isRecurring,
         },
         { allowDuplicate },

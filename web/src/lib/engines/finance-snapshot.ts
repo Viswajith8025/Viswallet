@@ -1,4 +1,4 @@
-import type { Category, Transaction, Account } from "@/lib/db/types";
+import type { Category, Transaction } from "@/lib/db/types";
 import { getCurrentCycleKey, getDaysLeftInCycle } from "@/lib/salary-cycle";
 import {
   getActiveCategories,
@@ -40,15 +40,9 @@ export type FinanceSnapshot = {
   parkedWalletsPaise: number;
   netWorthPaise: number;
   healthScore: number;
-  accounts: Account[];
-  selectedAccountId: number | null;
-  selectedAccount: Account | null;
 };
 
-export async function loadFinanceSnapshot(
-  monthKeyOverride?: string,
-  accountId?: number | null,
-): Promise<FinanceSnapshot> {
+export async function loadFinanceSnapshot(monthKeyOverride?: string): Promise<FinanceSnapshot> {
   const settings = await getSettings();
   const monthKey = monthKeyOverride ?? getCurrentCycleKey(settings.salaryDay);
   const [transactions, salary, categories, subs, bills, emis, loans, goals, investments, accounts] =
@@ -69,7 +63,7 @@ export async function loadFinanceSnapshot(
     categories.filter((c) => c.countsTowardSpending).map((c) => c.id),
   );
 
-  const fullExpensePaise = transactions
+  const expensePaise = transactions
     .filter((t) => t.kind === "expense" && spendingCats.has(t.categoryId))
     .reduce((s, t) => s + t.amountPaise, 0);
 
@@ -77,41 +71,13 @@ export async function loadFinanceSnapshot(
   const carryOverPaise = salary?.carryOverPaise ?? 0;
   const salaryPaise = salaryBase;
 
-  const fullTransactionIncomePaise = transactions
-    .filter((t) => t.kind === "income")
-    .reduce((s, t) => s + t.amountPaise, 0);
-
-  const fullIncomePaise = fullTransactionIncomePaise + salaryBase + carryOverPaise;
-  const cycleRemainingPaise = fullIncomePaise - fullExpensePaise;
-
-  const selectedAccount =
-    accountId != null ? accounts.find((a) => a.id === accountId) ?? null : null;
-  const scopedTransactions =
-    selectedAccount != null
-      ? transactions.filter((t) => t.accountId === accountId)
-      : transactions;
-
-  const expensePaise =
-    selectedAccount != null
-      ? scopedTransactions
-          .filter((t) => t.kind === "expense" && spendingCats.has(t.categoryId))
-          .reduce((s, t) => s + t.amountPaise, 0)
-      : fullExpensePaise;
-
   const incomePaise =
-    selectedAccount != null
-      ? scopedTransactions.filter((t) => t.kind === "income").reduce((s, t) => s + t.amountPaise, 0)
-      : fullIncomePaise;
-
-  const remainingPaise =
-    selectedAccount != null ? selectedAccount.balancePaise : cycleRemainingPaise;
+    transactions.filter((t) => t.kind === "income").reduce((s, t) => s + t.amountPaise, 0) +
+    salaryBase +
+    carryOverPaise;
+  const remainingPaise = incomePaise - expensePaise;
   const daysLeft = getDaysLeftInCycle(settings.salaryDay);
-  const safeSpendDaily =
-    selectedAccount != null
-      ? 0
-      : daysLeft > 0
-        ? Math.max(0, Math.floor(cycleRemainingPaise / daysLeft))
-        : 0;
+  const safeSpendDaily = daysLeft > 0 ? Math.max(0, Math.floor(remainingPaise / daysLeft)) : 0;
 
   const subscriptionMonthlyPaise = subs.reduce((s, sub) => s + toMonthlySubscriptionPaise(sub), 0);
 
@@ -133,15 +99,14 @@ export async function loadFinanceSnapshot(
     .reduce((s, a) => s + a.balancePaise, 0);
   const parkedWalletsPaise = backupWalletsPaise + savingsPotsPaise;
   const netWorthPaise =
-    cycleRemainingPaise +
+    remainingPaise +
     parkedWalletsPaise +
     goalsSaved +
     investmentValue +
     lentBalance -
     borrowedBalance;
 
-  const budgetUsed = salaryPaise > 0 ? fullExpensePaise / salaryPaise : 0;
-  const healthBaseRemaining = cycleRemainingPaise;
+  const budgetUsed = salaryPaise > 0 ? expensePaise / salaryPaise : 0;
   const healthScore = Math.round(
     Math.max(
       0,
@@ -151,7 +116,7 @@ export async function loadFinanceSnapshot(
           budgetUsed * 50 -
           (subscriptionMonthlyPaise / Math.max(salaryPaise, 1)) * 20 -
           (borrowedBalance / Math.max(salaryPaise, 1)) * 15 +
-          (healthBaseRemaining > 0 ? 10 : 0),
+          (remainingPaise > 0 ? 10 : 0),
       ),
     ),
   );
@@ -165,7 +130,7 @@ export async function loadFinanceSnapshot(
     remainingPaise,
     safeSpendDaily,
     daysLeft,
-    transactions: scopedTransactions.sort(
+    transactions: transactions.sort(
       (a, b) => new Date(b.occurredAt).getTime() - new Date(a.occurredAt).getTime(),
     ),
     categories,
@@ -181,9 +146,6 @@ export async function loadFinanceSnapshot(
     parkedWalletsPaise,
     netWorthPaise,
     healthScore,
-    accounts,
-    selectedAccountId: selectedAccount?.id ?? null,
-    selectedAccount,
   };
 }
 

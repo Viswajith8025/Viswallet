@@ -10,7 +10,6 @@ import { Button } from "@/components/ui/button";
 import { FinanceGate } from "@/components/layout/finance-gate";
 import { GlobalFilterBar } from "@/components/filters/global-filter-bar";
 import { HeroBalanceCard } from "@/components/dashboard/hero-balance-card";
-import { DashboardAccountSwitcher } from "@/components/dashboard/dashboard-account-switcher";
 import { ActionCenter } from "@/components/dashboard/action-center";
 import { LoanDueReminders } from "@/components/dashboard/loan-due-reminders";
 import { AiCoachStrip } from "@/components/ai/ai-coach-strip";
@@ -48,7 +47,6 @@ export default function DashboardPage() {
       {(data) => {
         const cats = categoryMap(data.categories);
         const recent = data.transactions.slice(0, 8);
-        const accountView = data.selectedAccount != null;
         const savingsRate = data.incomePaise
           ? Math.round(((data.incomePaise - data.expensePaise) / data.incomePaise) * 100)
           : 0;
@@ -70,8 +68,7 @@ export default function DashboardPage() {
               }
             />
 
-            <DashboardAccountSwitcher />
-            <GlobalFilterBar className="mt-4" />
+            <GlobalFilterBar />
 
             {show("hero") && (
               <section className="space-y-4">
@@ -81,66 +78,31 @@ export default function DashboardPage() {
                   incomePaise={data.incomePaise}
                   expensePaise={data.expensePaise}
                   savingsRate={savingsRate}
-                  headline={
-                    accountView
-                      ? `Balance in ${data.selectedAccount!.name}`
-                      : "Available this cycle"
-                  }
-                  showDaysLeft={!accountView}
                 />
 
                 <MetricStrip>
-                  {accountView ? (
-                    <>
-                      <StatCard
-                        label="Spent this cycle"
-                        value={formatINR(data.expensePaise)}
-                        hint="From this account"
-                        tone={data.expensePaise > 0 ? "negative" : "default"}
-                      />
-                      <StatCard
-                        label="Earned this cycle"
-                        value={formatINR(data.incomePaise)}
-                        hint="Tagged to this account"
-                        tone="positive"
-                      />
-                      <StatCard
-                        label="All accounts"
-                        value={formatINR(data.accounts.reduce((s, a) => s + a.balancePaise, 0))}
-                        hint="Total parked + bank"
-                      />
-                    </>
-                  ) : (
-                    <>
-                      <StatCard
-                        label="Daily budget"
-                        value={formatINR(data.safeSpendDaily)}
-                        hint={`${data.daysLeft} days in cycle`}
-                        tone="positive"
-                      />
-                      <StatCard label="Health" value={data.healthScore} hint="Out of 100" />
-                      <StatCard label="Net worth" value={formatINR(data.netWorthPaise)} />
-                      <StatCard
-                        label="In wallets & pots"
-                        value={formatINR(data.parkedWalletsPaise)}
-                        hint="Backup + savings"
-                      />
-                      <StatCard
-                        label="Fixed costs"
-                        value={formatINR(
-                          data.subscriptionMonthlyPaise + data.billsDuePaise + data.emiMonthlyPaise,
-                        )}
-                        hint="Subs · bills · EMI"
-                      />
-                      {data.borrowedBalance > 0 && (
-                        <StatCard
-                          label="You owe"
-                          value={formatINR(data.borrowedBalance)}
-                          hint="Borrowed — mark paid on dashboard"
-                          tone="negative"
-                        />
-                      )}
-                    </>
+                  <StatCard
+                    label="Daily budget"
+                    value={formatINR(data.safeSpendDaily)}
+                    hint={`${data.daysLeft} days in cycle`}
+                    tone="positive"
+                  />
+                  <StatCard label="Health" value={data.healthScore} hint="Out of 100" />
+                  <StatCard label="Net worth" value={formatINR(data.netWorthPaise)} />
+                  <StatCard
+                    label="Fixed costs"
+                    value={formatINR(
+                      data.subscriptionMonthlyPaise + data.billsDuePaise + data.emiMonthlyPaise,
+                    )}
+                    hint="Subs · bills · EMI"
+                  />
+                  {data.borrowedBalance > 0 && (
+                    <StatCard
+                      label="You owe"
+                      value={formatINR(data.borrowedBalance)}
+                      hint="Borrowed — mark paid on dashboard"
+                      tone="negative"
+                    />
                   )}
                 </MetricStrip>
               </section>
@@ -171,9 +133,7 @@ export default function DashboardPage() {
                 {show("recent") && (
                   <Card className="lg:col-span-3">
                     <CardHeader className="flex-row items-center justify-between space-y-0 pb-2">
-                      <CardTitle>
-                        {accountView ? `Activity · ${data.selectedAccount!.name}` : "Recent"}
-                      </CardTitle>
+                      <CardTitle>Recent</CardTitle>
                       <Link
                         href="/transactions"
                         className="inline-flex items-center gap-1 text-xs text-muted-foreground transition-colors hover:text-foreground"
@@ -185,12 +145,8 @@ export default function DashboardPage() {
                     <CardContent className="pt-0">
                       {recent.length === 0 ? (
                         <EmptyState
-                          title={accountView ? "No tagged transactions" : "No activity yet"}
-                          description={
-                            accountView
-                              ? "Expenses logged while this account is selected appear here. Use Transfer on Accounts for moves between wallets."
-                              : "Record an expense or income to start tracking."
-                          }
+                          title="No activity yet"
+                          description="Record an expense or income to start tracking."
                           illustration="transactions"
                           action={
                             <Button size="sm" onClick={() => router.push("/transactions?add=expense")}>

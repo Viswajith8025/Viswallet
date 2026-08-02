@@ -12,7 +12,6 @@ import { cn } from "@/lib/design/cn";
 
 export function GlobalFilterBar({ className }: { className?: string }) {
   const cycleKey = useFilterStore((s) => s.cycleKey);
-  const accountId = useFilterStore((s) => s.accountId);
   const kind = useFilterStore((s) => s.kind);
   const categoryId = useFilterStore((s) => s.categoryId);
   const setCycleKey = useFilterStore((s) => s.setCycleKey);
@@ -43,7 +42,7 @@ export function GlobalFilterBar({ className }: { className?: string }) {
   if (!settings) return null;
 
   const hasFilters =
-    cycleKey !== currentKey || accountId || kind !== "all" || categoryId;
+    cycleKey !== currentKey || kind !== "all" || categoryId;
 
   return (
     <div className={cn("flex flex-wrap items-center gap-2 border-b border-border/60 pb-4", className)}>

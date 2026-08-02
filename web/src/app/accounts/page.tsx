@@ -5,7 +5,6 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   ArrowLeftRight,
   PiggyBank,
-  RefreshCw,
   Shield,
   Star,
   Wallet,
@@ -24,9 +23,7 @@ import { sanitizeName } from "@/lib/security";
 import {
   ACCOUNT_ROLE_HINTS,
   ACCOUNT_ROLE_LABELS,
-  WALLET_PRESETS,
 } from "@/lib/accounts/wallet-presets";
-import { setupWalletPresets } from "@/lib/accounts/setup-wallet-presets";
 import { reconcileAccountBalance } from "@/lib/accounts/reconcile-account-balance";
 import { showToast } from "@/lib/store/toast-store";
 import { useInvalidateFinance } from "@/hooks/use-invalidate-finance";
@@ -164,17 +161,6 @@ export default function AccountsPage() {
     });
   }
 
-  async function handleSetupPresets() {
-    await run(async () => {
-      const added = await setupWalletPresets();
-      await refresh();
-      showToast(
-        added > 0 ? `Added ${added} wallets & pots` : "All presets already exist",
-        { tone: added > 0 ? "success" : "default" },
-      );
-    });
-  }
-
   async function setDefault(account: Account) {
     await db.transaction("rw", db.accounts, async () => {
       const all = await db.accounts.toArray();
@@ -212,7 +198,7 @@ export default function AccountsPage() {
       <PageHeader
         eyebrow="Wealth"
         title="Wallets & pots"
-        description="Track money across bank, backup wallets, and Jupiter pots. Add or edit accounts here."
+        description="Manage bank accounts, backup wallets, and savings pots. Add wallets from the More menu on mobile."
         actions={
           <Button variant="outline" onClick={() => openTransfer()}>
             <ArrowLeftRight size={16} className="mr-1.5" />
@@ -222,7 +208,7 @@ export default function AccountsPage() {
       />
 
       <Hint className="mb-6">
-        <strong>Workflow:</strong> Salary stays in your main bank → transfer to backup wallets when you load Amazon Pay / Slice / Mobikwik → move spare cash into Jupiter pots for savings. Spending from a wallet does not remove money from your wealth — only when you buy something.
+        <strong>Workflow:</strong> Salary stays in your main bank. Load backup wallets from More to park cash for quick use, or create pots for savings. Transfers here move money between accounts without changing your salary balance.
       </Hint>
 
       {isPending ? (
@@ -253,21 +239,10 @@ export default function AccountsPage() {
             </Card>
           </div>
 
-          {accounts.length <= 1 && (
-            <Card className="border-primary/20 bg-primary-muted/30">
-              <CardContent className="flex flex-col gap-3 p-5 sm:flex-row sm:items-center sm:justify-between">
-                <div>
-                  <p className="font-medium">Quick setup</p>
-                  <p className="text-sm text-muted-foreground">
-                    Add Amazon Pay, Slice, Mobikwik, and a Jupiter pot template in one tap.
-                  </p>
-                </div>
-                <Button onClick={() => void handleSetupPresets()} disabled={saving}>
-                  <RefreshCw size={16} className="mr-1.5" />
-                  Add my wallets
-                </Button>
-              </CardContent>
-            </Card>
+          {accounts.length <= 1 && !showForm && (
+            <div className="flex justify-end">
+              <Button variant="outline" onClick={() => setShowForm(true)}>Add account</Button>
+            </div>
           )}
 
           {showForm && (
@@ -280,7 +255,7 @@ export default function AccountsPage() {
                       <option key={r} value={r}>{ACCOUNT_ROLE_LABELS[r]}</option>
                     ))}
                   </Select>
-                  <Input label="App / bank (optional)" value={institution} onChange={(e) => setInstitution(e.target.value)} placeholder="Jupiter, Amazon Pay…" />
+                  <Input label="App / bank (optional)" value={institution} onChange={(e) => setInstitution(e.target.value)} placeholder="Bank or app name" />
                   <Input label="Current balance (₹)" type="number" value={balance} onChange={(e) => setBalance(e.target.value)} placeholder="0" />
                   <p className="sm:col-span-2 text-xs text-muted-foreground">{ACCOUNT_ROLE_HINTS[role]}</p>
                   {formError && <p className="sm:col-span-2 text-sm text-destructive">{formError}</p>}
@@ -294,8 +269,8 @@ export default function AccountsPage() {
           {accounts.length === 0 ? (
             <EmptyState
               title="No accounts yet"
-              description="Add your bank and backup wallets, or use quick setup."
-              action={<Button onClick={() => void handleSetupPresets()}>Add my wallets</Button>}
+              description="Add your main bank account, or create wallets from the More menu."
+              action={<Button onClick={() => setShowForm(true)}>Add account</Button>}
             />
           ) : (
             <div className="space-y-8">
@@ -322,7 +297,7 @@ export default function AccountsPage() {
                 </h2>
                 {grouped.backup.length === 0 ? (
                   <p className="text-sm text-muted-foreground px-1">
-                    No backup wallets yet. Quick add: {WALLET_PRESETS.filter((p) => p.role === "backup_wallet").map((p) => p.name).join(", ")}.
+                    No backup wallets yet. Create one from the More menu.
                   </p>
                 ) : (
                   grouped.backup.map((a) => (
@@ -343,7 +318,7 @@ export default function AccountsPage() {
                 </h2>
                 {grouped.pots.length === 0 ? (
                   <p className="text-sm text-muted-foreground px-1">
-                    Add Jupiter pots (Emergency, Travel, etc.) — each pot is a separate savings bucket.
+                    Add savings pots for goals like travel or emergencies — each pot is a separate bucket.
                   </p>
                 ) : (
                   grouped.pots.map((a) => (

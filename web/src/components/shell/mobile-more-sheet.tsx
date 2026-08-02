@@ -12,6 +12,7 @@ import { useDb } from "@/components/providers/db-provider";
 import { useAuth } from "@/components/providers/auth-provider";
 import { getProfile } from "@/lib/db";
 import { ProfileAvatar } from "@/components/profile/profile-avatar";
+import { MoreWalletsSection } from "@/components/shell/more-wallets-section";
 
 export function MobileMoreSheet() {
   const pathname = usePathname();
@@ -80,6 +81,8 @@ export function MobileMoreSheet() {
           <Search size={16} className="shrink-0 opacity-70" />
           <span>Search pages</span>
         </button>
+
+        <MoreWalletsSection />
 
         <nav
           className="scroll-premium flex-1 overflow-y-auto px-3 pb-4"
