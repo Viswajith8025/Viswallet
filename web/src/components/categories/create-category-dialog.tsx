@@ -27,13 +27,6 @@ export function CreateCategoryDialog({
   kind = "expense",
   onCreated,
 }: CreateCategoryDialogProps) {
-  const invalidate = useInvalidateFinance();
-  const queryClient = useQueryClient();
-  const [name, setName] = useState("");
-  const [color, setColor] = useState<string>(DEFAULT_CATEGORY_COLOR);
-  const [iconName, setIconName] = useState("circle-dot");
-  const [saving, setSaving] = useState(false);
-  const [error, setError] = useState("");
   const [isMobile, setIsMobile] = useState(false);
 
   useEffect(() => {
@@ -44,13 +37,54 @@ export function CreateCategoryDialog({
     return () => mq.removeEventListener("change", update);
   }, []);
 
-  useEffect(() => {
-    if (!open) return;
-    setName("");
-    setColor(DEFAULT_CATEGORY_COLOR);
-    setIconName("circle-dot");
-    setError("");
-  }, [open, kind]);
+  const title = kind === "income" ? "New income category" : "New expense category";
+  const form = open ? (
+    <CreateCategoryForm key={kind} kind={kind} onClose={onClose} onCreated={onCreated} />
+  ) : null;
+
+  if (isMobile) {
+    return (
+      <Sheet open={open} onClose={onClose} labelledBy="create-category-title">
+        <div className="px-5 pb-[max(1rem,env(safe-area-inset-bottom))] pt-2">
+          <h2 id="create-category-title" className="text-lg font-semibold">{title}</h2>
+          <p className="mt-1 text-sm text-muted-foreground">
+            Appears right away when adding transactions.
+          </p>
+          <div className="mt-4">{form}</div>
+        </div>
+      </Sheet>
+    );
+  }
+
+  return (
+    <Dialog open={open} onClose={onClose} labelledBy="create-category-title-desktop" size="md">
+      <div className="p-6">
+        <h2 id="create-category-title-desktop" className="text-lg font-semibold">{title}</h2>
+        <p className="mt-1 text-sm text-muted-foreground">
+          Custom categories show up in quick add and transaction forms.
+        </p>
+        <div className="mt-4">{form}</div>
+      </div>
+    </Dialog>
+  );
+}
+
+function CreateCategoryForm({
+  kind,
+  onClose,
+  onCreated,
+}: {
+  kind: "expense" | "income";
+  onClose: () => void;
+  onCreated?: (categoryId: number) => void;
+}) {
+  const invalidate = useInvalidateFinance();
+  const queryClient = useQueryClient();
+  const [name, setName] = useState("");
+  const [color, setColor] = useState<string>(DEFAULT_CATEGORY_COLOR);
+  const [iconName, setIconName] = useState("circle-dot");
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState("");
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -78,8 +112,7 @@ export function CreateCategoryDialog({
     }
   }
 
-  const title = kind === "income" ? "New income category" : "New expense category";
-  const body = (
+  return (
     <form onSubmit={handleSubmit} className="space-y-4">
       <Input
         label="Name"
@@ -130,31 +163,5 @@ export function CreateCategoryDialog({
         <Button type="button" variant="ghost" onClick={onClose}>Cancel</Button>
       </div>
     </form>
-  );
-
-  if (isMobile) {
-    return (
-      <Sheet open={open} onClose={onClose} labelledBy="create-category-title">
-        <div className="px-5 pb-[max(1rem,env(safe-area-inset-bottom))] pt-2">
-          <h2 id="create-category-title" className="text-lg font-semibold">{title}</h2>
-          <p className="mt-1 text-sm text-muted-foreground">
-            Appears right away when adding transactions.
-          </p>
-          <div className="mt-4">{body}</div>
-        </div>
-      </Sheet>
-    );
-  }
-
-  return (
-    <Dialog open={open} onClose={onClose} labelledBy="create-category-title-desktop" size="md">
-      <div className="p-6">
-        <h2 id="create-category-title-desktop" className="text-lg font-semibold">{title}</h2>
-        <p className="mt-1 text-sm text-muted-foreground">
-          Custom categories show up in quick add and transaction forms.
-        </p>
-        <div className="mt-4">{body}</div>
-      </div>
-    </Dialog>
   );
 }

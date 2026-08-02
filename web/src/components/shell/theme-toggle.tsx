@@ -1,7 +1,7 @@
 "use client";
 
 import { Moon, Sun } from "lucide-react";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useState } from "react";
 import { updateSettings, peekBootCache } from "@/lib/db";
 import { applyAccentColor } from "@/lib/theme/accent";
 import { applyThemeMode, type ResolvedTheme } from "@/lib/theme/resolve";
@@ -13,11 +13,10 @@ function readResolvedTheme(): ResolvedTheme {
 }
 
 export function ThemeToggle() {
-  const [resolved, setResolved] = useState<ResolvedTheme>("light");
-
-  useEffect(() => {
-    setResolved(readResolvedTheme());
-  }, []);
+  const [resolved, setResolved] = useState<ResolvedTheme>(() => {
+    if (typeof document === "undefined") return "light";
+    return readResolvedTheme();
+  });
 
   const toggle = useCallback(async () => {
     const next: ResolvedTheme = resolved === "dark" ? "light" : "dark";

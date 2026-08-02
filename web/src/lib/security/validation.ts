@@ -8,7 +8,6 @@ import {
   MAX_NAME_LENGTH,
   MAX_NOTES_LENGTH,
   MAX_TITLE_LENGTH,
-  MAX_URL_LENGTH,
 } from "./constants";
 
 const dateField = z.union([z.string().datetime(), z.coerce.date()]).transform((d) => new Date(d));

@@ -5,7 +5,7 @@ import { ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input, Select } from "@/components/ui/input";
 import { Dialog, Sheet } from "@/components/ui/dialog";
-import type { Account, AccountRole } from "@/lib/db/types";
+import type { Account } from "@/lib/db/types";
 import { recordAccountTransfer } from "@/lib/accounts/record-account-transfer";
 import { parseRupeeInput, formatINR } from "@/lib/money";
 import { showToast } from "@/lib/store/toast-store";
@@ -16,45 +16,25 @@ function accountLabel(a: Account): string {
   return `${a.name} (${role}) — ${formatINR(a.balancePaise)}`;
 }
 
-export function WalletTransferModal({
-  open,
-  onClose,
+function TransferForm({
   accounts,
   defaultFromId,
   defaultToId,
+  onClose,
   onSuccess,
 }: {
-  open: boolean;
-  onClose: () => void;
   accounts: Account[];
   defaultFromId?: number;
   defaultToId?: number;
+  onClose: () => void;
   onSuccess: () => void;
 }) {
-  const [fromId, setFromId] = useState("");
-  const [toId, setToId] = useState("");
+  const [fromId, setFromId] = useState(defaultFromId ? String(defaultFromId) : "");
+  const [toId, setToId] = useState(defaultToId ? String(defaultToId) : "");
   const [amount, setAmount] = useState("");
   const [note, setNote] = useState("");
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
-  const [isMobile, setIsMobile] = useState(false);
-
-  useEffect(() => {
-    const mq = window.matchMedia("(max-width: 767px)");
-    const update = () => setIsMobile(mq.matches);
-    update();
-    mq.addEventListener("change", update);
-    return () => mq.removeEventListener("change", update);
-  }, []);
-
-  useEffect(() => {
-    if (!open) return;
-    setFromId(defaultFromId ? String(defaultFromId) : "");
-    setToId(defaultToId ? String(defaultToId) : "");
-    setAmount("");
-    setNote("");
-    setError("");
-  }, [open, defaultFromId, defaultToId]);
 
   const fromAccount = accounts.find((a) => a.id === Number(fromId));
   const toAccount = accounts.find((a) => a.id === Number(toId));
@@ -76,7 +56,7 @@ export function WalletTransferModal({
     }
   }
 
-  const body = (
+  return (
     <form onSubmit={submit} className="space-y-4">
       <p className="text-sm text-muted-foreground">
         Move money between your bank, backup wallets, and savings pots. This does not count as spending.
@@ -139,13 +119,51 @@ export function WalletTransferModal({
       </div>
     </form>
   );
+}
+
+export function WalletTransferModal({
+  open,
+  onClose,
+  accounts,
+  defaultFromId,
+  defaultToId,
+  onSuccess,
+}: {
+  open: boolean;
+  onClose: () => void;
+  accounts: Account[];
+  defaultFromId?: number;
+  defaultToId?: number;
+  onSuccess: () => void;
+}) {
+  const [isMobile, setIsMobile] = useState(false);
+
+  useEffect(() => {
+    const mq = window.matchMedia("(max-width: 767px)");
+    const update = () => setIsMobile(mq.matches);
+    update();
+    mq.addEventListener("change", update);
+    return () => mq.removeEventListener("change", update);
+  }, []);
+
+  const formKey = `${defaultFromId ?? "none"}-${defaultToId ?? "none"}`;
+  const form = open ? (
+    <TransferForm
+      key={formKey}
+      accounts={accounts}
+      defaultFromId={defaultFromId}
+      defaultToId={defaultToId}
+      onClose={onClose}
+      onSuccess={onSuccess}
+    />
+  ) : null;
 
   if (isMobile) {
     return (
       <Sheet open={open} onClose={onClose} labelledBy="transfer-title">
         <div className="px-5 pb-[max(1rem,env(safe-area-inset-bottom))] pt-2">
           <h2 id="transfer-title" className="text-lg font-semibold">Transfer money</h2>
-          <div className="mt-4">{body}</div>
+          <div className="mt-4">{form}</div>
         </div>
       </Sheet>
     );
@@ -155,7 +173,7 @@ export function WalletTransferModal({
     <Dialog open={open} onClose={onClose} labelledBy="transfer-title-desktop" size="md">
       <div className="p-6">
         <h2 id="transfer-title-desktop" className="text-lg font-semibold">Transfer money</h2>
-        <div className="mt-4">{body}</div>
+        <div className="mt-4">{form}</div>
       </div>
     </Dialog>
   );

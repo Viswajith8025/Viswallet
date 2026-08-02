@@ -21,7 +21,6 @@ type LogoMarkContentProps = {
  * Shared mark geometry for in-app SVG and next/og icon routes.
  */
 export function LogoMarkContent({ variant = "default" }: LogoMarkContentProps) {
-  const showTile = variant !== "mark-only";
   const isInverse = variant === "inverse";
 
   const tileBase = isInverse ? LOGO_COLORS.cream : LOGO_COLORS.violetDeep;
