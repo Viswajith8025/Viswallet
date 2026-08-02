@@ -44,7 +44,7 @@ export function CreateCategoryDialog({
 
   if (isMobile) {
     return (
-      <Sheet open={open} onClose={onClose} labelledBy="create-category-title">
+      <Sheet open={open} onClose={onClose} labelledBy="create-category-title" layer="overlay">
         <div className="px-5 pb-[max(1rem,env(safe-area-inset-bottom))] pt-2">
           <h2 id="create-category-title" className="text-lg font-semibold">{title}</h2>
           <p className="mt-1 text-sm text-muted-foreground">
@@ -57,7 +57,7 @@ export function CreateCategoryDialog({
   }
 
   return (
-    <Dialog open={open} onClose={onClose} labelledBy="create-category-title-desktop" size="md">
+    <Dialog open={open} onClose={onClose} labelledBy="create-category-title-desktop" size="md" layer="overlay">
       <div className="p-6">
         <h2 id="create-category-title-desktop" className="text-lg font-semibold">{title}</h2>
         <p className="mt-1 text-sm text-muted-foreground">
@@ -86,9 +86,9 @@ function CreateCategoryForm({
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
 
-  async function handleSubmit(e: React.FormEvent) {
-    e.preventDefault();
-    if (saving) return;
+  async function handleSubmit(e?: React.FormEvent) {
+    e?.preventDefault();
+    if (saving || !name.trim()) return;
     setSaving(true);
     setError("");
     try {
@@ -100,6 +100,7 @@ function CreateCategoryForm({
       });
       await invalidate();
       await queryClient.refetchQueries({ queryKey: financeKeys.all });
+      await queryClient.refetchQueries({ queryKey: ["categories"] });
       showToast(`Category "${created.name}" created`, { tone: "success" });
       if (created.id != null) onCreated?.(created.id);
       onClose();
@@ -113,7 +114,16 @@ function CreateCategoryForm({
   }
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-4">
+    <form
+      onSubmit={(e) => void handleSubmit(e)}
+      className="space-y-4"
+      onKeyDown={(e) => {
+        if (e.key === "Enter" && (e.target as HTMLElement).tagName !== "BUTTON") {
+          e.preventDefault();
+          void handleSubmit();
+        }
+      }}
+    >
       <Input
         label="Name"
         required
@@ -157,7 +167,7 @@ function CreateCategoryForm({
         <p className="text-sm text-destructive" role="alert">{error}</p>
       )}
       <div className="flex gap-2 pt-1">
-        <Button type="submit" disabled={saving || !name.trim()}>
+        <Button type="button" disabled={saving || !name.trim()} onClick={() => void handleSubmit()}>
           {saving ? "Creating…" : "Create category"}
         </Button>
         <Button type="button" variant="ghost" onClick={onClose}>Cancel</Button>

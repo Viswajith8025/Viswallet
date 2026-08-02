@@ -1,5 +1,7 @@
 "use client";
 
+import { useSyncExternalStore } from "react";
+import { createPortal } from "react-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/design/cn";
 import { dialogVariants } from "@/lib/design/variants";
@@ -11,6 +13,14 @@ const overlayVariants = {
 
 const panelTransition = { duration: 0.25, ease: [0.16, 1, 0.3, 1] as const };
 
+function useBodyPortal() {
+  return useSyncExternalStore(
+    () => () => {},
+    () => true,
+    () => false,
+  );
+}
+
 export function Dialog({
   open,
   onClose,
@@ -18,6 +28,7 @@ export function Dialog({
   className,
   labelledBy,
   size = "md",
+  layer = "base",
 }: {
   open: boolean;
   onClose: () => void;
@@ -25,13 +36,17 @@ export function Dialog({
   className?: string;
   labelledBy?: string;
   size?: "sm" | "md" | "lg";
+  /** `overlay` stacks above other modals (e.g. category picker inside quick add). */
+  layer?: "base" | "overlay";
 }) {
+  const mounted = useBodyPortal();
   const maxWidth = size === "sm" ? "max-w-md" : size === "lg" ? "max-w-2xl" : "max-w-lg";
+  const zClass = layer === "overlay" ? "z-[110]" : "z-[100]";
 
-  return (
+  const node = (
     <AnimatePresence>
       {open && (
-        <div className="fixed inset-0 z-[100] flex items-end justify-center p-4 sm:items-center sm:p-6">
+        <div className={cn("fixed inset-0 flex items-end justify-center p-4 sm:items-center sm:p-6", zClass)}>
           <motion.button
             type="button"
             aria-label="Close dialog"
@@ -59,6 +74,9 @@ export function Dialog({
       )}
     </AnimatePresence>
   );
+
+  if (!mounted) return null;
+  return createPortal(node, document.body);
 }
 
 export function Sheet({
@@ -68,6 +86,7 @@ export function Sheet({
   className,
   labelledBy,
   fullScreen = false,
+  layer = "base",
 }: {
   open: boolean;
   onClose: () => void;
@@ -75,11 +94,15 @@ export function Sheet({
   className?: string;
   labelledBy?: string;
   fullScreen?: boolean;
+  layer?: "base" | "overlay";
 }) {
-  return (
+  const mounted = useBodyPortal();
+  const zClass = layer === "overlay" ? "z-[110]" : "z-[100]";
+
+  const node = (
     <AnimatePresence>
       {open && (
-        <div className="fixed inset-0 z-[100] flex items-end justify-center">
+        <div className={cn("fixed inset-0 flex items-end justify-center", zClass)}>
           <motion.button
             type="button"
             aria-label="Close"
@@ -96,9 +119,7 @@ export function Sheet({
             className={cn(
               dialogVariants.panel,
               dialogVariants.panelSheet,
-              fullScreen
-                ? "h-[100dvh] max-h-[100dvh] rounded-none"
-                : "w-full",
+              fullScreen ? "h-[100dvh] max-h-[100dvh] rounded-none" : "w-full",
               className,
             )}
             initial={{ y: "100%" }}
@@ -113,6 +134,9 @@ export function Sheet({
       )}
     </AnimatePresence>
   );
+
+  if (!mounted) return null;
+  return createPortal(node, document.body);
 }
 
 export function DialogBody({ className, ...props }: React.HTMLAttributes<HTMLDivElement>) {

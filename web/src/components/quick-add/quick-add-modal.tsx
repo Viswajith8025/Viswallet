@@ -195,7 +195,7 @@ export function QuickAddModal() {
       <SuccessMark label="Saved" />
     </div>
   ) : (
-    <form onSubmit={handleSubmit} className="flex min-h-0 flex-1 flex-col">
+    <div className="flex min-h-0 flex-1 flex-col">
       <div className="px-4 py-3 space-y-3">
         <TypePills kind={kind} onChange={handleKindChange} />
         {aiActive && (
@@ -228,7 +228,10 @@ export function QuickAddModal() {
         />
       </div>
 
-      <div className="shrink-0 border-t border-border/50 bg-background px-4 py-4 pb-[max(1rem,env(safe-area-inset-bottom))]">
+      <form
+        onSubmit={handleSubmit}
+        className="shrink-0 border-t border-border/50 bg-background px-4 py-4 pb-[max(1rem,env(safe-area-inset-bottom))]"
+      >
         <div className="flex items-center gap-2 rounded-xl bg-muted/50 px-4 py-3">
           <span className="text-lg font-medium text-muted-foreground">₹</span>
           <input
@@ -249,8 +252,8 @@ export function QuickAddModal() {
         <Button type="submit" className="mt-3 w-full" size="lg" disabled={saving || preview <= 0}>
           {saving ? "Saving…" : "Save"}
         </Button>
-      </div>
-    </form>
+      </form>
+    </div>
   );
 
   const desktopBody = success ? (
