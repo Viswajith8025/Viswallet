@@ -7,6 +7,7 @@ export type BillingCycle = "weekly" | "monthly" | "yearly";
 export type BillStatus = "upcoming" | "paid" | "overdue";
 export type NotificationType = "info" | "warning" | "success" | "bill" | "emi" | "insight" | "goal" | "duplicate" | "subscription";
 export type AccountType = "cash" | "bank" | "wallet" | "credit" | "investment" | "other";
+export type AccountRole = "primary" | "backup_wallet" | "pot";
 export type DashboardWidgetId =
   | "hero"
   | "stats"
@@ -67,6 +68,7 @@ export interface Account {
   id?: number;
   name: string;
   type: AccountType;
+  role?: AccountRole;
   institution?: string;
   balancePaise: number;
   color: string;
@@ -75,6 +77,16 @@ export interface Account {
   isActive: boolean;
   createdAt: Date;
   updatedAt: Date;
+}
+
+export interface AccountTransfer {
+  id?: number;
+  fromAccountId: number;
+  toAccountId: number;
+  amountPaise: number;
+  note?: string;
+  transferredAt: Date;
+  createdAt: Date;
 }
 
 export interface MonthlySnapshot {
@@ -128,6 +140,7 @@ export interface Category {
   countsTowardSpending: boolean;
   sortOrder: number;
   isDeleted: boolean;
+  hiddenFromQuickAdd?: boolean;
   rowVersion?: number;
 }
 

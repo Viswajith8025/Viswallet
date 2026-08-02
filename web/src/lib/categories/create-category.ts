@@ -52,6 +52,7 @@ export async function createCustomCategory(input: CreateCategoryInput): Promise<
       sortOrder,
       isDeleted: false,
       rowVersion: 1,
+      hiddenFromQuickAdd: false,
     })) as number;
 
     const created = await db.categories.get(id);
@@ -73,6 +74,7 @@ export async function createCustomCategory(input: CreateCategoryInput): Promise<
         sortOrder,
         isDeleted: false,
         rowVersion: 1,
+        hiddenFromQuickAdd: false,
       })) as number;
       const created = await db.categories.get(id);
       if (!created) throw new Error("Category was not saved.");

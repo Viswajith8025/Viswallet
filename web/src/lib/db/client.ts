@@ -3,6 +3,7 @@ import { DEFAULT_CATEGORIES } from "@/lib/categories-default";
 import { getCurrentCycleKey } from "@/lib/salary-cycle";
 import type {
   Account,
+  AccountTransfer,
   Achievement,
   AppNotification,
   AppSettings,
@@ -76,6 +77,7 @@ class ViswalletDB extends Dexie {
   notifications!: EntityTable<AppNotification, "id">;
   auditLogs!: EntityTable<AuditLog, "id">;
   accounts!: EntityTable<Account, "id">;
+  accountTransfers!: EntityTable<AccountTransfer, "id">;
   monthlySnapshots!: EntityTable<MonthlySnapshot, "id">;
   secureNotes!: EntityTable<SecureNote, "id">;
   transactionAttachments!: EntityTable<TransactionAttachment, "id">;
@@ -215,7 +217,9 @@ class ViswalletDB extends Dexie {
           const now = new Date();
           await tx.table("accounts").add({
             name: "Primary Wallet",
-            type: "wallet",
+            type: "bank",
+            role: "primary",
+            institution: "Bank",
             balancePaise: 0,
             color: "#5f4a8b",
             iconName: "Wallet",
@@ -282,6 +286,79 @@ class ViswalletDB extends Dexie {
           }
         }
       });
+
+    this.version(6)
+      .stores({
+        profiles: "id",
+        settings: "id",
+        categories: "++id, &slug, [isDeleted+sortOrder], sortOrder, isDeleted",
+        transactions:
+          "++id, monthKey, isDeleted, kind, [monthKey+isDeleted], [isDeleted+occurredAt], [isDeleted+kind], categoryId, accountId, occurredAt, *tags",
+        monthlySalaries: "++id, &monthKey",
+        budgetPlans: "++id, &monthKey",
+        budgetBuckets: "++id, planId, bucketKey, [planId+bucketKey]",
+        loans: "++id, [isDeleted+status], direction, isDeleted, status",
+        loanPayments: "++id, loanId, [loanId+paidAt]",
+        subscriptions: "++id, isActive, [isActive+nextRenewalAt]",
+        bills: "++id, status, [status+dueAt], dueAt",
+        emis: "++id, isActive, [isActive+nextDueAt]",
+        savingsGoals: "++id, isActive",
+        wishlistItems: "++id, isPurchased",
+        investments: "++id, type",
+        notifications: "++id, [read+createdAt], read, createdAt",
+        auditLogs: "++id, action, createdAt, [createdAt+success]",
+        accounts: "++id, isDefault, isActive",
+        monthlySnapshots: "++id, &monthKey",
+        secureNotes: "++id, updatedAt",
+        transactionAttachments: "++id, transactionId",
+        achievements: "++id, &achievementKey, unlockedAt",
+      })
+      .upgrade(async (tx) => {
+        const cats = await tx.table("categories").toArray();
+        for (const c of cats) {
+          if (c.id != null && c.hiddenFromQuickAdd == null) {
+            await tx.table("categories").update(c.id, { hiddenFromQuickAdd: false });
+          }
+        }
+      });
+
+    this.version(7)
+      .stores({
+        profiles: "id",
+        settings: "id",
+        categories: "++id, &slug, [isDeleted+sortOrder], sortOrder, isDeleted",
+        transactions:
+          "++id, monthKey, isDeleted, kind, [monthKey+isDeleted], [isDeleted+occurredAt], [isDeleted+kind], categoryId, accountId, occurredAt, *tags",
+        monthlySalaries: "++id, &monthKey",
+        budgetPlans: "++id, &monthKey",
+        budgetBuckets: "++id, planId, bucketKey, [planId+bucketKey]",
+        loans: "++id, [isDeleted+status], direction, isDeleted, status",
+        loanPayments: "++id, loanId, [loanId+paidAt]",
+        subscriptions: "++id, isActive, [isActive+nextRenewalAt]",
+        bills: "++id, status, [status+dueAt], dueAt",
+        emis: "++id, isActive, [isActive+nextDueAt]",
+        savingsGoals: "++id, isActive",
+        wishlistItems: "++id, isPurchased",
+        investments: "++id, type",
+        notifications: "++id, [read+createdAt], read, createdAt",
+        auditLogs: "++id, action, createdAt, [createdAt+success]",
+        accounts: "++id, isDefault, isActive",
+        accountTransfers: "++id, fromAccountId, toAccountId, transferredAt",
+        monthlySnapshots: "++id, &monthKey",
+        secureNotes: "++id, updatedAt",
+        transactionAttachments: "++id, transactionId",
+        achievements: "++id, &achievementKey, unlockedAt",
+      })
+      .upgrade(async (tx) => {
+        const accounts = await tx.table("accounts").toArray();
+        for (const a of accounts) {
+          if (a.id == null) continue;
+          const role =
+            a.role ??
+            (a.type === "bank" || a.isDefault ? "primary" : a.type === "wallet" ? "backup_wallet" : "primary");
+          await tx.table("accounts").update(a.id, { role });
+        }
+      });
   }
 }
 
@@ -307,6 +384,7 @@ async function syncDefaultCategories(): Promise<void> {
         countsTowardSpending: c.countsTowardSpending,
         sortOrder: c.sortOrder ?? maxOrder + i + 1,
         isDeleted: false,
+        hiddenFromQuickAdd: false,
       })),
     );
   }
@@ -365,7 +443,9 @@ export async function ensureDbSeeded(): Promise<void> {
     if (accountCount === 0) {
       await db.accounts.add({
         name: "Primary Wallet",
-        type: "wallet",
+        type: "bank",
+        role: "primary",
+        institution: "Bank",
         balancePaise: 0,
         color: "#5f4a8b",
         iconName: "Wallet",
@@ -581,6 +661,7 @@ export async function exportAllDataForSync(): Promise<string> {
     investments: await db.investments.toArray(),
     notifications: await db.notifications.toArray(),
     accounts: await db.accounts.toArray(),
+    accountTransfers: await db.accountTransfers.toArray(),
     monthlySnapshots: await db.monthlySnapshots.toArray(),
     secureNotes: await db.secureNotes.toArray(),
     achievements: await db.achievements.toArray(),
@@ -656,6 +737,8 @@ export async function importAllData(json: string, options: { skipRateLimit?: boo
         await db.notifications.bulkAdd(validated.notifications as unknown as AppNotification[]);
       if (validated.accounts?.length)
         await db.accounts.bulkAdd(validated.accounts as unknown as Account[]);
+      const transfers = (validated as unknown as { accountTransfers?: AccountTransfer[] }).accountTransfers;
+      if (transfers?.length) await db.accountTransfers.bulkAdd(transfers);
       if (validated.monthlySnapshots?.length)
         await db.monthlySnapshots.bulkAdd(validated.monthlySnapshots as unknown as MonthlySnapshot[]);
       if (validated.secureNotes?.length)

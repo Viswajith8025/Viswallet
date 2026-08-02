@@ -16,6 +16,7 @@ import { parseRupeeInput, formatINR } from "@/lib/money";
 import { PAYMENT_METHODS } from "@/lib/categories-default";
 import { useCategories } from "@/lib/queries/use-finance";
 import { getLastPaymentMethod, pickDefaultCategoryId } from "@/lib/ux/defaults";
+import { filterQuickAddCategories } from "@/lib/categories/manage-category";
 import { saveQuickTransaction } from "@/lib/transactions/save-quick-transaction";
 import { useInvalidateFinance } from "@/hooks/use-invalidate-finance";
 import { showToast } from "@/lib/store/toast-store";
@@ -71,6 +72,7 @@ export function QuickAddModal() {
     [categories],
   );
   const pool = kind === "income" ? incomeCats : expenseCats;
+  const visiblePool = useMemo(() => filterQuickAddCategories(pool), [pool]);
 
   const [title, setTitle] = useState("");
   const [amount, setAmount] = useState("");
@@ -100,7 +102,7 @@ export function QuickAddModal() {
 
   useEffect(() => {
     if (open && !wasOpen.current) {
-      const def = pickDefaultCategoryId(kind, pool.length ? pool : categories);
+      const def = pickDefaultCategoryId(kind, visiblePool.length ? visiblePool : pool);
       setTitle("");
       setAmount("");
       setCategoryId(def ? String(def) : "");
@@ -110,7 +112,7 @@ export function QuickAddModal() {
       setPaymentMethod(getLastPaymentMethod());
     }
     wasOpen.current = open;
-  }, [open, kind, pool, categories]);
+  }, [open, kind, visiblePool, pool, categories]);
 
   useEffect(() => {
     if (!aiActive || !debouncedTitle.trim() || debouncedTitle.length < 3) return;
@@ -139,7 +141,8 @@ export function QuickAddModal() {
   function handleKindChange(k: "expense" | "income") {
     useUIStore.setState({ quickAddKind: k });
     const nextPool = k === "income" ? incomeCats : expenseCats;
-    const def = pickDefaultCategoryId(k, nextPool.length ? nextPool : categories);
+    const visible = filterQuickAddCategories(nextPool);
+    const def = pickDefaultCategoryId(k, visible.length ? visible : nextPool);
     setCategoryId(def ? String(def) : "");
   }
 
@@ -153,7 +156,7 @@ export function QuickAddModal() {
     setSaving(true);
     setDupError(false);
     try {
-      const catId = Number(categoryId || pool[0]?.id);
+      const catId = Number(categoryId || visiblePool[0]?.id || pool[0]?.id);
       await saveQuickTransaction(
         {
           kind,
@@ -203,15 +206,23 @@ export function QuickAddModal() {
             compact
           />
         )}
-        <p className="text-center text-sm text-muted-foreground">
-          {aiActive ? "Or tap a category, then enter the amount" : "Tap a category, then enter the amount"}
+        <input
+          type="text"
+          value={title}
+          onChange={(e) => setTitle(e.target.value)}
+          placeholder="Title — e.g. Lunch, Uber, Amazon"
+          className="w-full rounded-xl border border-border/60 bg-muted/40 px-4 py-3 text-sm outline-none placeholder:text-muted-foreground/60 focus:border-primary/40 focus:ring-2 focus:ring-primary/10"
+          aria-label="Title"
+        />
+        <p className="text-center text-xs text-muted-foreground">
+          Pick a category, enter title and amount
         </p>
       </div>
 
       <div className="scroll-premium min-h-0 flex-1 overflow-y-auto">
         <CategoryGrid
           categories={pool}
-          value={categoryId || String(pool[0]?.id ?? "")}
+          value={categoryId || String(visiblePool[0]?.id ?? pool[0]?.id ?? "")}
           onChange={setCategoryId}
           kind={kind}
         />
@@ -261,6 +272,13 @@ export function QuickAddModal() {
           />
         )}
         <Input
+          label="Title"
+          value={title}
+          onChange={(e) => setTitle(e.target.value)}
+          placeholder="e.g. Lunch, Uber, salary bonus"
+          hint="Uses category name if left blank"
+        />
+        <Input
           label="Amount (₹)"
           required
           type="number"
@@ -271,7 +289,7 @@ export function QuickAddModal() {
         />
         <CategoryPicker
           categories={pool}
-          value={categoryId || String(pool[0]?.id ?? "")}
+          value={categoryId || String(visiblePool[0]?.id ?? pool[0]?.id ?? "")}
           onChange={setCategoryId}
           label="Category"
         />
@@ -280,12 +298,6 @@ export function QuickAddModal() {
             <option key={m} value={m}>{m}</option>
           ))}
         </Select>
-        <Input
-          label="Note (optional)"
-          value={title}
-          onChange={(e) => setTitle(e.target.value)}
-          placeholder="Optional"
-        />
         <Checkbox label="Repeats every month" checked={isRecurring} onChange={(e) => setIsRecurring(e.target.checked)} />
         {dupError && (
           <Button type="button" variant="outline" size="sm" onClick={() => submit(true)}>

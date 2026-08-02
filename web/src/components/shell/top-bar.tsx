@@ -5,6 +5,7 @@ import { Plus, Search } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { LogoMark } from "@/components/brand/logo-mark";
 import { NotificationBell } from "@/components/shell/notification-bell";
+import { ThemeToggle } from "@/components/shell/theme-toggle";
 import { useUIStore } from "@/lib/store/ui-store";
 
 export function TopBar() {
@@ -44,6 +45,7 @@ export function TopBar() {
           <Search size={20} strokeWidth={1.75} />
         </button>
         <NotificationBell />
+        <ThemeToggle />
         <Button
           onClick={() => setQuickAddOpen(true, "expense")}
           size="sm"

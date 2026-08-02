@@ -14,24 +14,24 @@
   --violet-muted: #ebe6f4;
   --violet-deep: #3d3058;
 
-  /* ── Semantic tokens ── */
-  --background: var(--cream);
+  /* ── Semantic tokens — light: white primary, violet secondary ── */
+  --background: #ffffff;
   --foreground: #2d2540;
-  --surface: var(--cream-elevated);
-  --surface-secondary: var(--cream-surface);
-  --surface-hover: var(--cream-muted);
-  --card: var(--cream-elevated);
+  --surface: #ffffff;
+  --surface-secondary: #f7f6fa;
+  --surface-hover: #f0eef4;
+  --card: #ffffff;
   --card-foreground: var(--foreground);
-  --elevated: #fffff8;
-  --primary: var(--violet);
-  --primary-hover: var(--violet-hover);
-  --primary-foreground: var(--cream);
-  --primary-muted: var(--violet-muted);
-  --secondary: var(--cream-surface);
-  --secondary-foreground: var(--violet-deep);
-  --muted: var(--cream-muted);
+  --elevated: #ffffff;
+  --primary: #ffffff;
+  --primary-hover: #f3f2f6;
+  --primary-foreground: var(--violet);
+  --primary-muted: #ede9f4;
+  --secondary: var(--violet);
+  --secondary-foreground: #ffffff;
+  --muted: #f5f4f8;
   --muted-foreground: #6b6080;
-  --accent: var(--violet-muted);
+  --accent: #ede9f4;
   --accent-foreground: var(--violet);
   --destructive: #b85c5c;
   --destructive-foreground: #fffef8;
@@ -51,7 +51,7 @@
   --input: rgba(95, 74, 139, 0.12);
   --ring: var(--violet);
   --overlay: rgba(45, 37, 64, 0.42);
-  --sidebar: rgba(255, 254, 242, 0.88);
+  --sidebar: rgba(255, 255, 255, 0.92);
   --sidebar-foreground: #6b6080;
   --sidebar-active: var(--violet);
 
@@ -245,6 +245,66 @@
 
 [data-theme="light"] {
   color-scheme: light;
+  --background: #ffffff;
+  --foreground: #2d2540;
+  --surface: #ffffff;
+  --surface-secondary: #f7f6fa;
+  --surface-hover: #f0eef4;
+  --card: #ffffff;
+  --card-foreground: #2d2540;
+  --elevated: #ffffff;
+  --primary: #ffffff;
+  --primary-hover: #f3f2f6;
+  --primary-foreground: #5f4a8b;
+  --primary-muted: #ede9f4;
+  --secondary: #5f4a8b;
+  --secondary-foreground: #ffffff;
+  --muted: #f5f4f8;
+  --muted-foreground: #6b6080;
+  --accent: #ede9f4;
+  --accent-foreground: #5f4a8b;
+  --destructive: #b85c5c;
+  --destructive-foreground: #fffef8;
+  --destructive-muted: #faeaea;
+  --success: #3d7a62;
+  --success-foreground: #f4faf7;
+  --success-muted: #e8f3ed;
+  --warning: #9a7b2e;
+  --warning-foreground: #2d2540;
+  --warning-muted: #f8f2e0;
+  --info: #6b5a96;
+  --info-foreground: #ffffff;
+  --info-muted: #ede9f5;
+  --border: rgba(95, 74, 139, 0.14);
+  --border-light: rgba(95, 74, 139, 0.08);
+  --border-strong: rgba(95, 74, 139, 0.22);
+  --input: rgba(95, 74, 139, 0.12);
+  --ring: #5f4a8b;
+  --overlay: rgba(45, 37, 64, 0.42);
+  --sidebar: rgba(255, 255, 255, 0.92);
+  --sidebar-foreground: #6b6080;
+  --sidebar-active: #5f4a8b;
+  --shadow-glow: 0 1px 0 rgba(95, 74, 139, 0.06), 0 8px 24px -10px rgba(45, 37, 64, 0.1);
+  --chart-1: #5f4a8b;
+  --chart-2: #7560a0;
+  --chart-3: #8b78b4;
+  --chart-4: #a191c4;
+  --chart-5: #b7aad4;
+  --chart-6: #cdc3e4;
+}
+
+[data-theme="light"] .bg-primary.text-primary-foreground {
+  border: 1px solid var(--border-strong);
+  box-shadow: var(--shadow-xs);
+}
+
+[data-theme="light"] .hero-balance-card,
+[data-theme="light"] .surface-card.hero-balance-card,
+[data-theme="light"] .surface-card.hero-balance-card:hover {
+  background: linear-gradient(145deg, #5f4a8b 0%, #4f3d77 100%);
+  color: #ffffff;
+  border-color: rgba(95, 74, 139, 0.35);
+  box-shadow: 0 12px 40px -16px rgba(61, 48, 88, 0.35);
 }
 
 * {

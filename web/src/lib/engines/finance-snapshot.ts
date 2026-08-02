@@ -14,6 +14,7 @@ import {
   getActiveSavingsGoals,
   getAllInvestments,
 } from "@/lib/db/repositories/finance-meta";
+import { getActiveAccounts } from "@/lib/db/repositories/accounts";
 import { subscriptionMonthlyPaise as toMonthlySubscriptionPaise } from "@/lib/money/subscription";
 
 export type FinanceSnapshot = {
@@ -34,6 +35,9 @@ export type FinanceSnapshot = {
   borrowedBalance: number;
   goalsSaved: number;
   investmentValue: number;
+  backupWalletsPaise: number;
+  savingsPotsPaise: number;
+  parkedWalletsPaise: number;
   netWorthPaise: number;
   healthScore: number;
 };
@@ -41,7 +45,7 @@ export type FinanceSnapshot = {
 export async function loadFinanceSnapshot(monthKeyOverride?: string): Promise<FinanceSnapshot> {
   const settings = await getSettings();
   const monthKey = monthKeyOverride ?? getCurrentCycleKey(settings.salaryDay);
-  const [transactions, salary, categories, subs, bills, emis, loans, goals, investments] =
+  const [transactions, salary, categories, subs, bills, emis, loans, goals, investments, accounts] =
     await Promise.all([
       getCycleTransactions(monthKey),
       getCycleSalary(monthKey),
@@ -52,6 +56,7 @@ export async function loadFinanceSnapshot(monthKeyOverride?: string): Promise<Fi
       getOpenLoans(),
       getActiveSavingsGoals(),
       getAllInvestments(),
+      getActiveAccounts(),
     ]);
 
   const spendingCats = new Set(
@@ -86,8 +91,20 @@ export async function loadFinanceSnapshot(monthKeyOverride?: string): Promise<Fi
     .reduce((s, l) => s + l.balancePaise, 0);
   const goalsSaved = goals.reduce((s, g) => s + g.savedPaise, 0);
   const investmentValue = investments.reduce((s, i) => s + i.currentValuePaise, 0);
+  const backupWalletsPaise = accounts
+    .filter((a) => a.role === "backup_wallet")
+    .reduce((s, a) => s + a.balancePaise, 0);
+  const savingsPotsPaise = accounts
+    .filter((a) => a.role === "pot")
+    .reduce((s, a) => s + a.balancePaise, 0);
+  const parkedWalletsPaise = backupWalletsPaise + savingsPotsPaise;
   const netWorthPaise =
-    remainingPaise + goalsSaved + investmentValue + lentBalance - borrowedBalance;
+    remainingPaise +
+    parkedWalletsPaise +
+    goalsSaved +
+    investmentValue +
+    lentBalance -
+    borrowedBalance;
 
   const budgetUsed = salaryPaise > 0 ? expensePaise / salaryPaise : 0;
   const healthScore = Math.round(
@@ -124,6 +141,9 @@ export async function loadFinanceSnapshot(monthKeyOverride?: string): Promise<Fi
     borrowedBalance,
     goalsSaved,
     investmentValue,
+    backupWalletsPaise,
+    savingsPotsPaise,
+    parkedWalletsPaise,
     netWorthPaise,
     healthScore,
   };

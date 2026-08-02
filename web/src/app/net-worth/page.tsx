@@ -22,6 +22,8 @@ export default function NetWorthPage() {
       {(data) => {
         const breakdown = [
           { label: "Available this cycle", value: data.remainingPaise, tone: "default" as const },
+          { label: "Backup wallets", value: data.backupWalletsPaise, tone: "primary" as const },
+          { label: "Savings pots", value: data.savingsPotsPaise, tone: "positive" as const },
           { label: "Savings goals", value: data.goalsSaved, tone: "positive" as const },
           { label: "Investments", value: data.investmentValue, tone: "primary" as const },
           { label: "Lent to others", value: data.lentBalance, tone: "default" as const },
@@ -95,9 +97,9 @@ export default function NetWorthPage() {
                 <CardTitle className="text-base font-semibold">How it&apos;s calculated</CardTitle>
               </CardHeader>
               <CardContent className="space-y-2 pt-0 text-sm text-muted-foreground">
-                <p>Net worth = cycle balance + savings goals + investments + money lent − money borrowed.</p>
+                <p>Net worth = cycle balance + backup wallets + savings pots + savings goals + investments + money lent − money borrowed.</p>
                 <p>
-                  Snapshots are recorded automatically each cycle for historical trend analysis.
+                  Park money in backup wallets (Amazon Pay, Slice, Mobikwik) or Jupiter pots via Accounts → Transfer. Transfers do not count as spending.
                 </p>
               </CardContent>
             </Card>

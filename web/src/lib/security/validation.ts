@@ -103,6 +103,7 @@ export const backupSchema = z.object({
   investments: z.array(z.record(z.string(), z.unknown())).max(MAX_BACKUP_RECORDS).optional().default([]),
   notifications: z.array(z.record(z.string(), z.unknown())).max(MAX_BACKUP_RECORDS).optional().default([]),
   accounts: z.array(z.record(z.string(), z.unknown())).max(MAX_BACKUP_RECORDS).optional().default([]),
+  accountTransfers: z.array(z.record(z.string(), z.unknown())).max(MAX_BACKUP_RECORDS).optional().default([]),
   monthlySnapshots: z.array(z.record(z.string(), z.unknown())).max(MAX_BACKUP_RECORDS).optional().default([]),
   secureNotes: z.array(z.record(z.string(), z.unknown())).max(MAX_BACKUP_RECORDS).optional().default([]),
   achievements: z.array(z.record(z.string(), z.unknown())).max(MAX_BACKUP_RECORDS).optional().default([]),

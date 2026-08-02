@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Lock, Trash2 } from "lucide-react";
+import { Lock, Trash2, EyeOff } from "lucide-react";
 import { PageHeader, EmptyState, PageContainer } from "@/components/ui/page";
 import { DexiePageGate } from "@/components/layout/dexie-page-gate";
 import { Card, CardContent } from "@/components/ui/card";
@@ -14,6 +14,7 @@ import { useInvalidateFinance, useAsyncAction, useDexieTable } from "@/hooks";
 import { confirmAction } from "@/lib/store/confirm-store";
 import { DEFAULT_CATEGORY_COLOR } from "@/lib/categories-default";
 import { CATEGORY_ICON_NAMES } from "@/lib/category-icons";
+import { hideCategoryFromQuickAdd, showCategoryInQuickAdd } from "@/lib/categories/manage-category";
 import { createCustomCategory } from "@/lib/categories/create-category";
 import { notifyDataMutation } from "@/lib/db/notify-mutation";
 import { cn } from "@/lib/design/cn";
@@ -50,6 +51,20 @@ export default function CategoriesPage() {
       showToast("Category created", { tone: "success" });
       await invalidate();
     }, { errorMessage: "Could not create category. Try a different name." });
+  }
+
+  async function hideFromQuickAdd(cat: Category) {
+    if (cat.id == null) return;
+    await hideCategoryFromQuickAdd(cat.id);
+    await invalidate();
+    showToast(`"${cat.name}" hidden from quick add`, { tone: "default" });
+  }
+
+  async function restoreQuickAdd(cat: Category) {
+    if (cat.id == null) return;
+    await showCategoryInQuickAdd(cat.id);
+    await invalidate();
+    showToast(`"${cat.name}" restored`, { tone: "success" });
   }
 
   async function remove(cat: Category) {
@@ -142,7 +157,16 @@ export default function CategoriesPage() {
               <div key={c.id} className="flex items-center gap-3 rounded-xl border border-border bg-muted/30 px-4 py-3">
                 <CategoryIconBadge category={c} size="sm" />
                 <span className="text-sm font-medium">{c.name}</span>
-                <Lock size={12} className="ml-auto text-muted-foreground" />
+                {c.hiddenFromQuickAdd ? (
+                  <Button size="sm" variant="ghost" className="ml-auto text-xs" onClick={() => restoreQuickAdd(c)}>
+                    Show in quick add
+                  </Button>
+                ) : (
+                  <Button size="icon" variant="ghost" className="ml-auto" onClick={() => hideFromQuickAdd(c)} aria-label={`Hide ${c.name}`}>
+                    <EyeOff size={14} className="text-muted-foreground" />
+                  </Button>
+                )}
+                <Lock size={12} className="text-muted-foreground" />
               </div>
             ))}
           </div>
