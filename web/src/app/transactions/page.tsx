@@ -24,7 +24,7 @@ import type { FinanceSnapshot } from "@/lib/engines/finance-snapshot";
 import { getSettings } from "@/lib/db";
 import { addTransaction, updateTransactionWithLock } from "@/lib/db/repositories/transactions";
 import { restoreTransaction, softDeleteTransaction } from "@/lib/db/integrity";
-import { DuplicateTransactionError, OptimisticLockError } from "@/lib/db/errors";
+import { DuplicateTransactionError, OptimisticLockError, ReferentialIntegrityError } from "@/lib/db/errors";
 import type { Transaction } from "@/lib/db/types";
 import { parseRupeeInput, formatINR } from "@/lib/money";
 import { getMonthKey } from "@/lib/salary-cycle";
@@ -106,6 +106,7 @@ function TransactionsContent({
   }
 
   function startEdit(t: Transaction) {
+    if (!t.id) return;
     setEdit(t);
     setTitle(t.title);
     setAmount(String(t.amountPaise / 100));
@@ -115,6 +116,10 @@ function TransactionsContent({
     setIsRecurring(t.isRecurring);
     setShowForm(true);
     setFormError("");
+    setForceDuplicate(false);
+    requestAnimationFrame(() => {
+      document.getElementById("transaction-form")?.scrollIntoView({ behavior: "smooth", block: "start" });
+    });
   }
 
   function openNew(k: "expense" | "income" = "expense") {
@@ -145,6 +150,13 @@ function TransactionsContent({
     const paise = parseRupeeInput(amount);
     if (paise <= 0) {
       setFormError("Enter an amount greater than zero.");
+      showToast("Enter an amount greater than zero.", { tone: "error" });
+      return;
+    }
+    const catId = Number(resolvedCategoryId || categories[0]?.id);
+    if (!catId || !Number.isFinite(catId)) {
+      setFormError("Pick a category.");
+      showToast("Pick a category.", { tone: "error" });
       return;
     }
     setFormError("");
@@ -153,22 +165,17 @@ function TransactionsContent({
       const settings = await getSettings();
       const occurredAt = edit ? new Date(edit.occurredAt) : new Date();
       const monthKey = getMonthKey(occurredAt, settings.salaryDay);
-      const catId = Number(resolvedCategoryId || categories[0]?.id);
 
       if (edit?.id) {
-        await updateTransactionWithLock(
-          edit.id,
-          {
-            title: title,
-            kind,
-            amountPaise: paise,
-            categoryId: catId,
-            paymentMethod,
-            monthKey,
-            isRecurring,
-          },
-          edit.rowVersion ?? 1,
-        );
+        await updateTransactionWithLock(edit.id, {
+          title: title,
+          kind,
+          amountPaise: paise,
+          categoryId: catId,
+          paymentMethod,
+          monthKey,
+          isRecurring,
+        });
         showToast("Transaction updated", { tone: "success" });
       } else {
         await addTransaction(
@@ -197,8 +204,17 @@ function TransactionsContent({
       if (err instanceof DuplicateTransactionError) {
         setFormError("Similar transaction found today.");
         setForceDuplicate(true);
+        showToast("Similar transaction found today.", { tone: "error" });
       } else if (err instanceof OptimisticLockError) {
-        setFormError("Updated elsewhere — refresh and try again.");
+        setFormError("Could not update — refresh and try again.");
+        showToast("Could not update — refresh and try again.", { tone: "error" });
+      } else if (err instanceof ReferentialIntegrityError) {
+        setFormError(err.message);
+        showToast(err.message, { tone: "error" });
+      } else {
+        const message = err instanceof Error ? err.message : "Could not save transaction.";
+        setFormError(message);
+        showToast(message, { tone: "error" });
       }
     } finally {
       setSaving(false);
@@ -276,7 +292,7 @@ function TransactionsContent({
       />
 
       {showForm && (
-        <Card>
+        <Card id="transaction-form">
           <CardContent className="p-5 md:p-6">
             <div className="mb-4 flex items-center justify-between gap-2">
               <div className="flex items-center gap-2">
@@ -326,25 +342,23 @@ function TransactionsContent({
                 onChange={(e) => setIsRecurring(e.target.checked)}
                 className="self-end"
               />
-              {formError && (
-                <div className="md:col-span-2">
-                  <p className="text-sm text-destructive" role="alert">
+              <div className="flex flex-col gap-2 md:col-span-2 sm:flex-row sm:items-end">
+                {formError && (
+                  <p className="text-sm text-destructive sm:mr-auto sm:mb-2 sm:flex-1" role="alert">
                     {formError}
                   </p>
-                  {forceDuplicate && (
-                    <Button type="submit" variant="outline" size="sm" className="mt-2">
-                      Save anyway
-                    </Button>
-                  )}
-                </div>
-              )}
-              <div className="flex items-end gap-2 md:col-span-2">
-                <Button type="submit" disabled={saving}>
+                )}
+                <Button type="submit" disabled={saving} className="sm:w-auto">
                   {saving ? "Saving…" : edit ? "Update" : "Save"}
                 </Button>
                 <Button type="button" variant="ghost" onClick={resetForm}>
                   Cancel
                 </Button>
+                {forceDuplicate && !edit && (
+                  <Button type="submit" variant="outline" size="sm">
+                    Save anyway
+                  </Button>
+                )}
               </div>
             </form>
             {!edit && (

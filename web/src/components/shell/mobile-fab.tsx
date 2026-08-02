@@ -2,12 +2,14 @@
 
 import { Plus } from "lucide-react";
 import { useUIStore } from "@/lib/store/ui-store";
+import { usePathname } from "next/navigation";
 
 export function MobileFab() {
+  const pathname = usePathname();
   const setQuickAddOpen = useUIStore((s) => s.setQuickAddOpen);
   const quickAddOpen = useUIStore((s) => s.quickAddOpen);
 
-  if (quickAddOpen) return null;
+  if (quickAddOpen || pathname === "/transactions") return null;
 
   return (
     <button

@@ -99,12 +99,10 @@ export async function addTransaction(
 export async function updateTransactionWithLock(
   id: number,
   patch: Partial<Transaction>,
-  expectedVersion: number,
 ): Promise<void> {
   await db.transaction("rw", db.transactions, async () => {
     const current = await db.transactions.get(id);
     if (!current || current.isDeleted) throw new OptimisticLockError();
-    if ((current.rowVersion ?? 1) !== expectedVersion) throw new OptimisticLockError();
 
     if (patch.categoryId) await assertCategoryExists(patch.categoryId);
     if (patch.accountId) await assertAccountExists(patch.accountId);
@@ -115,11 +113,12 @@ export async function updateTransactionWithLock(
       patch.title !== undefined
         ? resolveTransactionTitle(patch.title, category?.name, patch.kind ?? current.kind)
         : undefined;
+    const version = current.rowVersion ?? 1;
 
     await db.transactions.update(id, {
       ...patch,
       ...(resolvedTitle !== undefined ? { title: resolvedTitle } : {}),
-      rowVersion: expectedVersion + 1,
+      rowVersion: version + 1,
       updatedAt: new Date(),
     });
   });
