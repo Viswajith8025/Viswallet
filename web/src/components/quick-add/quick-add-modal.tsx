@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { SuccessMark } from "@/components/ui/success-mark";
 import { successFeedback } from "@/lib/ux/feedback";
 import { useUIStore } from "@/lib/store/ui-store";
@@ -61,6 +61,13 @@ function TypePills({
   );
 }
 
+function scrollFocusedInput(el: HTMLElement | null) {
+  if (!el) return;
+  requestAnimationFrame(() => {
+    el.scrollIntoView({ block: "center", behavior: "auto" });
+  });
+}
+
 export function QuickAddModal() {
   const open = useUIStore((s) => s.quickAddOpen);
   const kind = useUIStore((s) => s.quickAddKind);
@@ -86,6 +93,8 @@ export function QuickAddModal() {
   const [dupError, setDupError] = useState(false);
   const { active: aiActive } = useAiFeatures();
   const wasOpen = useRef(false);
+  const titleInputRef = useRef<HTMLInputElement>(null);
+  const amountInputRef = useRef<HTMLInputElement>(null);
   const debouncedTitle = useDebounce(title, 700);
 
   const categoryOptions = useMemo(
@@ -106,9 +115,12 @@ export function QuickAddModal() {
       setDupError(false);
       setSuccess(false);
       setPaymentMethod(getLastPaymentMethod());
+      if (isMobileLayout) {
+        requestAnimationFrame(() => titleInputRef.current?.focus());
+      }
     }
     wasOpen.current = open;
-  }, [open, kind, visiblePool, pool, categories]);
+  }, [open, kind, visiblePool, pool, isMobileLayout]);
 
   useEffect(() => {
     if (!aiActive || !debouncedTitle.trim() || debouncedTitle.length < 3) return;
@@ -142,9 +154,9 @@ export function QuickAddModal() {
     setCategoryId(def ? String(def) : "");
   }
 
-  function handleClose() {
+  const handleClose = useCallback(() => {
     setOpen(false);
-  }
+  }, [setOpen]);
 
   async function submit(allowDuplicate = false) {
     const paise = parseRupeeInput(amount);
@@ -197,45 +209,51 @@ export function QuickAddModal() {
       <SuccessMark label={copy.success.saved} />
     </div>
   ) : (
-    <div className="flex min-h-0 flex-1 flex-col">
-      <div className="space-y-3 px-4 py-3">
-        <TypePills kind={kind} onChange={handleKindChange} />
-        {aiActive && (
-          <AiSmartInput
-            kind={kind}
-            categories={categoryOptions}
-            onParsed={applyAiParse}
-            compact
+    <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
+      <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain">
+        <div className="space-y-3 px-4 py-3">
+          <TypePills kind={kind} onChange={handleKindChange} />
+          {aiActive && (
+            <AiSmartInput
+              kind={kind}
+              categories={categoryOptions}
+              onParsed={applyAiParse}
+              compact
+            />
+          )}
+          <input
+            ref={titleInputRef}
+            type="text"
+            value={title}
+            onChange={(e) => setTitle(e.target.value)}
+            onFocus={(e) => scrollFocusedInput(e.currentTarget)}
+            placeholder={copy.quickAdd.titlePlaceholder}
+            className="w-full rounded-xl border border-border/60 bg-muted/40 px-4 py-3.5 text-base outline-none placeholder:text-muted-foreground/60 focus:border-primary/40 focus:ring-2 focus:ring-primary/10"
+            aria-label={copy.forms.title}
           />
-        )}
-        <input
-          type="text"
-          value={title}
-          onChange={(e) => setTitle(e.target.value)}
-          placeholder={copy.quickAdd.titlePlaceholder}
-          className="w-full rounded-xl border border-border/60 bg-muted/40 px-4 py-3.5 text-base outline-none placeholder:text-muted-foreground/60 focus:border-primary/40 focus:ring-2 focus:ring-primary/10"
-          aria-label={copy.forms.title}
+        </div>
+
+        <CategoryCollapsiblePicker
+          categories={pool}
+          value={resolvedCategoryId}
+          onChange={setCategoryId}
+          kind={kind}
         />
       </div>
 
-      <CategoryCollapsiblePicker
-        categories={pool}
-        value={resolvedCategoryId}
-        onChange={setCategoryId}
-        kind={kind}
-      />
-
       <form
         onSubmit={handleSubmit}
-        className="mt-auto shrink-0 border-t border-border/50 bg-background px-4 py-4 pb-[max(1rem,env(safe-area-inset-bottom))]"
+        className="shrink-0 border-t border-border/50 bg-background px-4 py-4 pb-[max(1rem,env(safe-area-inset-bottom))]"
       >
         <div className="flex items-center gap-2 rounded-xl bg-muted/50 px-4 py-3.5">
           <span className="text-lg font-medium text-muted-foreground">₹</span>
           <input
+            ref={amountInputRef}
             type="text"
             inputMode="decimal"
             value={amount}
             onChange={(e) => setAmount(e.target.value)}
+            onFocus={(e) => scrollFocusedInput(e.currentTarget)}
             placeholder="0"
             className="min-w-0 flex-1 bg-transparent text-3xl font-semibold tabular-nums outline-none placeholder:text-muted-foreground/40"
             aria-label={copy.forms.amountRupee}
@@ -341,7 +359,7 @@ export function QuickAddModal() {
   return (
     <>
       {isMobileLayout && (
-        <Sheet open={open} onClose={handleClose} labelledBy="quick-add-title" fullScreen>
+        <Sheet open={open} onClose={handleClose} labelledBy="quick-add-title" fullScreen stealFocus={false}>
           <div className="flex h-full flex-col bg-background">
             <header className="flex shrink-0 items-center justify-between border-b border-border/50 px-4 py-3 pt-[max(0.75rem,env(safe-area-inset-top))]">
               <button type="button" onClick={handleClose} className="min-h-11 px-1 text-sm text-muted-foreground">
