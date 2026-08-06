@@ -135,35 +135,48 @@ async function ensureAccountScopedLocalData(userId: string): Promise<void> {
   setStoredCloudUserId(userId);
 }
 
-/** Pull cloud vault and merge into local IndexedDB if cloud is newer. */
-export async function pullCloudVault(): Promise<boolean> {
-  if (!canUseCloudVault()) return false;
+type PullCloudVaultOptions = {
+  /** Ignore per-browser sync timestamp — used after login to restore account data. */
+  force?: boolean;
+};
 
+async function fetchCloudVaultRow(userId: string) {
   const sb = getSupabase();
-  const user = await getAuthUser();
-  if (!sb || !user) return false;
-
-  await ensureAccountScopedLocalData(user.id);
+  if (!sb) return null;
 
   const { data, error } = await sb
     .from("user_data_vaults")
     .select("payload, updated_at, backup_version")
-    .eq("user_id", user.id)
+    .eq("user_id", userId)
     .maybeSingle();
 
   if (error) {
     if (isMissingVaultTable(error)) {
       markVaultUnavailable();
-      return false;
+      return null;
     }
     throw new Error(error.message);
   }
+
+  return data;
+}
+
+/** Pull cloud vault into local IndexedDB when cloud is newer (or when forced). */
+export async function pullCloudVault(options: PullCloudVaultOptions = {}): Promise<boolean> {
+  if (!canUseCloudVault()) return false;
+
+  const user = await getAuthUser();
+  if (!user) return false;
+
+  await ensureAccountScopedLocalData(user.id);
+
+  const data = await fetchCloudVaultRow(user.id);
   if (!data?.payload) return false;
 
   const cloudUpdated = new Date(data.updated_at as string);
   const localSync = getLastLocalSyncAt();
 
-  if (localSync && cloudUpdated <= localSync) {
+  if (!options.force && localSync && cloudUpdated <= localSync) {
     return false;
   }
 
@@ -234,35 +247,23 @@ function isMissingVaultTable(error: SupabaseErrorLike | string): boolean {
   );
 }
 
-/** After login: pull if cloud exists, else push local data. */
+/** After login: always restore from cloud when a vault exists; otherwise push local setup once. */
 export async function syncCloudOnLogin(): Promise<"pulled" | "pushed" | "noop"> {
   if (loginSyncInFlight) return loginSyncInFlight;
   if (!isCloudVaultEnvEnabled()) return "noop";
 
   loginSyncInFlight = withCloudTimeout(
     (async () => {
-      const sb = getSupabase();
       const user = await getAuthUser();
-      if (!sb || !user) return "noop";
+      if (!user) return "noop";
 
       await ensureAccountScopedLocalData(user.id);
 
-      const { data, error } = await sb
-        .from("user_data_vaults")
-        .select("updated_at")
-        .eq("user_id", user.id)
-        .maybeSingle();
+      const data = await fetchCloudVaultRow(user.id);
+      if (!data) return "noop";
 
-      if (error) {
-        if (isMissingVaultTable(error)) {
-          markVaultUnavailable();
-          return "noop";
-        }
-        throw new Error(error.message);
-      }
-
-      if (data?.updated_at) {
-        const pulled = await pullCloudVault();
+      if (data.payload) {
+        const pulled = await pullCloudVault({ force: true });
         if (pulled) clearVaultUnavailable();
         return pulled ? "pulled" : "noop";
       }
@@ -294,8 +295,21 @@ export async function syncCloudNow(): Promise<void> {
       try {
         const user = await getAuthUser();
         if (!user) return;
+
+        const cloudRow = await fetchCloudVaultRow(user.id);
+        const cloudUpdated = cloudRow?.updated_at ? new Date(cloudRow.updated_at as string) : null;
+        const localSync = getLastLocalSyncAt();
+
         const pulled = await pullCloudVault();
-        if (!pulled) {
+        if (pulled) return;
+
+        if (!cloudRow?.payload) {
+          await pushCloudVault();
+          return;
+        }
+
+        // Cloud exists — only push when this device has newer changes than the vault.
+        if (localSync && cloudUpdated && localSync > cloudUpdated) {
           await pushCloudVault();
         }
       } finally {

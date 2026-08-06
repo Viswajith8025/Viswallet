@@ -14,7 +14,7 @@ import type { Loan } from "@/lib/db/types";
 import { formatINR, parseRupeeInput } from "@/lib/money";
 import { useDexieTable, useInvalidateFinance, useAsyncAction } from "@/hooks";
 import { confirmAction } from "@/lib/store/confirm-store";
-import { markLentFullyReturned, loanProgress, recordLoanPayment } from "@/lib/loans/record-loan-payment";
+import { markLentFullyReturned, loanProgress, recordLoanPayment, createLentLoan, updateLentLoan, archiveLentLoan } from "@/lib/loans/record-loan-payment";
 import { copy, toastCopy } from "@/lib/ux/copy";
 import { showToast } from "@/lib/store/toast-store";
 import { notifyDataMutation } from "@/lib/db/notify-mutation";
@@ -73,31 +73,23 @@ export function LentExperience() {
     const paise = parseRupeeInput(amount);
     if (!name.trim() || paise <= 0) return;
     await run(async () => {
-      const now = new Date();
       const expectedReturnAt = parseLoanDueInput(dueAt);
       if (edit?.id) {
         const diff = paise - edit.principalPaise;
-        await db.loans.update(edit.id, {
+        await updateLentLoan(edit.id, {
           personName: name.trim(),
           principalPaise: paise,
           balancePaise: Math.max(0, edit.balancePaise + diff),
           reason: reason.trim() || undefined,
           expectedReturnAt,
-          updatedAt: now,
         });
+        showToast(copy.toast.entryUpdated, { tone: "success" });
       } else {
-        await db.loans.add({
+        await createLentLoan({
           personName: name.trim(),
-          direction: "lent_by_me",
-          principalPaise: paise,
-          balancePaise: paise,
+          amountPaise: paise,
           reason: reason.trim() || undefined,
-          borrowedAt: now,
           expectedReturnAt,
-          status: "pending",
-          isDeleted: false,
-          createdAt: now,
-          updatedAt: now,
         });
         showToast(toastCopy.lent(paise), { tone: "success" });
       }
@@ -144,7 +136,7 @@ export function LentExperience() {
       destructive: true,
     });
     if (!ok) return;
-    await db.loans.update(id, { isDeleted: true, updatedAt: new Date() });
+    await archiveLentLoan(id);
     notifyDataMutation();
     await invalidate();
   }

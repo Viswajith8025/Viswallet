@@ -28,6 +28,8 @@ type AuthContextValue = {
   required: boolean;
   user: User | null;
   loading: boolean;
+  /** False while login cloud restore is in progress (when vault is enabled). */
+  cloudSyncReady: boolean;
   syncing: boolean;
   signIn: (email: string, password: string) => Promise<void>;
   signUp: (email: string, password: string, displayName?: string) => Promise<
@@ -44,6 +46,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const required = cloudAuthRequired();
   const [user, setUser] = useState<User | null>(null);
   const [sessionReady, setSessionReady] = useState(!configured);
+  const [cloudSyncReady, setCloudSyncReady] = useState(!configured || !shouldAutoCloudSync());
   const [loginSyncing, setLoginSyncing] = useState(false);
   const [autoSyncing, setAutoSyncing] = useState(false);
   const syncing = loginSyncing || autoSyncing;
@@ -51,14 +54,19 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const loading = configured && !sessionReady;
 
   const runCloudSync = useCallback(async () => {
-    if (!configured || !shouldAutoCloudSync()) return;
+    if (!configured || !shouldAutoCloudSync()) {
+      setCloudSyncReady(true);
+      return;
+    }
     setLoginSyncing(true);
+    setCloudSyncReady(false);
     try {
       await syncCloudOnLogin();
     } catch (err) {
       console.warn("[Viswallet] Cloud sync skipped:", err);
     } finally {
       setLoginSyncing(false);
+      setCloudSyncReady(true);
     }
   }, [configured]);
 
@@ -95,6 +103,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setUser(session?.user ?? null);
       if (event === "INITIAL_SESSION" || event === "SIGNED_IN" || event === "TOKEN_REFRESHED") {
         markSessionReady();
+      }
+      if (event === "SIGNED_IN" && session?.user && shouldAutoCloudSync()) {
+        void runCloudSync();
       }
     });
 
@@ -138,12 +149,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       required,
       user,
       loading,
+      cloudSyncReady,
       syncing,
       signIn,
       signUp,
       signOut,
     }),
-    [configured, required, user, loading, syncing, signIn, signUp, signOut],
+    [configured, required, user, loading, cloudSyncReady, syncing, signIn, signUp, signOut],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

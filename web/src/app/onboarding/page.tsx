@@ -8,7 +8,7 @@ import { StepHeader } from "@/components/brand/step-header";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useAuth } from "@/components/providers/auth-provider";
-import { completeOnboarding, getProfile } from "@/lib/db";
+import { completeOnboarding, getProfile, getSettings } from "@/lib/db";
 import { syncProfileFromAuthUser } from "@/lib/supabase/profile-sync";
 import { parseRupeeInput, formatINR } from "@/lib/money";
 import { SALARY_PRESETS } from "@/lib/ux/defaults";
@@ -57,6 +57,15 @@ export default function OnboardingPage() {
       cancelled = true;
     };
   }, [user]);
+
+  useEffect(() => {
+    if (!bootstrapped) return;
+    void getSettings().then((settings) => {
+      if (settings.onboardingComplete) {
+        router.replace("/");
+      }
+    });
+  }, [bootstrapped, router]);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();

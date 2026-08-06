@@ -23,10 +23,6 @@ export function TopBar() {
         <BrandLockup markSize={26} markOnly />
       </Link>
 
-      <div className="hidden shrink-0 lg:flex">
-        <BrandLockup href="/" markSize={28} showTagline taglineClassName="hidden xl:block" />
-      </div>
-
       <button
         type="button"
         onClick={() => setCommandOpen(true)}

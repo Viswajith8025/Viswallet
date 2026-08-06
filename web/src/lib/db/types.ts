@@ -210,6 +210,8 @@ export interface Loan {
   expectedReturnAt?: Date;
   status: LoanStatus;
   notes?: string;
+  /** Expense logged when money was first lent (lent_by_me only). */
+  disbursementTransactionId?: number;
   isDeleted: boolean;
   createdAt: Date;
   updatedAt: Date;

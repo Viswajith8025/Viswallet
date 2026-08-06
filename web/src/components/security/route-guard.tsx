@@ -5,6 +5,8 @@ import { useEffect, useState } from "react";
 import { getSettings, peekBootCache } from "@/lib/db";
 import { useAuth } from "@/components/providers/auth-provider";
 import { BrandLoader } from "@/components/brand/brand-loader";
+import { shouldAutoCloudSync } from "@/lib/supabase/cloud-sync";
+import { copy } from "@/lib/ux/copy";
 
 const ALWAYS_PUBLIC_ROUTES = ["/auth", "/privacy", "/terms", "/licenses", "/about"];
 const ONBOARDING_ROUTE = "/onboarding";
@@ -19,7 +21,7 @@ function canRenderImmediately(pathname: string, configured: boolean): boolean {
 export function RouteGuard({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const router = useRouter();
-  const { configured, user, loading: authLoading } = useAuth();
+  const { configured, user, loading: authLoading, cloudSyncReady } = useAuth();
   const isOnboarding = pathname === ONBOARDING_ROUTE;
   const isPublic =
     ALWAYS_PUBLIC_ROUTES.includes(pathname) ||
@@ -31,6 +33,8 @@ export function RouteGuard({ children }: { children: React.ReactNode }) {
     if (isPublic) return;
 
     if (configured && authLoading) return;
+
+    if (configured && user && shouldAutoCloudSync() && !cloudSyncReady) return;
 
     if (configured && !user) {
       router.replace("/auth");
@@ -76,11 +80,17 @@ export function RouteGuard({ children }: { children: React.ReactNode }) {
       cancelled = true;
       window.clearTimeout(settingsTimeout);
     };
-  }, [pathname, router, isPublic, configured, user, authLoading, isOnboarding]);
+  }, [pathname, router, isPublic, configured, user, authLoading, cloudSyncReady, isOnboarding]);
 
   if (isPublic) return <>{children}</>;
-  if (!appReady || (configured && (authLoading || !user))) {
-    return <BrandLoader fullScreen />;
+  const restoringCloud = configured && user && shouldAutoCloudSync() && !cloudSyncReady;
+  if (!appReady || (configured && (authLoading || !user)) || restoringCloud) {
+    return (
+      <BrandLoader
+        fullScreen
+        label={restoringCloud ? copy.loading.finances : undefined}
+      />
+    );
   }
 
   return <>{children}</>;
