@@ -40,6 +40,7 @@ const settingsSchema = z.object({
   pinLockedUntil: dateField.optional(),
   autoLockMinutes: z.number().int().min(1).max(120).optional().default(15),
   dashboardWidgets: z.array(z.string()).max(20).optional(),
+  aiFeaturesEnabled: z.boolean().optional(),
   lastBackupAt: dateField.optional(),
   createdAt: dateField,
   updatedAt: dateField,

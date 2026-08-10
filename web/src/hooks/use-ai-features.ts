@@ -27,7 +27,7 @@ export function useAiFeatures(): AiFeaturesState {
     void Promise.all([fetchAiStatus(), getSettings()]).then(([ai, settings]) => {
       if (cancelled) return;
       setStatus(ai);
-      setEnabled(Boolean(settings.aiFeaturesEnabled));
+      setEnabled(settings.aiFeaturesEnabled ?? true);
       setLoaded(true);
     });
     return () => {

@@ -708,6 +708,7 @@ export async function importAllData(json: string, options: { skipRateLimit?: boo
               ...s,
               accentColor: s.accentColor ?? "violet",
               biometricEnabled: s.biometricEnabled ?? false,
+              aiFeaturesEnabled: s.aiFeaturesEnabled ?? true,
               dashboardWidgets: (s.dashboardWidgets ?? DEFAULT_DASHBOARD_WIDGETS) as AppSettings["dashboardWidgets"],
             })),
           ) as AppSettings[],

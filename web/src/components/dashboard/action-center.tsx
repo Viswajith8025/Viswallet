@@ -72,40 +72,42 @@ function ActionRow({
   return (
     <li
       className={cn(
-        "animate-fade-in flex items-center gap-3 rounded-xl border border-border/60 bg-card/80 p-3 transition-all",
+        "animate-fade-in rounded-xl border border-border/60 bg-card/80 p-3 transition-all",
         item.urgency === "high" && "border-destructive/30 bg-destructive/[0.04]",
       )}
     >
-      <div className={cn("flex h-10 w-10 shrink-0 items-center justify-center rounded-full", meta.accent)}>
-        <Icon size={18} strokeWidth={2} />
-      </div>
-      <div className="min-w-0 flex-1">
-        <p className="truncate font-medium text-sm">{item.title}</p>
-        <p className="text-xs text-muted-foreground">{item.subtitle}</p>
-      </div>
-      <div className="flex shrink-0 flex-col items-stretch gap-2 sm:flex-row sm:items-center sm:justify-end sm:gap-2">
-        <span className="text-sm font-semibold tabular-nums sm:order-first sm:mr-auto">{formatINR(item.amountPaise)}</span>
-        <div className="flex flex-col gap-1.5 sm:flex-row sm:items-center sm:gap-1">
-          <Button
-            size="sm"
-            variant="ghost"
-            disabled={busy}
-            onClick={() => onPayLater(item)}
-            className="shrink-0 text-xs w-full sm:w-auto"
-          >
-            {copy.actionCenter.remindTomorrow}
-          </Button>
-          <Button
-            size="sm"
-            variant={item.urgency === "high" ? "primary" : "outline"}
-            disabled={busy}
-            onClick={() => onAction(item)}
-            className="shrink-0 text-xs w-full sm:w-auto"
-          >
-            <Check size={14} className="mr-1" />
-            {meta.actionLabel}
-          </Button>
+      <div className="flex items-start gap-3">
+        <div className={cn("flex h-10 w-10 shrink-0 items-center justify-center rounded-full", meta.accent)}>
+          <Icon size={18} strokeWidth={2} />
         </div>
+        <div className="min-w-0 flex-1">
+          <div className="flex items-start justify-between gap-2">
+            <p className="text-sm font-medium leading-snug sm:truncate">{item.title}</p>
+            <span className="shrink-0 text-sm font-semibold tabular-nums">{formatINR(item.amountPaise)}</span>
+          </div>
+          <p className="mt-0.5 text-xs text-muted-foreground">{item.subtitle}</p>
+        </div>
+      </div>
+      <div className="mt-3 flex flex-col gap-2 sm:mt-2 sm:flex-row sm:justify-end">
+        <Button
+          size="sm"
+          variant="ghost"
+          disabled={busy}
+          onClick={() => onPayLater(item)}
+          className="w-full shrink-0 text-xs sm:w-auto"
+        >
+          {copy.actionCenter.remindTomorrow}
+        </Button>
+        <Button
+          size="sm"
+          variant={item.urgency === "high" ? "primary" : "outline"}
+          disabled={busy}
+          onClick={() => onAction(item)}
+          className="w-full shrink-0 text-xs sm:w-auto"
+        >
+          <Check size={14} className="mr-1" />
+          {meta.actionLabel}
+        </Button>
       </div>
     </li>
   );

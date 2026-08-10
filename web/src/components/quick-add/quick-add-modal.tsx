@@ -116,7 +116,7 @@ export function QuickAddModal() {
       setSuccess(false);
       setPaymentMethod(getLastPaymentMethod());
       if (isMobileLayout) {
-        requestAnimationFrame(() => titleInputRef.current?.focus());
+        requestAnimationFrame(() => amountInputRef.current?.focus());
       }
     }
     wasOpen.current = open;
@@ -209,7 +209,10 @@ export function QuickAddModal() {
       <SuccessMark label={copy.success.saved} />
     </div>
   ) : (
-    <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
+    <form
+      onSubmit={handleSubmit}
+      className="flex min-h-0 flex-1 flex-col overflow-hidden"
+    >
       <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain">
         <div className="space-y-3 px-4 py-3">
           <TypePills kind={kind} onChange={handleKindChange} />
@@ -221,6 +224,20 @@ export function QuickAddModal() {
               compact
             />
           )}
+          <div className="flex items-center gap-2 rounded-xl border border-border/60 bg-muted/50 px-4 py-3.5 focus-within:border-primary/40 focus-within:ring-2 focus-within:ring-primary/10">
+            <span className="text-lg font-medium text-muted-foreground">₹</span>
+            <input
+              ref={amountInputRef}
+              type="text"
+              inputMode="decimal"
+              value={amount}
+              onChange={(e) => setAmount(e.target.value)}
+              onFocus={(e) => scrollFocusedInput(e.currentTarget)}
+              placeholder="0"
+              className="min-w-0 flex-1 bg-transparent text-3xl font-semibold tabular-nums outline-none placeholder:text-muted-foreground/40"
+              aria-label={copy.forms.amountRupee}
+            />
+          </div>
           <input
             ref={titleInputRef}
             type="text"
@@ -238,29 +255,12 @@ export function QuickAddModal() {
           value={resolvedCategoryId}
           onChange={setCategoryId}
           kind={kind}
+          compact
         />
       </div>
 
-      <form
-        onSubmit={handleSubmit}
-        className="shrink-0 border-t border-border/50 bg-background px-4 py-4 pb-[max(1rem,env(safe-area-inset-bottom))]"
-      >
-        <div className="flex items-center gap-2 rounded-xl bg-muted/50 px-4 py-3.5">
-          <span className="text-lg font-medium text-muted-foreground">₹</span>
-          <input
-            ref={amountInputRef}
-            type="text"
-            inputMode="decimal"
-            value={amount}
-            onChange={(e) => setAmount(e.target.value)}
-            onFocus={(e) => scrollFocusedInput(e.currentTarget)}
-            placeholder="0"
-            className="min-w-0 flex-1 bg-transparent text-3xl font-semibold tabular-nums outline-none placeholder:text-muted-foreground/40"
-            aria-label={copy.forms.amountRupee}
-          />
-        </div>
-
-        <div className="mt-3 grid grid-cols-2 gap-2">
+      <div className="shrink-0 border-t border-border/50 bg-background px-4 py-4 pb-[max(1rem,env(safe-area-inset-bottom))]">
+        <div className="grid grid-cols-2 gap-2">
           <label className="space-y-1">
             <span className="text-xs text-muted-foreground">{copy.quickAdd.paidWith}</span>
             <select
@@ -292,8 +292,8 @@ export function QuickAddModal() {
         <Button type="submit" className="mt-3 w-full" size="lg" disabled={saving || preview <= 0}>
           {saving ? copy.buttons.saving : copy.buttons.save}
         </Button>
-      </form>
-    </div>
+      </div>
+    </form>
   );
 
   const desktopBody = success ? (
@@ -315,13 +315,6 @@ export function QuickAddModal() {
           />
         )}
         <Input
-          label={copy.forms.title}
-          value={title}
-          onChange={(e) => setTitle(e.target.value)}
-          placeholder={copy.quickAdd.titlePlaceholderDesktop}
-          hint={copy.quickAdd.titleHint}
-        />
-        <Input
           label={copy.forms.amountInr}
           required
           type="number"
@@ -329,6 +322,13 @@ export function QuickAddModal() {
           value={amount}
           onChange={(e) => setAmount(e.target.value)}
           placeholder={copy.forms.balancePlaceholder}
+        />
+        <Input
+          label={copy.forms.title}
+          value={title}
+          onChange={(e) => setTitle(e.target.value)}
+          placeholder={copy.quickAdd.titlePlaceholderDesktop}
+          hint={copy.quickAdd.titleHint}
         />
         <CategoryCollapsiblePicker
           categories={pool}
