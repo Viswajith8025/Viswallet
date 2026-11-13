@@ -82,7 +82,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     <html lang="en" data-scroll-behavior="smooth" className={cn("min-h-full", display.variable, body.variable, mono.variable)} suppressHydrationWarning>
       <body className="min-h-[100dvh] min-h-screen font-[family-name:var(--font-body)] antialiased">
         <Script id="theme-boot" strategy="beforeInteractive">
-          {`(function(){try{var d=document.documentElement;var mode="dark";var raw=localStorage.getItem("vw_boot_cache");if(raw){var boot=JSON.parse(raw);if(boot.themeMode==="light"||boot.themeMode==="dark"||boot.themeMode==="system")mode=boot.themeMode}var resolved=mode==="system"?(matchMedia("(prefers-color-scheme: dark)").matches?"dark":"light"):mode;d.setAttribute("data-theme",resolved);d.setAttribute("data-theme-mode",mode)}catch(e){document.documentElement.setAttribute("data-theme","dark")}})();`}
+          {`(function(){try{var d=document.documentElement;var mode=localStorage.getItem("vw-theme");if(mode!=="light"&&mode!=="dark"&&mode!=="system"){mode="dark";var raw=localStorage.getItem("vw_boot_cache");if(raw){var boot=JSON.parse(raw);if(boot.themeMode==="light"||boot.themeMode==="dark"||boot.themeMode==="system")mode=boot.themeMode}}var resolved=mode==="system"?(matchMedia("(prefers-color-scheme: dark)").matches?"dark":"light"):mode;d.setAttribute("data-theme",resolved);d.setAttribute("data-theme-mode",mode)}catch(e){document.documentElement.setAttribute("data-theme","dark")}})();`}
         </Script>
         <a
           href="#main-content"

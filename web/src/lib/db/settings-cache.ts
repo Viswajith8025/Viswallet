@@ -1,4 +1,6 @@
 import type { AccentColor, AppSettings, ThemeMode } from "./types";
+import { readExplicitTheme } from "@/lib/theme/preference";
+import { setHapticsEnabled } from "@/lib/ux/feedback";
 
 const BOOT_CACHE_KEY = "vw_boot_cache";
 
@@ -26,7 +28,7 @@ export function peekBootCache(): BootCache | null {
 export function writeBootCache(settings: AppSettings): void {
   if (typeof window === "undefined") return;
   const cache: BootCache = {
-    themeMode: settings.themeMode,
+    themeMode: readExplicitTheme() ?? settings.themeMode,
     accentColor: (settings.accentColor ?? "violet") as AccentColor,
     onboardingComplete: settings.onboardingComplete,
     appLockEnabled: settings.appLockEnabled && Boolean(settings.pinHash),
@@ -44,6 +46,7 @@ export function rememberSettings(settings: AppSettings): AppSettings {
     ...settings,
     aiFeaturesEnabled: settings.aiFeaturesEnabled ?? true,
   };
+  setHapticsEnabled(settings.hapticsEnabled !== false);
   settingsMemoryCache = normalized;
   writeBootCache(normalized);
   return normalized;

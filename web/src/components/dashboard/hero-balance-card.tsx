@@ -1,6 +1,7 @@
 "use client";
 
 import { Card, CardContent } from "@/components/ui/card";
+import { SharedBalance } from "@/components/dashboard/shared-balance";
 import { formatINR } from "@/lib/money";
 
 export function HeroBalanceCard({
@@ -26,9 +27,10 @@ export function HeroBalanceCard({
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div>
             <p className="text-xs font-medium uppercase tracking-[0.06em] text-current/75">{headline}</p>
-            <p className="mt-2 font-display text-[2.25rem] font-semibold tabular-nums tracking-[-0.03em] md:text-[2.75rem]">
-              {formatINR(remainingPaise)}
-            </p>
+            <SharedBalance
+              paise={remainingPaise}
+              className="mt-2 font-display text-[2.25rem] font-semibold tracking-[-0.03em] md:text-[2.75rem]"
+            />
           </div>
           {showDaysLeft && (
             <p className="rounded-full border border-current/12 px-3 py-1 text-[11px] font-medium tabular-nums tracking-wide">

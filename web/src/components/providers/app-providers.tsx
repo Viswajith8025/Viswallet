@@ -7,44 +7,38 @@ import { DbProvider } from "@/components/providers/db-provider";
 import { AuthProvider } from "@/components/providers/auth-provider";
 import { PremiumBootstrap } from "@/components/providers/premium-bootstrap";
 import { kickstartDb } from "@/lib/db/boot";
-import { ensureDbSeeded, getSettings, peekBootCache } from "@/lib/db";
+import { ensureDbSeeded, getSettings, updateSettings } from "@/lib/db";
 import { clearAccentOverrides } from "@/lib/theme/accent";
+import { readExplicitTheme, readThemeMode, writeThemeMode } from "@/lib/theme/preference";
 import { applyThemeMode } from "@/lib/theme/resolve";
 import { createQueryClient } from "@/lib/react-query/create-query-client";
-
-function applyBootTheme() {
-  clearAccentOverrides();
-  const boot = peekBootCache();
-  if (!boot) return;
-  applyThemeMode(boot.themeMode);
-}
 
 export function AppProviders({ children }: { children: React.ReactNode }) {
   const [queryClient] = useState(createQueryClient);
 
   useEffect(() => {
     kickstartDb();
-    let mq: MediaQueryList | null = null;
-    let themeMode: "system" | "light" | "dark" = peekBootCache()?.themeMode ?? "dark";
+    clearAccentOverrides();
+    if (readExplicitTheme()) applyThemeMode(readThemeMode());
+    else writeThemeMode(readThemeMode());
 
+    const mq = window.matchMedia("(prefers-color-scheme: dark)");
     const onThemeChange = () => {
-      if (themeMode === "system") applyThemeMode("system");
+      if (readThemeMode() === "system") applyThemeMode("system");
     };
-
-    applyBootTheme();
+    mq.addEventListener("change", onThemeChange);
 
     ensureDbSeeded()
       .then(() => getSettings())
       .then((settings) => {
-        themeMode = settings.themeMode;
-        applyThemeMode(themeMode);
-        clearAccentOverrides();
-        mq = window.matchMedia("(prefers-color-scheme: dark)");
-        mq.addEventListener("change", onThemeChange);
+        const chosen = readThemeMode();
+        if (settings.themeMode !== chosen) {
+          void updateSettings({ themeMode: chosen });
+        }
       });
 
     return () => {
-      mq?.removeEventListener("change", onThemeChange);
+      mq.removeEventListener("change", onThemeChange);
     };
   }, []);
 

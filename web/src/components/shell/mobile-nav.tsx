@@ -1,67 +1,197 @@
 "use client";
 
-import Link from "next/link";
+import { useEffect, useRef, useState } from "react";
 import { usePathname } from "next/navigation";
-import { LayoutDashboard, ArrowLeftRight, BarChart3, Ellipsis } from "lucide-react";
+import { Plus, ArrowDownLeft, ArrowUpRight, Users } from "lucide-react";
+import { LayoutGroup, motion } from "motion/react";
 import { cn } from "@/lib/design/cn";
 import { useUIStore } from "@/lib/store/ui-store";
-import { isMobileMoreRoute } from "@/lib/navigation/app-nav";
+import { MOBILE_TABS, mobileTabActive } from "@/lib/navigation/app-nav";
+import { NavLink } from "@/components/shell/nav-link";
+import { usePressFeedback } from "@/hooks/use-press-feedback";
 
-const TABS = [
-  { href: "/", label: "Home", icon: LayoutDashboard },
-  { href: "/transactions", label: "List", icon: ArrowLeftRight },
-  { href: "/analytics", label: "Charts", icon: BarChart3 },
-  { href: "__more__", label: "More", icon: Ellipsis },
-] as const;
+const SHORTCUTS = [
+  { id: "spent", label: "Spent", icon: ArrowUpRight, kind: "expense" as const },
+  { id: "earned", label: "Earned", icon: ArrowDownLeft, kind: "income" as const },
+  { id: "split", label: "Split with crew", icon: Users, href: "/crew?tab=friends" },
+];
 
 export function MobileNav() {
   const pathname = usePathname();
-  const mobileMenuOpen = useUIStore((s) => s.mobileMenuOpen);
-  const setMobileMenuOpen = useUIStore((s) => s.setMobileMenuOpen);
-  const moreActive = mobileMenuOpen || isMobileMoreRoute(pathname);
+  const setQuickAddOpen = useUIStore((s) => s.setQuickAddOpen);
+  const press = usePressFeedback();
+  const [radial, setRadial] = useState(false);
+  const holdTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const longPress = useRef(false);
+  const skipClick = useRef(false);
+  const startPoint = useRef<{ x: number; y: number } | null>(null);
+
+  function clearHold() {
+    if (holdTimer.current) {
+      clearTimeout(holdTimer.current);
+      holdTimer.current = null;
+    }
+  }
+
+  useEffect(() => {
+    if (!radial) return;
+    function onPointerDown(event: PointerEvent) {
+      const target = event.target as HTMLElement | null;
+      if (target?.closest("[data-add-radial]")) return;
+      setRadial(false);
+    }
+    document.addEventListener("pointerdown", onPointerDown);
+    return () => document.removeEventListener("pointerdown", onPointerDown);
+  }, [radial]);
+
+  function onPointerDown(event: React.PointerEvent) {
+    longPress.current = false;
+    startPoint.current = { x: event.clientX, y: event.clientY };
+    clearHold();
+    holdTimer.current = setTimeout(() => {
+      longPress.current = true;
+      skipClick.current = true;
+      setRadial(true);
+    }, 450);
+  }
+
+  function onPointerMove(event: React.PointerEvent) {
+    const start = startPoint.current;
+    if (!start) return;
+    if (Math.hypot(event.clientX - start.x, event.clientY - start.y) > 10) clearHold();
+  }
+
+  function onPointerUp() {
+    clearHold();
+    startPoint.current = null;
+  }
+
+  function onClick() {
+    if (skipClick.current) {
+      skipClick.current = false;
+      return;
+    }
+    setRadial(false);
+    setQuickAddOpen(true, "expense");
+  }
 
   return (
     <nav
-      className="fixed bottom-0 left-0 right-0 z-40 border-t border-border-light bg-background/92 pb-[env(safe-area-inset-bottom)] shadow-[0_-1px_0_rgba(45,37,64,0.04)] backdrop-blur-xl backdrop-saturate-150 lg:hidden"
+      className="fixed inset-x-0 bottom-0 z-40 select-none lg:hidden"
+      style={{ viewTransitionName: "mobile-nav" }}
       aria-label="Main navigation"
+      data-shell-nav
     >
-      <div className="mx-auto flex h-[3.5rem] max-w-lg items-center justify-around px-1">
-        {TABS.map((tab) => {
-          if (tab.href === "__more__") {
+      {radial && (
+        <div
+          data-add-radial
+          className="pointer-events-none absolute bottom-[calc(64px+env(safe-area-inset-bottom)+12px)] left-1/2 h-28 w-64 -translate-x-1/2"
+        >
+          {SHORTCUTS.map((item, index) => {
+            const place = ["left-[0%] top-[42%]", "left-1/2 top-0 -translate-x-1/2", "right-0 top-[42%]"][index];
+            const className = cn(
+              "pointer-events-auto absolute flex h-11 min-w-11 items-center gap-1.5 rounded-full border border-hairline bg-raised px-3 text-[11px] font-mono text-ink shadow-[0_8px_24px_rgba(0,0,0,0.28)]",
+              press.className,
+              place,
+            );
+            if ("href" in item && item.href) {
+              return (
+                <NavLink
+                  key={item.id}
+                  href={item.href}
+                  motion="nav-tab"
+                  className={className}
+                  onClick={() => setRadial(false)}
+                >
+                  <item.icon size={14} />
+                  {item.label}
+                </NavLink>
+              );
+            }
             return (
               <button
-                key={tab.href}
+                key={item.id}
                 type="button"
-                onClick={() => setMobileMenuOpen(true)}
-                className={cn(
-                  "flex min-w-[4rem] flex-col items-center gap-0.5 py-1 text-[11px] font-medium transition-colors duration-[var(--duration-fast)]",
-                  moreActive ? "text-ink" : "text-muted-foreground",
-                )}
-                aria-label="More pages"
-                aria-expanded={mobileMenuOpen}
+                className={className}
+                onClick={() => {
+                  setRadial(false);
+                  setQuickAddOpen(true, item.kind);
+                }}
               >
-                <tab.icon size={22} strokeWidth={moreActive ? 2 : 1.75} />
-                <span>{tab.label}</span>
+                <item.icon size={14} />
+                {item.label}
               </button>
             );
-          }
+          })}
+        </div>
+      )}
 
-          const active = pathname === tab.href;
-          return (
-            <Link
-              key={tab.href}
-              href={tab.href}
-              className={cn(
-                "flex min-w-[4rem] flex-col items-center gap-0.5 py-1 text-[11px] font-medium transition-colors duration-[var(--duration-fast)]",
-                active ? "text-ink" : "text-muted-foreground",
-              )}
-            >
-              <tab.icon size={22} strokeWidth={active ? 2 : 1.75} />
-              <span>{tab.label}</span>
-            </Link>
-          );
-        })}
+      <div className="border-t border-hairline bg-sunken/92 pb-[env(safe-area-inset-bottom)] backdrop-blur-[12px]">
+        <LayoutGroup>
+          <div className="mx-auto grid h-16 max-w-lg grid-cols-5 items-end">
+            {MOBILE_TABS.slice(0, 2).map((tab) => (
+              <TabLink key={tab.href} href={tab.href} label={tab.label} icon={tab.icon} active={mobileTabActive(tab.href, pathname)} />
+            ))}
+            <div className="relative flex justify-center">
+              <button
+                type="button"
+                data-add-radial
+                onPointerDown={onPointerDown}
+                onPointerMove={onPointerMove}
+                onPointerUp={onPointerUp}
+                onPointerCancel={onPointerUp}
+                onClick={onClick}
+                className={cn(
+                  "absolute -top-3 flex h-14 w-14 items-center justify-center rounded-full bg-lime text-[#0D0D0B] ring-2 ring-bg",
+                  press.className,
+                )}
+                aria-label="Add. Hold for Spent, Earned, or Split with crew."
+                aria-expanded={radial}
+              >
+                <Plus size={26} strokeWidth={2.4} />
+              </button>
+            </div>
+            {MOBILE_TABS.slice(2).map((tab) => (
+              <TabLink key={tab.href} href={tab.href} label={tab.label} icon={tab.icon} active={mobileTabActive(tab.href, pathname)} />
+            ))}
+          </div>
+        </LayoutGroup>
       </div>
     </nav>
+  );
+}
+
+function TabLink({
+  href,
+  label,
+  icon: Icon,
+  active,
+}: {
+  href: string;
+  label: string;
+  icon: typeof MOBILE_TABS[number]["icon"];
+  active: boolean;
+}) {
+  return (
+    <NavLink
+      href={href}
+      motion="nav-tab"
+      className={cn(
+        "flex h-16 flex-col items-center justify-center gap-1 font-mono text-[11px]",
+        active ? "text-ink" : "text-ink-2",
+      )}
+    >
+      <Icon size={22} strokeWidth={active ? 2.1 : 1.75} />
+      <span className="relative">
+        {label}
+        {active && (
+          <motion.span
+            layoutId="tab-dot"
+            className="absolute -bottom-1.5 left-1/2 h-1 w-1 -translate-x-1/2 rounded-full bg-lime"
+            transition={{ type: "spring", stiffness: 420, damping: 38 }}
+          />
+        )}
+      </span>
+    </NavLink>
   );
 }

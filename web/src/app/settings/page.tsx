@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, useSyncExternalStore } from "react";
 import { PageHeader, PageContainer, SuccessBanner } from "@/components/ui/page";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -28,7 +28,9 @@ import { categoryMap } from "@/lib/engines/finance-snapshot";
 import { getCurrentCycleKey } from "@/lib/salary-cycle";
 import { useAuth } from "@/components/providers/auth-provider";
 import { useUIStore } from "@/lib/store/ui-store";
-import { applyThemeMode } from "@/lib/theme/resolve";
+import { readThemeMode, subscribeTheme, writeThemeMode } from "@/lib/theme/preference";
+import type { ThemeMode } from "@/lib/theme/resolve";
+import { setHapticsEnabled } from "@/lib/ux/feedback";
 import type { DashboardWidgetId } from "@/lib/db/types";
 import { DEFAULT_DASHBOARD_WIDGETS, DASHBOARD_WIDGET_LABELS } from "@/lib/db/types";
 import {
@@ -55,7 +57,7 @@ export default function SettingsPage() {
   const lock = useSecurityStore((s) => s.lock);
   const fileRef = useRef<HTMLInputElement>(null);
   const csvRef = useRef<HTMLInputElement>(null);
-  const [theme, setTheme] = useState<"system" | "light" | "dark">("system");
+  const theme = useSyncExternalStore(subscribeTheme, readThemeMode, (): ThemeMode => "dark");
   const [biometricEnabled, setBiometricEnabled] = useState(false);
   const [widgets, setWidgets] = useState<DashboardWidgetId[]>(DEFAULT_DASHBOARD_WIDGETS);
   const [resetting, setResetting] = useState(false);
@@ -71,17 +73,19 @@ export default function SettingsPage() {
   const [success, setSuccess] = useState("");
   const [settingsLoaded, setSettingsLoaded] = useState(false);
   const [aiFeaturesEnabled, setAiFeaturesEnabled] = useState(false);
+  const [hapticsOn, setHapticsOn] = useState(true);
   const aiFeatures = useAiFeatures();
 
   useEffect(() => {
     Promise.all([getSettings()])
       .then(([s]) => {
-        setTheme(s.themeMode);
         setBiometricEnabled(s.biometricEnabled ?? false);
         setWidgets(s.dashboardWidgets ?? DEFAULT_DASHBOARD_WIDGETS);
         setAppLockEnabled(s.appLockEnabled);
         setAutoLockMinutes(String(s.autoLockMinutes ?? 15));
         setAiFeaturesEnabled(s.aiFeaturesEnabled ?? false);
+        setHapticsOn(s.hapticsEnabled !== false);
+        setHapticsEnabled(s.hapticsEnabled !== false);
       })
       .catch(() => setError("Could not load settings."))
       .finally(() => setSettingsLoaded(true));
@@ -94,10 +98,9 @@ export default function SettingsPage() {
   }
 
   async function handleThemeChange(value: string) {
-    const mode = value as "system" | "light" | "dark";
-    setTheme(mode);
+    const mode = value as ThemeMode;
+    writeThemeMode(mode);
     await updateSettings({ themeMode: mode });
-    applyThemeMode(mode);
     await logAudit("settings.update", { success: true, detail: "theme" });
     refresh();
   }
@@ -423,6 +426,17 @@ export default function SettingsPage() {
             <option value="light">Light</option>
             <option value="dark">Dark</option>
           </Select>
+          <Checkbox
+            label="Haptics"
+            checked={hapticsOn}
+            onChange={(e) => {
+              const on = e.target.checked;
+              setHapticsOn(on);
+              setHapticsEnabled(on);
+              void updateSettings({ hapticsEnabled: on });
+            }}
+          />
+          <p className="text-sm text-muted-foreground">A short pulse on Android when you save, settle, or hit a goal.</p>
           <Checkbox
             label="Unlock with Face ID or fingerprint"
             checked={biometricEnabled}

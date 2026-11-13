@@ -52,6 +52,7 @@ import {
 import { getActiveCategories as repoGetActiveCategories } from "./repositories/categories";
 import { emitNotificationsChanged, emitDbDataChanged } from "@/lib/notifications/bus";
 import { mergeSalaryPromptDate } from "@/lib/salary/salary-prompt";
+import { readExplicitTheme } from "@/lib/theme/preference";
 import {
   clearSettingsCache,
   readSettingsCache,
@@ -573,6 +574,11 @@ export async function getProfile(): Promise<Profile> {
 export async function updateSettings(partial: Partial<AppSettings>): Promise<void> {
   const current = await getSettings();
   const next = { ...current, ...partial, updatedAt: new Date() };
+  // A settings write that started before a theme change must not put the old mode back.
+  if (partial.themeMode === undefined) {
+    const chosen = readExplicitTheme();
+    if (chosen) next.themeMode = chosen;
+  }
   await db.settings.update(1, next);
   rememberSettings(next);
   emitDbDataChanged();
@@ -749,6 +755,7 @@ export async function importAllData(json: string, options: { skipRateLimit?: boo
             validated.settings.map((s) => ({
               ...s,
               accentColor: s.accentColor ?? "violet",
+              themeMode: readExplicitTheme() ?? s.themeMode,
               biometricEnabled: s.biometricEnabled ?? false,
               aiFeaturesEnabled: s.aiFeaturesEnabled ?? true,
               dashboardWidgets: (s.dashboardWidgets ?? DEFAULT_DASHBOARD_WIDGETS) as AppSettings["dashboardWidgets"],

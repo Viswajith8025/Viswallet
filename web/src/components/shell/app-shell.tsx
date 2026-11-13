@@ -1,13 +1,14 @@
 "use client";
 
-import { Suspense, useEffect } from "react";
+import { Suspense, useEffect, useRef, useState } from "react";
 import { usePathname, useSearchParams } from "next/navigation";
 import { TopBar } from "./top-bar";
 import { OfflineBanner } from "./offline-banner";
 import { MobileNav } from "./mobile-nav";
 import { MobileMoreSheet } from "./mobile-more-sheet";
-import { MobileFab } from "./mobile-fab";
 import { Sidebar } from "./sidebar";
+import { HubTabs } from "./hub-tabs";
+import { RouteTransition } from "./route-transition";
 import { RouteGuard } from "@/components/security/route-guard";
 import { SecurityProvider } from "@/components/security/security-provider";
 import { ToastHost } from "@/components/ui/toast";
@@ -39,6 +40,21 @@ function QuickAddDeepLink() {
 export function AppShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const isFullBleed = pathname === "/onboarding" || pathname === "/auth";
+  const [scrolled, setScrolled] = useState(false);
+  const mainRef = useRef<HTMLElement>(null);
+  const sentinelRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const root = mainRef.current;
+    const sentinel = sentinelRef.current;
+    if (!root || !sentinel) return;
+    const observer = new IntersectionObserver(
+      ([entry]) => setScrolled(!entry.isIntersecting),
+      { root, threshold: 1 },
+    );
+    observer.observe(sentinel);
+    return () => observer.disconnect();
+  }, [pathname]);
 
   if (isFullBleed) {
     return <RouteGuard>{children}</RouteGuard>;
@@ -47,20 +63,26 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   return (
     <RouteGuard>
       <SecurityProvider>
-        <div className="flex h-[100dvh] h-screen overflow-hidden bg-background">
-          <Sidebar />
+        <div className="flex h-dvh overflow-hidden bg-bg">
+          <Suspense fallback={null}>
+            <Sidebar />
+          </Suspense>
           <div className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden">
             <OfflineBanner />
-            <TopBar />
+            <TopBar scrolled={scrolled} />
             <main
               id="main-content"
-              className="scroll-premium min-h-0 flex-1 overflow-y-auto overscroll-y-contain px-4 py-4 pb-[calc(3.5rem+3.5rem+env(safe-area-inset-bottom))] lg:px-8 lg:py-8 lg:pb-8"
+              ref={mainRef}
+              className="scroll-premium min-h-0 flex-1 overflow-y-auto overscroll-contain px-4 py-4 pb-[calc(64px+16px+env(safe-area-inset-bottom))] lg:px-8 lg:py-8 lg:pb-8"
               tabIndex={-1}
             >
-              {children}
+              <div ref={sentinelRef} className="h-px w-full" aria-hidden />
+              <Suspense fallback={null}>
+                <HubTabs />
+              </Suspense>
+              <RouteTransition pathname={pathname}>{children}</RouteTransition>
             </main>
           </div>
-          <MobileFab />
           <MobileNav />
           <MobileMoreSheet />
           <Suspense fallback={null}>

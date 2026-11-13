@@ -39,6 +39,7 @@ import { confirmAction } from "@/lib/store/confirm-store";
 import { copy, toastCopy } from "@/lib/ux/copy";
 import { showToast } from "@/lib/store/toast-store";
 import { useUIStore } from "@/lib/store/ui-store";
+import { SharedBalance } from "@/components/dashboard/shared-balance";
 
 function TransactionsContent({
   data,
@@ -276,6 +277,7 @@ function TransactionsContent({
             </div>
           }
         />
+        <SharedBalance paise={data.remainingPaise} className="mt-3 text-[28px] font-semibold" />
       </FadeIn>
 
       <TabBar

@@ -16,7 +16,7 @@ export function ConfirmDialog() {
   const close = useConfirmStore((s) => s.close);
 
   return (
-    <Dialog open={open} onClose={() => close(false)} labelledBy="confirm-title" size="sm">
+    <Dialog open={open} onClose={() => close(false)} labelledBy="confirm-title" size="sm" sheetOnMobile={false}>
       <DialogBody>
         <div className="mb-4 flex gap-3">
           {destructive && (

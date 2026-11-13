@@ -1,22 +1,34 @@
-/** Optional tactile feedback — respects reduced motion and missing APIs. */
+/** Optional tactile feedback. Success is one short pulse, Android only, and only when Haptics is on. */
+
+let hapticsOn = true;
+
+export function setHapticsEnabled(on: boolean) {
+  hapticsOn = on;
+}
 
 function canVibrate(): boolean {
-  if (typeof navigator === "undefined") return false;
+  if (!hapticsOn) return false;
+  if (typeof navigator === "undefined" || typeof navigator.vibrate !== "function") return false;
+  if (!/Android/i.test(navigator.userAgent)) return false;
   if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return false;
-  return typeof navigator.vibrate === "function";
+  return true;
+}
+
+export function vibrateSuccess(): void {
+  if (canVibrate()) navigator.vibrate(8);
 }
 
 /** Light tap — buttons, toggles */
 export function tapFeedback(): void {
-  if (canVibrate()) navigator.vibrate(8);
+  vibrateSuccess();
 }
 
-/** Success — save, complete */
+/** Success — save, settle, goal hit */
 export function successFeedback(): void {
-  if (canVibrate()) navigator.vibrate([12, 40, 12]);
+  vibrateSuccess();
 }
 
 /** Error — validation fail, destructive confirm */
 export function errorFeedback(): void {
-  if (canVibrate()) navigator.vibrate([20, 30, 20, 30, 20]);
+  if (canVibrate()) navigator.vibrate(8);
 }

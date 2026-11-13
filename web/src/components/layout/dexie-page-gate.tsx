@@ -3,7 +3,7 @@
 import { Button } from "@/components/ui/button";
 import { ErrorState } from "@/components/ui/page";
 import { PageEnter } from "@/components/ui/motion";
-import { BrandLoader } from "@/components/brand/brand-loader";
+import { PageSkeleton, DelayedSkeleton } from "@/components/ui/skeleton";
 import { copy } from "@/lib/ux/copy";
 
 export function DexiePageGate({
@@ -19,7 +19,16 @@ export function DexiePageGate({
   label?: string;
   children: React.ReactNode;
 }) {
-  if (isPending) return <BrandLoader label={label} />;
+  if (isPending) {
+    return (
+      <DelayedSkeleton>
+        <div>
+          {label && <span className="sr-only">{label}</span>}
+          <PageSkeleton />
+        </div>
+      </DelayedSkeleton>
+    );
+  }
   if (isError) {
     return (
       <ErrorState

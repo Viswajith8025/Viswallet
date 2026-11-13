@@ -1,43 +1,34 @@
 "use client";
 
-import { SuccessPop } from "@/components/ui/motion";
-import { Check } from "lucide-react";
+import { useReducedMotion } from "motion/react";
 import { cn } from "@/lib/design/cn";
-import { motion } from "motion/react";
 
 export function SuccessMark({
   size = "lg",
   className,
-  label = "Saved successfully",
+  label = "Saved",
 }: {
   size?: "md" | "lg";
   className?: string;
   label?: string;
 }) {
+  const reduced = useReducedMotion();
   const box = size === "lg" ? "h-14 w-14" : "h-11 w-11";
-  const icon = size === "lg" ? 28 : 22;
 
   return (
-    <div className={cn("flex flex-col items-center text-center", className)}>
-      <SuccessPop className={cn("relative flex items-center justify-center rounded-xl bg-success-muted text-success", box)}>
-        <motion.div
-          initial={{ scale: 0, rotate: -20 }}
-          animate={{ scale: 1, rotate: 0 }}
-          transition={{ type: "spring", stiffness: 400, damping: 18, delay: 0.1 }}
-        >
-          <Check size={icon} strokeWidth={2.5} />
-        </motion.div>
-      </SuccessPop>
-      {label && (
-        <motion.p
-          className="mt-4 font-semibold"
-          initial={{ opacity: 0, y: 6 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.2, duration: 0.3 }}
-        >
-          {label}
-        </motion.p>
-      )}
+    <div className={cn("flex flex-col items-center text-center text-lime", className)}>
+      <svg viewBox="0 0 24 24" className={box} aria-hidden>
+        <path
+          d="M5 12.5 9.5 17 19 7"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="2.4"
+          strokeLinecap="round"
+          pathLength={1}
+          className={reduced ? undefined : "success-draw"}
+        />
+      </svg>
+      {label && <p className="mt-3 font-mono text-[11px] uppercase tracking-[0.14em] text-ink">{label}</p>}
     </div>
   );
 }

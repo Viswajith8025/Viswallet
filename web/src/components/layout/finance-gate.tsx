@@ -2,8 +2,7 @@
 
 import type { FinanceSnapshot } from "@/lib/engines/finance-snapshot";
 import { useFinanceSnapshot } from "@/lib/queries/use-finance";
-import { BrandLoader } from "@/components/brand/brand-loader";
-import { DashboardSkeleton } from "@/components/ui/skeleton";
+import { DashboardSkeleton, DelayedSkeleton, PageSkeleton } from "@/components/ui/skeleton";
 import { ErrorState } from "@/components/ui/page";
 import { PageEnter } from "@/components/ui/motion";
 import { Button } from "@/components/ui/button";
@@ -20,7 +19,11 @@ export function FinanceGate({
   const { data, isLoading, isError, refetch } = useFinanceSnapshot();
 
   if (isLoading) {
-    return skeleton === "dashboard" ? <DashboardSkeleton /> : <BrandLoader />;
+    return (
+      <DelayedSkeleton>
+        {skeleton === "dashboard" ? <DashboardSkeleton /> : <PageSkeleton />}
+      </DelayedSkeleton>
+    );
   }
 
   if (isError || !data) {

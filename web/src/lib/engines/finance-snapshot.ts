@@ -16,11 +16,14 @@ import {
 } from "@/lib/db/repositories/finance-meta";
 import { getActiveAccounts } from "@/lib/db/repositories/accounts";
 import { subscriptionMonthlyPaise as toMonthlySubscriptionPaise } from "@/lib/money/subscription";
+import { expectedSalaryPaise as readExpectedSalaryPaise } from "@/lib/salary/salary-prompt";
 
 export type FinanceSnapshot = {
   monthKey: string;
   salaryDay: number;
   salaryPaise: number;
+  /** Settings expected salary. Used when this cycle has no salary row yet. */
+  expectedSalaryPaise: number;
   incomePaise: number;
   expensePaise: number;
   remainingPaise: number;
@@ -125,6 +128,7 @@ export async function loadFinanceSnapshot(monthKeyOverride?: string): Promise<Fi
     monthKey,
     salaryDay: settings.salaryDay,
     salaryPaise,
+    expectedSalaryPaise: readExpectedSalaryPaise(settings),
     incomePaise,
     expensePaise,
     remainingPaise,

@@ -78,7 +78,7 @@ export function NotificationBell() {
         variant="ghost"
         size="icon"
         onClick={() => setOpen((prev) => !prev)}
-        className="relative h-9 w-9"
+        className="relative h-11 w-11"
         aria-expanded={open}
         aria-haspopup="dialog"
         aria-label={`Notifications${unread > 0 ? `, ${unread} unread` : ""}`}

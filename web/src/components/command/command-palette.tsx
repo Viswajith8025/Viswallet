@@ -3,12 +3,12 @@
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { Command } from "cmdk";
-import { motion, AnimatePresence } from "motion/react";
 import {
   LayoutDashboard,
   ArrowLeftRight,
   BarChart3,
   PiggyBank,
+  Users,
   Settings,
   Plus,
   Search,
@@ -23,8 +23,10 @@ import {
 import { useUIStore } from "@/lib/store/ui-store";
 
 const ACTIONS = [
-  { label: "Dashboard", href: "/", icon: LayoutDashboard, kbd: "G D" },
-  { label: "Transactions", href: "/transactions", icon: ArrowLeftRight, kbd: "G T" },
+  { label: "Home", href: "/", icon: LayoutDashboard, kbd: "G H" },
+  { label: "Money", href: "/transactions", icon: ArrowLeftRight, kbd: "G T" },
+  { label: "Crew", href: "/crew", icon: Users },
+  { label: "You", href: "/you", icon: Settings, kbd: "G Y" },
   { label: "Analytics", href: "/analytics", icon: BarChart3, kbd: "G A" },
   { label: "Budgets", href: "/budgets", icon: PiggyBank },
   { label: "Insights", href: "/insights", icon: Sparkles },
@@ -55,29 +57,19 @@ export function CommandPalette() {
   }, [open, setOpen]);
 
   return (
-    <AnimatePresence>
-      {open && (
-        <div className="fixed inset-0 z-[100] flex items-start justify-center p-4 pt-[10vh] sm:pt-[14vh]">
-          <motion.button
-            type="button"
-            aria-label="Close command palette"
-            className="absolute inset-0 bg-overlay backdrop-blur-[3px]"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            onClick={() => setOpen(false)}
-          />
-          <motion.div
-            initial={{ opacity: 0, scale: 0.96, y: -8 }}
-            animate={{ opacity: 1, scale: 1, y: 0 }}
-            exit={{ opacity: 0, scale: 0.98, y: -4 }}
-            transition={{ duration: 0.2, ease: [0.16, 1, 0.3, 1] }}
-            className="relative w-full max-w-xl"
+    open && (
+      <div className="fixed inset-0 z-[100] flex items-start justify-center p-4 pt-[12vh]">
+        <button
+          type="button"
+          aria-label="Close command palette"
+          className="absolute inset-0 bg-bg/70"
+          onClick={() => setOpen(false)}
+        />
+        <div className="relative w-full max-w-xl">
+          <Command
+            className="overflow-hidden rounded-[14px] border border-hairline bg-raised"
+            onKeyDown={(e) => e.key === "Escape" && setOpen(false)}
           >
-            <Command
-              className="overflow-hidden rounded-xl border border-border bg-elevated/98 shadow-glow backdrop-blur-xl"
-              onKeyDown={(e) => e.key === "Escape" && setOpen(false)}
-            >
               <div className="flex items-center gap-3 border-b border-border/80 px-4">
                 <Search size={18} className="shrink-0 text-muted-foreground" />
                 <Command.Input
@@ -132,10 +124,9 @@ export function CommandPalette() {
                 </Command.Group>
               </Command.List>
             </Command>
-          </motion.div>
         </div>
-      )}
-    </AnimatePresence>
+      </div>
+    )
   );
 }
 
@@ -148,7 +139,7 @@ function CommandItem({
 }) {
   return (
     <Command.Item
-      className="flex cursor-pointer items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium outline-none transition-colors aria-selected:bg-primary-muted aria-selected:text-primary"
+      className="flex min-h-11 cursor-pointer items-center gap-3 border-b border-hairline px-3 py-2.5 text-sm text-ink outline-none aria-selected:bg-surface"
       onSelect={onSelect}
     >
       {children}

@@ -44,6 +44,12 @@ type AuthContextValue = {
 const AuthContext = createContext<AuthContextValue | null>(null);
 const SESSION_READY_TIMEOUT_MS = 5000;
 
+/** Let IndexedDB paint before a vault pull takes the database lock. */
+function deferCloudSync(start: () => void): void {
+  const idle = window.requestIdleCallback?.(start, { timeout: 1500 });
+  if (idle == null) window.setTimeout(start, 300);
+}
+
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const configured = cloudAuthEnabled();
   const required = cloudAuthRequired();
@@ -106,7 +112,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setUser(sessionUser);
       markSessionReady();
       if (sessionUser && shouldAutoCloudSync()) {
-        void runCloudSync();
+        deferCloudSync(() => void runCloudSync());
       }
     });
 
@@ -117,7 +123,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         markSessionReady();
       }
       if (event === "SIGNED_IN" && session?.user && shouldAutoCloudSync()) {
-        void runCloudSync();
+        deferCloudSync(() => void runCloudSync());
       }
     });
 

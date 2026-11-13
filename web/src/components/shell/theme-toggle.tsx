@@ -2,20 +2,12 @@
 
 import { Moon, Sun } from "lucide-react";
 import { useCallback, useSyncExternalStore } from "react";
-import { updateSettings, peekBootCache } from "@/lib/db";
+import { updateSettings } from "@/lib/db";
+import { readThemeMode, subscribeTheme, writeThemeMode } from "@/lib/theme/preference";
 import { applyThemeMode, type ResolvedTheme, type ThemeMode } from "@/lib/theme/resolve";
 import { cn } from "@/lib/design/cn";
 
 const CYCLE: ThemeMode[] = ["dark", "light", "system"];
-const listeners = new Set<() => void>();
-
-function readMode(): ThemeMode {
-  const attr = document.documentElement.getAttribute("data-theme-mode");
-  if (attr === "dark" || attr === "light" || attr === "system") return attr;
-  const boot = peekBootCache()?.themeMode;
-  if (boot === "dark" || boot === "light" || boot === "system") return boot;
-  return "dark";
-}
 
 function readResolved(): ResolvedTheme {
   const attr = document.documentElement.getAttribute("data-theme");
@@ -23,25 +15,21 @@ function readResolved(): ResolvedTheme {
 }
 
 function snapshot(): string {
-  return `${readMode()}:${readResolved()}`;
+  return `${readThemeMode()}:${readResolved()}`;
 }
 
 function subscribe(listener: () => void): () => void {
-  listeners.add(listener);
+  const unsubscribe = subscribeTheme(listener);
   const media = window.matchMedia("(prefers-color-scheme: dark)");
   const onMedia = () => {
-    if (readMode() === "system") applyThemeMode("system");
+    if (readThemeMode() === "system") applyThemeMode("system");
     listener();
   };
   media.addEventListener("change", onMedia);
   return () => {
-    listeners.delete(listener);
+    unsubscribe();
     media.removeEventListener("change", onMedia);
   };
-}
-
-function emit(): void {
-  listeners.forEach((listener) => listener());
 }
 
 export function ThemeToggle() {
@@ -50,8 +38,7 @@ export function ThemeToggle() {
 
   const toggle = useCallback(async () => {
     const next = CYCLE[(CYCLE.indexOf(mode) + 1) % CYCLE.length] ?? "dark";
-    applyThemeMode(next);
-    emit();
+    writeThemeMode(next);
     await updateSettings({ themeMode: next });
   }, [mode]);
 

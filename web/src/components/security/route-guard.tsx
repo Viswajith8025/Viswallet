@@ -5,8 +5,6 @@ import { useEffect, useState } from "react";
 import { getSettings, peekBootCache } from "@/lib/db";
 import { useAuth } from "@/components/providers/auth-provider";
 import { BrandLoader } from "@/components/brand/brand-loader";
-import { shouldAutoCloudSync } from "@/lib/supabase/cloud-sync";
-import { copy } from "@/lib/ux/copy";
 
 const ALWAYS_PUBLIC_ROUTES = ["/auth", "/privacy", "/terms", "/licenses", "/about"];
 const ONBOARDING_ROUTE = "/onboarding";
@@ -15,7 +13,7 @@ const SETTINGS_READY_TIMEOUT_MS = 6000;
 export function RouteGuard({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const router = useRouter();
-  const { configured, user, loading: authLoading, cloudSyncReady, cloudDown } = useAuth();
+  const { configured, user, loading: authLoading, cloudDown } = useAuth();
   const authRequired = configured && !cloudDown;
   const isOnboarding = pathname === ONBOARDING_ROUTE;
   const isPublic =
@@ -28,8 +26,6 @@ export function RouteGuard({ children }: { children: React.ReactNode }) {
     if (isPublic) return;
 
     if (authRequired && authLoading) return;
-
-    if (authRequired && user && shouldAutoCloudSync() && !cloudSyncReady) return;
 
     if (authRequired && !user) {
       router.replace("/auth");
@@ -75,17 +71,11 @@ export function RouteGuard({ children }: { children: React.ReactNode }) {
       cancelled = true;
       window.clearTimeout(settingsTimeout);
     };
-  }, [pathname, router, isPublic, configured, authRequired, user, authLoading, cloudSyncReady, isOnboarding]);
+  }, [pathname, router, isPublic, configured, authRequired, user, authLoading, isOnboarding]);
 
   if (isPublic) return <>{children}</>;
-  const restoringCloud = authRequired && user && shouldAutoCloudSync() && !cloudSyncReady;
-  if (!appReady || (authRequired && (authLoading || !user)) || restoringCloud) {
-    return (
-      <BrandLoader
-        fullScreen
-        label={restoringCloud ? copy.loading.finances : undefined}
-      />
-    );
+  if (!appReady || (authRequired && (authLoading || !user))) {
+    return <BrandLoader fullScreen />;
   }
 
   return <>{children}</>;

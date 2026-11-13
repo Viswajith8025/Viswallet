@@ -41,6 +41,7 @@ const settingsSchema = z.object({
   autoLockMinutes: z.number().int().min(1).max(120).optional().default(15),
   dashboardWidgets: z.array(z.string()).max(20).optional(),
   aiFeaturesEnabled: z.boolean().optional(),
+  hapticsEnabled: z.boolean().optional(),
   lastBackupAt: dateField.optional(),
   lastSalaryPromptDate: z.string().max(10).optional(),
   expectedSalaryPaise: z.number().int().min(0).max(MAX_AMOUNT_PAISE).optional(),

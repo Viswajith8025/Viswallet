@@ -14,26 +14,28 @@ import type { FinanceSnapshot } from "@/lib/engines/finance-snapshot";
 import { formatINR } from "@/lib/money";
 import { formatCycleLabel } from "@/lib/salary-cycle";
 import { categoryMap } from "@/lib/engines/finance-snapshot";
+import { expectedSalaryPaise } from "@/lib/salary/salary-prompt";
 
 function BudgetsContent({ data }: { data: FinanceSnapshot }) {
   const invalidate = useInvalidateFinance();
+  const salaryPaise = data.salaryPaise > 0 ? data.salaryPaise : expectedSalaryPaise(data);
 
   const { data: buckets = [], isPending: bucketsLoading } = useQuery({
-    queryKey: ["budget-buckets", data.monthKey, data.salaryPaise],
+    queryKey: ["budget-buckets", data.monthKey, salaryPaise],
     queryFn: async () => {
       let plan = await db.budgetPlans.where("monthKey").equals(data.monthKey).first();
-      if (!plan && data.salaryPaise > 0) {
-        const id = await createBudgetPlanForCycle(data.monthKey, data.salaryPaise);
+      if (!plan && salaryPaise > 0) {
+        const id = await createBudgetPlanForCycle(data.monthKey, salaryPaise);
         plan = await db.budgetPlans.get(id);
-        await invalidate();
+        void invalidate();
       }
       if (!plan?.id) return [];
       return db.budgetBuckets.where("planId").equals(plan.id).sortBy("sortOrder");
     },
-    enabled: data.salaryPaise > 0,
+    enabled: salaryPaise > 0,
   });
 
-  if (data.salaryPaise <= 0) {
+  if (salaryPaise <= 0) {
     return (
       <PageContainer className="max-w-5xl">
         <PageHeader title="Budgets" description="Allocate your salary across spending buckets." />
@@ -74,7 +76,7 @@ function BudgetsContent({ data }: { data: FinanceSnapshot }) {
       />
 
       <div className="grid gap-4 md:grid-cols-3">
-        <StatCard label="Salary" value={formatINR(data.salaryPaise)} />
+        <StatCard label="Salary" value={formatINR(salaryPaise)} />
         <StatCard label="Allocated" value={formatINR(totalAllocated)} hint={`${buckets.length} buckets`} />
         <StatCard
           label="Spent in buckets"

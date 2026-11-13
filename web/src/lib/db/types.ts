@@ -62,6 +62,8 @@ export interface AppSettings {
   /** Salary the reminder and /salary share. Not the current cycle's received row. */
   expectedSalaryPaise?: number;
   aiFeaturesEnabled?: boolean;
+  /** Android vibration on save, settle, and goal moments. Defaults on. */
+  hapticsEnabled?: boolean;
   createdAt: Date;
   updatedAt: Date;
 }

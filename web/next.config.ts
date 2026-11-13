@@ -23,6 +23,7 @@ const nextConfig: NextConfig = {
   },
   experimental: {
     optimizePackageImports: ["lucide-react", "recharts", "date-fns", "motion"],
+    viewTransition: true,
   },
   webpack: (config, { dev }) => {
     if (dev) {
@@ -35,7 +36,11 @@ const nextConfig: NextConfig = {
     return config;
   },
   async redirects() {
-    return [{ source: "/loans", destination: "/lent", permanent: true }];
+    return [
+      { source: "/loans", destination: "/crew?tab=lent", permanent: true },
+      { source: "/lent", destination: "/crew?tab=lent", permanent: true },
+      { source: "/borrowed", destination: "/crew?tab=borrowed", permanent: true },
+    ];
   },
   async headers() {
     return [

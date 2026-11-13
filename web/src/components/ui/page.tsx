@@ -183,23 +183,15 @@ export function EmptyState({
 
   return (
     <FadeIn>
-      <div className="flex flex-col items-center justify-center rounded-2xl border border-dashed border-border bg-card/60 px-6 py-16 text-center sm:py-20">
+      <div className="flex max-h-[280px] flex-col items-center justify-center overflow-hidden px-4 py-5 text-center lg:max-h-none lg:py-10">
         {illustration ? (
-          <EmptyIllustration variant={illustration} className="mb-5" />
+          <EmptyIllustration variant={illustration} className="mb-3 max-h-16" />
         ) : (
-          <div className="mb-5 flex h-14 w-14 items-center justify-center rounded-xl border border-border-light bg-primary-muted/50 text-primary">
-            <Icon icon={IconComponent} size="xl" className="opacity-70" />
-          </div>
+          <Icon icon={IconComponent} size="lg" className="mb-3 text-ink-2" />
         )}
-        <h3 className={typography.title}>{title}</h3>
-        {description && (
-          <p className={cn(typography.body, "mt-2 max-w-sm text-muted-foreground")}>{description}</p>
-        )}
-        {action && (
-          <motion.div className="mt-8" initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.2 }}>
-            {action}
-          </motion.div>
-        )}
+        <h3 className="font-mono text-sm text-ink">{title}</h3>
+        {action && <div className="mt-4">{action}</div>}
+        {description && <p className="mt-2 max-w-xs text-sm text-ink-2">{description}</p>}
       </div>
     </FadeIn>
   );
