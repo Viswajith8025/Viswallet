@@ -83,7 +83,15 @@ export async function suggestCategoryWithAi(
   kind: "expense" | "income",
   categories: Array<{ slug: string; name: string }>,
 ): Promise<{ categorySlug: string }> {
-  return postJson<{ categorySlug: string }>("/api/ai/categorize", { title, kind, categories });
+  const payload = categories
+    .slice(0, 100)
+    .map((category) => ({
+      slug: category.slug.slice(0, 64),
+      name: category.name.slice(0, 80),
+    }))
+    .filter((category) => category.slug.length > 0 && category.name.length > 0);
+  if (payload.length === 0) return { categorySlug: "misc" };
+  return postJson<{ categorySlug: string }>("/api/ai/categorize", { title, kind, categories: payload });
 }
 
 export async function fetchAiInsights(context: AiInsightsContext): Promise<AiInsightsResult> {

@@ -7,47 +7,28 @@ export interface CategorySeed {
   sortOrder: number;
 }
 
-/** Curated palette — distinguishable yet on-brand */
+/** Receipt Noir only. Chips never use violet or purple. */
 export const CATEGORY_COLOR_PALETTE = [
-  "#3F6E00",
-  "#7560a0",
-  "#8b78b4",
-  "#6b5a96",
-  "#4f3d77",
-  "#a191c4",
-  "#3d7a62",
-  "#8b5a6b",
-  "#5a5570",
-  "#9a7b2e",
-  "#7a6b9e",
-  "#b7aad4",
-  "#3d3058",
-  "#4a8f75",
-  "#cdc3e4",
-  "#6b6080",
-  "#c45c8a",
-  "#e07a5f",
-  "#2a9d8f",
-  "#457b9d",
-  "#6d597a",
-  "#b5838d",
-  "#e5989b",
-  "#ffb703",
-  "#8ecae6",
-  "#219ebc",
-  "#023047",
-  "#588157",
-  "#a3b18a",
-  "#dad7cd",
-  "#bc6c25",
-  "#dda15e",
-  "#606c38",
-  "#283618",
-  "#7f5539",
-  "#9c6644",
-  "#5c4d7d",
-  "#9d8189",
+  "#C6F432",
+  "#FF5A36",
+  "#FFB020",
+  "#7DA3FF",
+  "#9A968A",
 ] as const;
+
+const RECEIPT_COLORS = new Set(CATEGORY_COLOR_PALETTE.map((color) => color.toLowerCase()));
+
+/** Map a stored colour onto lime, chili, marigold, cobalt, or neutral. */
+export function toReceiptCategoryColor(color: string | undefined, salt = ""): string {
+  const raw = (color ?? "").trim().toLowerCase();
+  if (RECEIPT_COLORS.has(raw)) {
+    return CATEGORY_COLOR_PALETTE.find((entry) => entry.toLowerCase() === raw) ?? CATEGORY_COLOR_PALETTE[0];
+  }
+  const key = `${raw}:${salt}`;
+  let hash = 0;
+  for (let i = 0; i < key.length; i += 1) hash = (hash * 31 + key.charCodeAt(i)) >>> 0;
+  return CATEGORY_COLOR_PALETTE[hash % CATEGORY_COLOR_PALETTE.length] ?? CATEGORY_COLOR_PALETTE[0];
+}
 
 export const DEFAULT_CATEGORY_COLOR = CATEGORY_COLOR_PALETTE[0];
 

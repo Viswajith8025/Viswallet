@@ -10,9 +10,10 @@ import {
   PieChart,
   Pie,
   Cell,
-  CartesianGrid,
 } from "recharts";
 import { ChartCard, ChartTooltip, CHART_COLORS } from "@/components/ui/chart";
+import { toReceiptCategoryColor } from "@/lib/categories-default";
+import { useMobileLayout } from "@/hooks/use-mobile-layout";
 
 type BreakdownItem = { name: string; color: string; amount: number };
 
@@ -21,6 +22,7 @@ export function AnalyticsCharts({
 }: {
   expenseBreakdown: BreakdownItem[];
 }) {
+  const mobile = useMobileLayout();
   return (
     <div className="grid gap-6 lg:grid-cols-2">
       <ChartCard
@@ -31,17 +33,30 @@ export function AnalyticsCharts({
       >
         <ResponsiveContainer width="100%" height="100%">
           <BarChart data={expenseBreakdown.slice(0, 8)} margin={{ top: 8, right: 8, left: -12, bottom: 0 }}>
-            <CartesianGrid strokeDasharray="3 3" stroke={CHART_COLORS.grid} vertical={false} />
-            <XAxis dataKey="name" tick={{ fontSize: 11, fill: CHART_COLORS.axis }} axisLine={false} tickLine={false} />
+            <XAxis
+              dataKey="name"
+              tick={{ fontSize: 11, fill: CHART_COLORS.axis, fontFamily: "var(--font-mono)" }}
+              axisLine={{ stroke: "var(--hairline-strong)" }}
+              tickLine={false}
+            />
+            {!mobile && (
             <YAxis
               tickFormatter={(v) => `₹${Math.round(v / 100)}`}
-              tick={{ fontSize: 11, fill: CHART_COLORS.axis }}
+              tick={{ fontSize: 11, fill: CHART_COLORS.axis, fontFamily: "var(--font-mono)" }}
               axisLine={false}
               tickLine={false}
               width={48}
             />
-            <Tooltip content={<ChartTooltip />} cursor={{ fill: CHART_COLORS.cursor, opacity: 0.4 }} />
-            <Bar dataKey="amount" fill={CHART_COLORS.primary} radius={[6, 6, 0, 0]} maxBarSize={40} />
+            )}
+            <Tooltip content={<ChartTooltip />} cursor={{ fill: "transparent" }} />
+            <Bar
+              dataKey="amount"
+              fill={CHART_COLORS.primary}
+              radius={[6, 6, 0, 0]}
+              maxBarSize={40}
+              animationDuration={600}
+              animationEasing="ease-out"
+            />
           </BarChart>
         </ResponsiveContainer>
       </ChartCard>
@@ -59,7 +74,7 @@ export function AnalyticsCharts({
               stroke="transparent"
             >
               {expenseBreakdown.map((e) => (
-                <Cell key={e.name} fill={e.color} />
+                <Cell key={e.name} fill={toReceiptCategoryColor(e.color, e.name)} />
               ))}
             </Pie>
             <Tooltip content={<ChartTooltip />} />

@@ -77,7 +77,7 @@ export function MobileNav() {
 
   return (
     <nav
-      className="fixed inset-x-0 bottom-0 z-40 select-none lg:hidden"
+      className="fixed inset-x-0 bottom-0 z-40 overflow-visible select-none lg:hidden"
       style={{ viewTransitionName: "mobile-nav" }}
       aria-label="Main navigation"
       data-shell-nav
@@ -126,13 +126,13 @@ export function MobileNav() {
         </div>
       )}
 
-      <div className="border-t border-hairline bg-sunken/92 pb-[env(safe-area-inset-bottom)] backdrop-blur-[12px]">
+      <div className="overflow-visible border-t border-hairline bg-sunken pb-[env(safe-area-inset-bottom)]">
         <LayoutGroup>
-          <div className="mx-auto grid h-16 max-w-lg grid-cols-5 items-end">
+          <div className="mx-auto grid h-16 max-w-lg grid-cols-5 items-end overflow-visible">
             {MOBILE_TABS.slice(0, 2).map((tab) => (
               <TabLink key={tab.href} href={tab.href} label={tab.label} icon={tab.icon} active={mobileTabActive(tab.href, pathname)} />
             ))}
-            <div className="relative flex justify-center">
+            <div className="relative flex h-16 items-end justify-center overflow-visible">
               <button
                 type="button"
                 data-add-radial
@@ -142,7 +142,7 @@ export function MobileNav() {
                 onPointerCancel={onPointerUp}
                 onClick={onClick}
                 className={cn(
-                  "absolute -top-3 flex h-14 w-14 items-center justify-center rounded-full bg-lime text-[#0D0D0B] ring-2 ring-bg",
+                  "absolute bottom-3 left-1/2 flex h-14 w-14 -translate-x-1/2 -translate-y-[35%] items-center justify-center rounded-full bg-lime text-[#0D0D0B] ring-2 ring-bg",
                   press.className,
                 )}
                 aria-label="Add. Hold for Spent, Earned, or Split with crew."

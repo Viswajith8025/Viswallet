@@ -16,29 +16,31 @@ const ICONS: Record<string, typeof Award> = {
 };
 
 export default function AchievementsPage() {
-  const { data: achievements = [] } = useQuery({
+  const { data: achievements, isPending } = useQuery({
     queryKey: ["achievements"],
     queryFn: () => db.achievements.toArray(),
+    staleTime: 30_000,
   });
+  const rows = achievements ?? [];
 
-  const unlocked = achievements.filter((a) => a.unlockedAt).length;
+  const unlocked = rows.filter((a) => a.unlockedAt).length;
 
   return (
     <PageContainer className="max-w-4xl">
       <PageHeader
         eyebrow="Milestones"
         title="Achievements & Milestones"
-        description={`${unlocked} of ${achievements.length} milestones unlocked.`}
+        description={isPending ? "Loading milestones…" : `${unlocked} of ${rows.length} milestones unlocked.`}
       />
 
-      {achievements.length === 0 ? (
+      {isPending ? null : rows.length === 0 ? (
         <EmptyState
           title="No milestones yet"
           description="Track transactions, hit savings goals, and stay consistent to unlock achievements."
         />
       ) : (
       <div className="grid gap-4 sm:grid-cols-2">
-        {achievements.map((a) => {
+        {rows.map((a) => {
           const Icon = ICONS[a.iconName] ?? Award;
           const pct = Math.min(100, Math.round((a.progress / a.target) * 100));
           const done = Boolean(a.unlockedAt);

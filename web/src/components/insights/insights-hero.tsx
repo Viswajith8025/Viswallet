@@ -14,6 +14,7 @@ export function InsightsHero({
   safeSpendDaily,
   daysLeft,
   insightCount,
+  showHealth = false,
 }: {
   healthScore: number;
   budgetUsedPct: number;
@@ -22,6 +23,7 @@ export function InsightsHero({
   safeSpendDaily: number;
   daysLeft: number;
   insightCount: number;
+  showHealth?: boolean;
 }) {
   const healthTone =
     healthScore >= 70 ? "text-success" : healthScore >= 40 ? "text-warning" : "text-destructive";
@@ -33,14 +35,18 @@ export function InsightsHero({
       <CardContent className="p-5 lg:p-6">
         <div className="flex items-start justify-between gap-4">
           <div className="min-w-0">
-            <p className="text-xs font-medium uppercase tracking-wide opacity-75">Health score</p>
-            <div className="mt-1 flex items-baseline gap-2">
-              <span className={cn("font-display text-4xl font-semibold tabular-nums tracking-tight", healthTone)}>
-                {healthScore}
-              </span>
-              <span className="text-lg opacity-60">/ 100</span>
-            </div>
-            <p className="mt-1 text-sm opacity-80">{healthLabel}</p>
+            {showHealth ? (
+              <>
+                <p className="font-mono text-[11px] uppercase tracking-[0.16em] text-ink-2">Health</p>
+                <div className="mt-1 flex items-baseline gap-2">
+                  <span className={cn("font-mono text-4xl", healthTone)}>{healthScore}</span>
+                  <span className="text-lg text-ink-2">/ 100</span>
+                </div>
+                <p className="mt-1 text-sm text-ink-2">{healthLabel}</p>
+              </>
+            ) : (
+              <p className="font-body text-sm text-ink-2">Health shows after 10 transactions.</p>
+            )}
           </div>
           <div
             className="flex h-16 w-16 shrink-0 items-center justify-center rounded-2xl border border-current/15 bg-background/10 backdrop-blur-sm"

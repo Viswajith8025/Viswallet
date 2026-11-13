@@ -1,19 +1,9 @@
 "use client";
 
-import Link from "next/link";
-import {
-  ArrowDownLeft,
-  ArrowUpRight,
-  Check,
-  CreditCard,
-  Receipt,
-  Repeat,
-} from "lucide-react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
+import { useMemo, useState } from "react";
+import { motion, useReducedMotion } from "motion/react";
 import { formatINR } from "@/lib/money";
-import { cn } from "@/lib/design/cn";
-import { loadActionItems, type ActionItem, type ActionItemKind } from "@/lib/dashboard/load-action-items";
+import { loadActionItems, type ActionItem } from "@/lib/dashboard/load-action-items";
 import { snoozeActionItem } from "@/lib/dashboard/action-snooze";
 import { markBorrowedFullyPaid, markLentFullyReturned } from "@/lib/loans/record-loan-payment";
 import { markBillPaid } from "@/lib/obligations/mark-bill-paid";
@@ -22,94 +12,69 @@ import { markSubscriptionRenewed } from "@/lib/obligations/mark-subscription-ren
 import { useInvalidateFinance, useDexieTable } from "@/hooks";
 import { copy, toastCopy } from "@/lib/ux/copy";
 import { showToast } from "@/lib/store/toast-store";
-import { useMemo, useState } from "react";
 
-const KIND_META: Record<
-  ActionItemKind,
-  { icon: typeof Receipt; accent: string; actionLabel: string }
-> = {
-  borrowed: {
-    icon: ArrowDownLeft,
-    accent: "text-destructive bg-destructive/10",
-    actionLabel: "Record payment",
-  },
-  lent: {
-    icon: ArrowUpRight,
-    accent: "text-success bg-success/10",
-    actionLabel: "Mark returned",
-  },
-  bill: {
-    icon: Receipt,
-    accent: "text-warning bg-warning/10",
-    actionLabel: "Mark paid",
-  },
-  emi: {
-    icon: CreditCard,
-    accent: "text-primary bg-primary/10",
-    actionLabel: "Record payment",
-  },
-  subscription: {
-    icon: Repeat,
-    accent: "text-primary bg-primary/10",
-    actionLabel: "Record renewal",
-  },
-};
-
-function ActionRow({
+function ReceiptCard({
   item,
   busy,
-  onAction,
-  onPayLater,
+  onSettle,
+  onRemind,
 }: {
   item: ActionItem;
   busy: boolean;
-  onAction: (item: ActionItem) => void;
-  onPayLater: (item: ActionItem) => void;
+  onSettle: (item: ActionItem) => void;
+  onRemind: (item: ActionItem) => void;
 }) {
-  const meta = KIND_META[item.kind];
-  const Icon = meta.icon;
+  const reduce = useReducedMotion();
 
   return (
-    <li
-      className={cn(
-        "animate-fade-in rounded-xl border border-border/60 bg-card/80 p-3 transition-all",
-        item.urgency === "high" && "border-destructive/30 bg-destructive/[0.04]",
-      )}
+    <motion.li
+      className="w-[240px] shrink-0 snap-start"
+      drag={reduce ? false : "y"}
+      dragConstraints={{ top: 0, bottom: 0 }}
+      dragElastic={0.2}
+      onDragEnd={(_, info) => {
+        if (info.offset.y < -48) onRemind(item);
+      }}
     >
-      <div className="flex items-start gap-3">
-        <div className={cn("flex h-10 w-10 shrink-0 items-center justify-center rounded-full", meta.accent)}>
-          <Icon size={18} strokeWidth={2} />
+      <article
+        className="flex h-full flex-col justify-between rounded-[14px] border border-hairline bg-surface p-4"
+        style={{
+          maskImage:
+            "linear-gradient(#000 0 calc(100% - 10px), transparent calc(100% - 10px)), radial-gradient(circle at 8px 100%, transparent 7px, #000 7.5px)",
+          maskSize: "100% 100%, 16px 10px",
+          maskRepeat: "no-repeat, repeat-x",
+          maskPosition: "top, bottom",
+          WebkitMaskImage:
+            "linear-gradient(#000 0 calc(100% - 10px), transparent calc(100% - 10px)), radial-gradient(circle at 8px 100%, transparent 7px, #000 7.5px)",
+          WebkitMaskSize: "100% 100%, 16px 10px",
+          WebkitMaskRepeat: "no-repeat, repeat-x",
+          WebkitMaskPosition: "top, bottom",
+        }}
+      >
+        <div>
+          <p className="font-body text-[15px] font-medium text-ink">{item.title}</p>
+          {item.subtitle && <p className="mt-1 font-mono text-[11px] text-ink-2">{item.subtitle}</p>}
+          <p className="mt-3 font-mono text-lg text-ink">{formatINR(item.amountPaise)}</p>
         </div>
-        <div className="min-w-0 flex-1">
-          <div className="flex items-start justify-between gap-2">
-            <p className="text-sm font-medium leading-snug sm:truncate">{item.title}</p>
-            <span className="shrink-0 text-sm font-semibold tabular-nums">{formatINR(item.amountPaise)}</span>
-          </div>
-          <p className="mt-0.5 text-xs text-muted-foreground">{item.subtitle}</p>
+        <div className="mt-4 flex gap-2">
+          <button
+            type="button"
+            className="h-11 flex-1 rounded-full border border-hairline font-mono text-[11px] uppercase tracking-[0.08em] text-ink"
+            onClick={() => onRemind(item)}
+          >
+            Remind
+          </button>
+          <button
+            type="button"
+            className="h-11 flex-1 rounded-full bg-lime font-mono text-[11px] uppercase tracking-[0.08em] text-[#0D0D0B] disabled:opacity-50"
+            disabled={busy}
+            onClick={() => onSettle(item)}
+          >
+            Settled
+          </button>
         </div>
-      </div>
-      <div className="mt-3 flex flex-col gap-2 sm:mt-2 sm:flex-row sm:justify-end">
-        <Button
-          size="sm"
-          variant="ghost"
-          disabled={busy}
-          onClick={() => onPayLater(item)}
-          className="w-full shrink-0 text-xs sm:w-auto"
-        >
-          {copy.actionCenter.remindTomorrow}
-        </Button>
-        <Button
-          size="sm"
-          variant={item.urgency === "high" ? "primary" : "outline"}
-          disabled={busy}
-          onClick={() => onAction(item)}
-          className="w-full shrink-0 text-xs sm:w-auto"
-        >
-          <Check size={14} className="mr-1" />
-          {meta.actionLabel}
-        </Button>
-      </div>
-    </li>
+      </article>
+    </motion.li>
   );
 }
 
@@ -118,19 +83,18 @@ export function ActionCenter() {
   const { data: items = [], isPending } = useDexieTable("action-items", loadActionItems);
   const [busyId, setBusyId] = useState<string | null>(null);
   const [hiddenIds, setHiddenIds] = useState<Set<string>>(() => new Set());
-
   const visibleItems = useMemo(
-    () => items.filter((item) => !hiddenIds.has(item.id)),
+    () => items.filter((item) => !hiddenIds.has(item.id)).slice(0, 8),
     [items, hiddenIds],
   );
 
-  function handlePayLater(item: ActionItem) {
+  function handleRemind(item: ActionItem) {
     snoozeActionItem(item.id);
     setHiddenIds((prev) => new Set(prev).add(item.id));
     showToast(copy.toast.remindTomorrow, { tone: "info" });
   }
 
-  async function handleAction(item: ActionItem) {
+  async function handleSettle(item: ActionItem) {
     setBusyId(item.id);
     try {
       if (item.kind === "borrowed") {
@@ -145,7 +109,7 @@ export function ActionCenter() {
       } else if (item.kind === "emi") {
         await markEmiPaid(item.entityId);
         showToast(copy.toast.emiPaidNamed(item.title), { tone: "success" });
-      } else if (item.kind === "subscription") {
+      } else {
         await markSubscriptionRenewed(item.entityId);
         showToast(copy.toast.renewedNamed(item.title), { tone: "success" });
       }
@@ -157,72 +121,22 @@ export function ActionCenter() {
     }
   }
 
-  if (isPending) {
-    return (
-      <Card>
-        <CardContent className="p-5">
-          <div className="skeleton h-16 rounded-xl" />
-        </CardContent>
-      </Card>
-    );
-  }
-
-  if (visibleItems.length === 0) {
-    return (
-      <Card className="border-primary/20 bg-primary/[0.03]">
-        <CardContent className="flex items-center gap-3 p-5">
-          <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary/10 text-primary">
-            <Check size={18} />
-          </div>
-          <div>
-            <p className="font-medium text-sm">{copy.empty.actionCenterClear.title}</p>
-            <p className="text-xs text-muted-foreground">
-              {copy.empty.actionCenterClear.description}
-            </p>
-          </div>
-        </CardContent>
-      </Card>
-    );
-  }
-
-  const highCount = visibleItems.filter((i) => i.urgency === "high").length;
-  const viewAllHref = visibleItems[0]?.href ?? "/bills";
+  if (isPending || visibleItems.length === 0) return null;
 
   return (
-    <Card className="overflow-hidden">
-      <CardHeader className="flex-row items-center justify-between space-y-0 pb-3">
-        <div>
-          <CardTitle className="text-base">{copy.actionCenter.title}</CardTitle>
-          <p className="text-xs text-muted-foreground mt-0.5">
-            {copy.actionCenter.itemCount(visibleItems.length)}
-            {highCount > 0 && ` · ${copy.actionCenter.urgent(highCount)}`}
-          </p>
-        </div>
-        <Link
-          href={viewAllHref}
-          className="text-sm text-muted-foreground hover:text-foreground transition-colors"
-        >
-          {copy.actionCenter.viewAll}
-        </Link>
-      </CardHeader>
-      <CardContent className="pt-0">
-        <ul className="space-y-2">
-          {visibleItems.slice(0, 5).map((item) => (
-            <ActionRow
-              key={item.id}
-              item={item}
-              busy={busyId === item.id}
-              onAction={handleAction}
-              onPayLater={handlePayLater}
-            />
-          ))}
-        </ul>
-        {visibleItems.length > 5 && (
-          <p className="mt-3 text-center text-xs text-muted-foreground">
-            {copy.actionCenter.moreItems(visibleItems.length - 5)}
-          </p>
-        )}
-      </CardContent>
-    </Card>
+    <section aria-label="Up next">
+      <h2 className="mb-3 font-mono text-[11px] uppercase tracking-[0.16em] text-ink-2">Up next</h2>
+      <ul className="flex snap-x gap-3 overflow-x-auto pb-2">
+        {visibleItems.map((item) => (
+          <ReceiptCard
+            key={item.id}
+            item={item}
+            busy={busyId === item.id}
+            onSettle={handleSettle}
+            onRemind={handleRemind}
+          />
+        ))}
+      </ul>
+    </section>
   );
 }

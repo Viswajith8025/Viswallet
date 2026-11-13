@@ -85,6 +85,7 @@ export async function addTransaction(
     const id = (await db.transactions.add({
       ...input,
       title,
+      syncId: crypto.randomUUID(),
       isDeleted: false,
       rowVersion: 1,
       createdAt: now,

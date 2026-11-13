@@ -2,11 +2,8 @@ import { BACKUP_VERSION, MAX_BACKUP_BYTES } from "@/lib/security/constants";
 import { getSupabase } from "@/lib/supabase/client";
 import { getAuthUser } from "@/lib/supabase/auth";
 import { exportAllDataForSync, importAllData, resetLocalDatabase, getSettings } from "@/lib/db/client";
-import {
-  emitCloudSyncActive,
-  emitDbDataChanged,
-  emitNotificationsChanged,
-} from "@/lib/notifications/bus";
+import { clearVaultDirty, isVaultDirty, readVaultDirtyToken } from "@/lib/db/vault-dirty";
+import { emitCloudSyncActive, emitNotificationsChanged } from "@/lib/notifications/bus";
 
 const LAST_SYNC_KEY = "vw_cloud_last_sync_at";
 const USER_ID_KEY = "vw_cloud_user_id";
@@ -135,11 +132,6 @@ async function ensureAccountScopedLocalData(userId: string): Promise<void> {
   setStoredCloudUserId(userId);
 }
 
-type PullCloudVaultOptions = {
-  /** Ignore per-browser sync timestamp — used after login to restore account data. */
-  force?: boolean;
-};
-
 async function fetchCloudVaultRow(userId: string) {
   const sb = getSupabase();
   if (!sb) return null;
@@ -161,8 +153,8 @@ async function fetchCloudVaultRow(userId: string) {
   return data;
 }
 
-/** Pull cloud vault into local IndexedDB when cloud is newer (or when forced). */
-export async function pullCloudVault(options: PullCloudVaultOptions = {}): Promise<boolean> {
+/** Pull the cloud vault and merge it into IndexedDB. A newer local row is never replaced. */
+export async function pullCloudVault(): Promise<boolean> {
   if (!canUseCloudVault()) return false;
 
   const user = await getAuthUser();
@@ -175,19 +167,24 @@ export async function pullCloudVault(options: PullCloudVaultOptions = {}): Promi
 
   const cloudUpdated = new Date(data.updated_at as string);
   const localSync = getLastLocalSyncAt();
+  const dirty = isVaultDirty();
 
-  if (!options.force && localSync && cloudUpdated <= localSync) {
+  if (!dirty && localSync && cloudUpdated <= localSync) {
     return false;
   }
 
   const json =
     typeof data.payload === "string" ? data.payload : JSON.stringify(data.payload);
 
-  await importAllData(json, { skipRateLimit: true });
-  setLastLocalSyncAt(cloudUpdated);
+  await importAllData(json, { skipRateLimit: true, merge: true });
   clearVaultUnavailable();
   emitNotificationsChanged();
-  emitDbDataChanged();
+
+  if (isVaultDirty()) {
+    await pushCloudVault();
+  } else {
+    setLastLocalSyncAt(cloudUpdated);
+  }
   return true;
 }
 
@@ -201,6 +198,7 @@ export async function pushCloudVault(): Promise<void> {
 
   await ensureAccountScopedLocalData(user.id);
 
+  const dirtyToken = readVaultDirtyToken();
   const json = await exportAllDataForSync();
   if (json.length > MAX_BACKUP_BYTES) {
     throw new Error("Local data exceeds cloud vault size limit. Export a backup and trim old records.");
@@ -227,6 +225,7 @@ export async function pushCloudVault(): Promise<void> {
   }
   clearVaultUnavailable();
   setLastLocalSyncAt(new Date(now));
+  clearVaultDirty(dirtyToken);
 }
 
 function isMissingVaultTable(error: SupabaseErrorLike | string): boolean {
@@ -263,7 +262,7 @@ export async function syncCloudOnLogin(): Promise<"pulled" | "pushed" | "noop"> 
       if (!data) return "noop";
 
       if (data.payload) {
-        const pulled = await pullCloudVault({ force: true });
+        const pulled = await pullCloudVault();
         if (pulled) clearVaultUnavailable();
         return pulled ? "pulled" : "noop";
       }
@@ -302,6 +301,11 @@ export async function syncCloudNow(): Promise<void> {
 
         const pulled = await pullCloudVault();
         if (pulled) return;
+
+        if (isVaultDirty()) {
+          await pushCloudVault();
+          return;
+        }
 
         if (!cloudRow?.payload) {
           await pushCloudVault();

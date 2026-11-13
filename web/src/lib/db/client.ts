@@ -53,6 +53,8 @@ import { getActiveCategories as repoGetActiveCategories } from "./repositories/c
 import { emitNotificationsChanged, emitDbDataChanged } from "@/lib/notifications/bus";
 import { mergeSalaryPromptDate } from "@/lib/salary/salary-prompt";
 import { readExplicitTheme } from "@/lib/theme/preference";
+import { beginVaultApply, endVaultApply } from "./vault-dirty";
+import { fieldSyncKey, idSyncKey, mergeRecords, transactionSyncKey, type MergeRow } from "./vault-merge";
 import {
   clearSettingsCache,
   readSettingsCache,
@@ -723,7 +725,28 @@ export async function exportAllData(): Promise<string> {
   return json;
 }
 
-export async function importAllData(json: string, options: { skipRateLimit?: boolean } = {}): Promise<void> {
+async function writeMergedTable(
+  table: object,
+  incoming: MergeRow[],
+  keyOf: (row: MergeRow) => string,
+): Promise<void> {
+  const store = table as {
+    toArray: () => Promise<MergeRow[]>;
+    clear: () => Promise<void>;
+    bulkAdd: (rows: MergeRow[]) => Promise<unknown>;
+  };
+  await db.transaction("rw", table as never, async () => {
+    const local = await store.toArray();
+    const merged = mergeRecords(local, incoming, keyOf);
+    await store.clear();
+    if (merged.length > 0) await store.bulkAdd(merged);
+  });
+}
+
+export async function importAllData(
+  json: string,
+  options: { skipRateLimit?: boolean; merge?: boolean } = {},
+): Promise<void> {
   if (!options.skipRateLimit) assertImportRateLimit();
   const localSettings = await db.settings.get(1);
   const validated = validateBackupPayload(json);
@@ -743,6 +766,56 @@ export async function importAllData(json: string, options: { skipRateLimit?: boo
         }));
 
   try {
+    if (options.merge) {
+      beginVaultApply();
+      try {
+        await writeMergedTable(db.profiles, validated.profiles as MergeRow[], () => "singleton");
+        await writeMergedTable(
+          db.settings,
+          (validated.settings as MergeRow[]).map((row) => ({
+            ...row,
+            themeMode: readExplicitTheme() ?? row.themeMode,
+          })),
+          () => "singleton",
+        );
+        await writeMergedTable(db.categories, validated.categories as MergeRow[], fieldSyncKey("slug"));
+        await writeMergedTable(db.achievements, (validated.achievements ?? []) as MergeRow[], fieldSyncKey("achievementKey"));
+        await writeMergedTable(db.transactions, transactions as MergeRow[], transactionSyncKey);
+        await writeMergedTable(db.monthlySalaries, validated.monthlySalaries as MergeRow[], fieldSyncKey("monthKey"));
+        await writeMergedTable(db.budgetPlans, validated.budgetPlans as MergeRow[], fieldSyncKey("monthKey"));
+        await writeMergedTable(db.budgetBuckets, validated.budgetBuckets as MergeRow[], (row) =>
+          `${String(row.planId)}:${String(row.bucketKey)}`,
+        );
+        await writeMergedTable(db.loans, validated.loans as MergeRow[], idSyncKey);
+        await writeMergedTable(db.loanPayments, validated.loanPayments as MergeRow[], idSyncKey);
+        await writeMergedTable(db.subscriptions, validated.subscriptions as MergeRow[], idSyncKey);
+        await writeMergedTable(db.bills, validated.bills as MergeRow[], idSyncKey);
+        await writeMergedTable(db.emis, validated.emis as MergeRow[], idSyncKey);
+        await writeMergedTable(db.savingsGoals, validated.savingsGoals as MergeRow[], idSyncKey);
+        await writeMergedTable(db.wishlistItems, validated.wishlistItems as MergeRow[], idSyncKey);
+        await writeMergedTable(db.investments, validated.investments as MergeRow[], idSyncKey);
+        await writeMergedTable(db.notifications, validated.notifications as MergeRow[], idSyncKey);
+        await writeMergedTable(db.accounts, (validated.accounts ?? []) as MergeRow[], idSyncKey);
+        await writeMergedTable(
+          db.accountTransfers,
+          ((validated as unknown as { accountTransfers?: MergeRow[] }).accountTransfers ?? []) as MergeRow[],
+          idSyncKey,
+        );
+        await writeMergedTable(db.monthlySnapshots, (validated.monthlySnapshots ?? []) as MergeRow[], fieldSyncKey("monthKey"));
+        await writeMergedTable(db.secureNotes, (validated.secureNotes ?? []) as MergeRow[], idSyncKey);
+        seedPromise = null;
+        clearSettingsCache();
+        const mergedSettings = await db.settings.get(1);
+        if (mergedSettings) rememberSettings(mergedSettings);
+        emitDbDataChanged();
+      } finally {
+        endVaultApply();
+      }
+      await ensureDbSeeded();
+      await logAudit("backup.import", { success: true });
+      return;
+    }
+
     await db.transaction("rw", db.tables, async () => {
       for (const table of db.tables) {
         if (table.name === "auditLogs") continue;

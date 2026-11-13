@@ -63,6 +63,7 @@ const categorySchema = z.object({
 
 const transactionSchema = z.object({
   id: z.number().int().positive().optional(),
+  syncId: z.string().min(8).max(64).optional(),
   kind: z.enum(["expense", "income"]),
   amountPaise: z.number().int().min(0).max(MAX_AMOUNT_PAISE),
   categoryId: z.number().int().positive(),

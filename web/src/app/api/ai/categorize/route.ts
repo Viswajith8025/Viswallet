@@ -9,8 +9,8 @@ const bodySchema = z.object({
   kind: z.enum(["expense", "income"]),
   categories: z
     .array(z.object({ slug: z.string().max(64), name: z.string().max(80) }))
-    .min(1)
-    .max(50),
+    .max(120)
+    .default([]),
 });
 
 export async function POST(request: Request) {
@@ -27,6 +27,9 @@ export async function POST(request: Request) {
     }
 
     const { title, kind, categories } = parsed.data;
+    if (categories.length === 0) {
+      return NextResponse.json({ categorySlug: "misc" });
+    }
     const slugList = categories.map((c) => c.slug).join(", ");
 
     const raw = await groqChat(

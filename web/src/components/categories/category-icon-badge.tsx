@@ -3,6 +3,7 @@
 import { createElement } from "react";
 import { cn } from "@/lib/design/cn";
 import { getCategoryLucideIcon } from "@/lib/category-icons";
+import { toReceiptCategoryColor } from "@/lib/categories-default";
 import type { Category } from "@/lib/db/types";
 
 type CategoryIconBadgeProps = {
@@ -28,7 +29,10 @@ export function CategoryIconBadge({
   className,
 }: CategoryIconBadgeProps) {
   const resolvedIcon = iconName ?? category?.iconName ?? "circle-dot";
-  const resolvedColor = color ?? category?.color ?? "var(--primary)";
+  const resolvedColor = toReceiptCategoryColor(
+    color ?? category?.color,
+    category?.name ?? iconName ?? "",
+  );
   const isGrid = size === "grid";
 
   return (

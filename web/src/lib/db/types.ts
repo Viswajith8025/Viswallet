@@ -62,6 +62,9 @@ export interface AppSettings {
   /** Salary the reminder and /salary share. Not the current cycle's received row. */
   expectedSalaryPaise?: number;
   aiFeaturesEnabled?: boolean;
+  /** One-sentence coach line, refreshed at most once a day. */
+  aiCoachSentence?: string;
+  aiCoachAt?: Date;
   /** Android vibration on save, settle, and goal moments. Defaults on. */
   hapticsEnabled?: boolean;
   createdAt: Date;
@@ -150,6 +153,8 @@ export interface Category {
 
 export interface Transaction {
   id?: number;
+  /** Stable across devices. Autoincrement ids collide, so sync must not key on id alone. */
+  syncId?: string;
   kind: TransactionKind;
   amountPaise: number;
   categoryId: number;

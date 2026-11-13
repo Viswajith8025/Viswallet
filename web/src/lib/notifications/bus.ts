@@ -1,3 +1,5 @@
+import { markVaultDirty } from "@/lib/db/vault-dirty";
+
 const NOTIFICATIONS_EVENT = "viswallet:notifications-changed";
 const DB_DATA_EVENT = "viswallet:db-data-changed";
 const CLOUD_SYNC_ACTIVE_EVENT = "viswallet:cloud-sync-active";
@@ -15,6 +17,7 @@ export function onNotificationsChanged(handler: () => void): () => void {
 
 export function emitDbDataChanged(): void {
   if (typeof window === "undefined") return;
+  markVaultDirty();
   window.dispatchEvent(new CustomEvent(DB_DATA_EVENT));
 }
 

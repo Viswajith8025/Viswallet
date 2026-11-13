@@ -2,7 +2,6 @@ import { format, subDays } from "date-fns";
 import { db, pushNotification, countActiveTransactions } from "@/lib/db/client";
 import { getActiveSavingsGoals } from "@/lib/db/repositories/finance-meta";
 import { getActiveTransactions } from "@/lib/db/repositories/transactions";
-import { loadFinanceSnapshot } from "@/lib/engines/finance-snapshot";
 
 async function unlock(key: string, progress: number): Promise<boolean> {
   const achievement = await db.achievements.where("achievementKey").equals(key).first();
@@ -44,16 +43,21 @@ export async function evaluateAchievements(): Promise<void> {
     await unlock("backup_created", 1);
   }
 
-  const snapshot = await loadFinanceSnapshot();
-  if (snapshot.expensePaise <= snapshot.salaryPaise && snapshot.salaryPaise > 0) {
-    await unlock("budget_master", 1);
+  const salaryPaise = settings?.expectedSalaryPaise ?? 0;
+  if (salaryPaise > 0) {
+    const spent = await db.transactions
+      .filter((row) => !row.isDeleted && row.kind === "expense")
+      .toArray();
+    const expensePaise = spent.reduce((sum, row) => sum + row.amountPaise, 0);
+    if (expensePaise <= salaryPaise) await unlock("budget_master", 1);
   }
-  if (snapshot.borrowedBalance === 0) {
-    await unlock("debt_free", 1);
-  }
+  const openBorrowed = await db.loans
+    .filter((loan) => !loan.isDeleted && loan.direction === "borrowed_by_me" && loan.balancePaise > 0)
+    .count();
+  if (openBorrowed === 0) await unlock("debt_free", 1);
 
   const dates = new Set<string>();
-  const recent = await getActiveTransactions(200);
+  const recent = await getActiveTransactions(60);
   for (const t of recent) {
     dates.add(format(new Date(t.occurredAt), "yyyy-MM-dd"));
   }

@@ -50,6 +50,7 @@ function InsightsBody({ data }: { data: FinanceSnapshot }) {
         safeSpendDaily={data.safeSpendDaily}
         daysLeft={data.daysLeft}
         insightCount={allInsights.length}
+        showHealth={data.transactions.length >= 10}
       />
 
       {showAi && (

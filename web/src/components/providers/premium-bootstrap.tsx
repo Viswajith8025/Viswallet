@@ -29,10 +29,10 @@ export function PremiumBootstrap() {
 
     const idle = window.requestIdleCallback?.(() => {
       if (!cancelled) void runPremiumJobs();
-    }, { timeout: 4000 });
+    }, { timeout: 8000 });
     const fallback = window.setTimeout(() => {
       if (!cancelled) void runPremiumJobs();
-    }, 2500);
+    }, 8000);
 
     const offDb = onDbDataChanged(schedule);
 

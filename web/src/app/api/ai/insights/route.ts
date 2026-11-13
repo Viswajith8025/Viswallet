@@ -4,19 +4,21 @@ import { groqChat } from "@/lib/ai/groq-server";
 import { enforceAiRateLimit } from "@/lib/api/ai-rate-limit";
 import { enforceAiAccess, sanitizeAiError } from "@/lib/api/ai-guard";
 
+const paise = z.number().finite().transform((value) => Math.round(value));
+
 const bodySchema = z.object({
   monthLabel: z.string().max(40),
-  salaryPaise: z.number().int().min(0),
-  expensePaise: z.number().int().min(0),
-  remainingPaise: z.number().int(),
-  daysLeft: z.number().int().min(0),
-  safeSpendDaily: z.number().int().min(0).optional(),
-  borrowedBalance: z.number().int().min(0).optional(),
-  billsDuePaise: z.number().int().min(0).optional(),
-  emiMonthlyPaise: z.number().int().min(0).optional(),
-  healthScore: z.number().int().min(0).max(100).optional(),
+  salaryPaise: paise.pipe(z.number().min(0)),
+  expensePaise: paise.pipe(z.number().min(0)),
+  remainingPaise: paise,
+  daysLeft: paise.pipe(z.number().min(0)),
+  safeSpendDaily: paise.pipe(z.number().min(0)).optional(),
+  borrowedBalance: paise.pipe(z.number().min(0)).optional(),
+  billsDuePaise: paise.pipe(z.number().min(0)).optional(),
+  emiMonthlyPaise: paise.pipe(z.number().min(0)).optional(),
+  healthScore: paise.pipe(z.number().min(0).max(100)).optional(),
   topCategories: z
-    .array(z.object({ name: z.string().max(80), amountPaise: z.number().int().min(0) }))
+    .array(z.object({ name: z.string().max(80), amountPaise: paise.pipe(z.number().min(0)) }))
     .max(8),
 });
 

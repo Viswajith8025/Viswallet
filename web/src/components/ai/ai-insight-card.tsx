@@ -78,6 +78,7 @@ export function AiInsightCard({
   ]);
 
   if (!enabled) return null;
+  if (error) return null;
 
   const body = loading ? (
     <p className="text-sm text-muted-foreground">Reading your cycle…</p>
