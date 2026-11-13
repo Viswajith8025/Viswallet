@@ -1,7 +1,20 @@
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 import { getSupabaseConfig } from "@/lib/security/env";
+import { markCloudUnreachable } from "@/lib/supabase/reachability";
 
 let client: SupabaseClient | null = null;
+
+function createGuardedFetch(getClient: () => SupabaseClient | null): typeof fetch {
+  return async (input, init) => {
+    try {
+      return await fetch(input, init);
+    } catch (error) {
+      markCloudUnreachable();
+      void getClient()?.auth.stopAutoRefresh();
+      throw error;
+    }
+  };
+}
 
 /**
  * Optional cloud sync layer. Local IndexedDB remains source of truth.
@@ -9,7 +22,12 @@ let client: SupabaseClient | null = null;
  */
 export function getSupabase(): SupabaseClient | null {
   if (client) return client;
-  const config = getSupabaseConfig();
+  let config: { url: string; anonKey: string } | null;
+  try {
+    config = getSupabaseConfig();
+  } catch {
+    return null;
+  }
   if (!config) return null;
 
   client = createClient(config.url, config.anonKey, {
@@ -21,6 +39,7 @@ export function getSupabase(): SupabaseClient | null {
       storage: typeof window !== "undefined" ? window.localStorage : undefined,
     },
     global: {
+      fetch: createGuardedFetch(() => client),
       headers: { "X-Client-Info": "viswallet-web" },
     },
   });

@@ -60,7 +60,7 @@ export async function loadActionItems(): Promise<ActionItem[]> {
         title: `${loan.personName} owes you`,
         subtitle: loan.reason ? `${dueSubtitle} · ${loan.reason}` : dueSubtitle,
         amountPaise: loan.balancePaise,
-        href: "/loans",
+        href: "/lent",
         urgency,
       });
     }

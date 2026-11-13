@@ -113,10 +113,12 @@ export function CategoryPicker({
                   <button
                     type="button"
                     onClick={() => void handleRemove(c)}
-                    className="absolute -right-0.5 -top-0.5 flex h-5 w-5 items-center justify-center rounded-full bg-destructive text-destructive-foreground shadow-sm"
+                    className="absolute -right-2 -top-2 flex h-11 w-11 items-center justify-center"
                     aria-label={`Remove ${c.name}`}
                   >
-                    <X size={12} strokeWidth={2.5} />
+                    <span className="flex h-5 w-5 items-center justify-center rounded-full bg-destructive text-destructive-foreground shadow-sm">
+                      <X size={12} strokeWidth={2.5} />
+                    </span>
                   </button>
                 )}
               </div>

@@ -1,7 +1,6 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { usePathname } from "next/navigation";
 import { Banknote, Wallet } from "lucide-react";
 import { Dialog, DialogBody } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -11,17 +10,26 @@ import { formatCycleLabel } from "@/lib/salary-cycle";
 import {
   buildSalaryCreditPreview,
   creditSalaryForCurrentCycle,
+  dismissSalaryCreditForCycle,
   dismissSalaryCreditPromptForToday,
   shouldPromptSalaryCredit,
   type SalaryCreditPreview,
 } from "@/lib/salary/salary-credit";
 import { useInvalidateFinance } from "@/hooks/use-invalidate-finance";
 import { showToast } from "@/lib/store/toast-store";
+import { useUIStore } from "@/lib/store/ui-store";
 
-const SKIP_PATHS = ["/onboarding", "/auth"];
+const LAUNCH_GUARD_MS = 2000;
+const salaryPromptArmedAt = Date.now();
+let salaryPromptDecided = false;
+
+function anotherOverlayOpen(): boolean {
+  const ui = useUIStore.getState();
+  if (ui.commandOpen || ui.quickAddOpen || ui.statementImportOpen || ui.mobileMenuOpen) return true;
+  return document.querySelector("[role='dialog']") != null;
+}
 
 export function SalaryCreditModal() {
-  const pathname = usePathname();
   const invalidate = useInvalidateFinance();
   const [open, setOpen] = useState(false);
   const [preview, setPreview] = useState<SalaryCreditPreview | null>(null);
@@ -38,32 +46,57 @@ export function SalaryCreditModal() {
   }, []);
 
   useEffect(() => {
-    if (SKIP_PATHS.some((p) => pathname.startsWith(p))) return;
-
     let cancelled = false;
-    (async () => {
-      const should = await shouldPromptSalaryCredit();
-      if (cancelled || !should) return;
-      await loadPreview();
-      if (!cancelled) setOpen(true);
-    })();
+    let timer: ReturnType<typeof setTimeout> | null = null;
 
+    const attempt = async () => {
+      if (cancelled || salaryPromptDecided) return;
+      const elapsed = Date.now() - salaryPromptArmedAt;
+      if (elapsed < LAUNCH_GUARD_MS) {
+        timer = setTimeout(() => void attempt(), LAUNCH_GUARD_MS - elapsed);
+        return;
+      }
+      if (anotherOverlayOpen()) {
+        timer = setTimeout(() => void attempt(), 1000);
+        return;
+      }
+      const should = await shouldPromptSalaryCredit();
+      if (cancelled || salaryPromptDecided) return;
+      if (!should) {
+        salaryPromptDecided = true;
+        return;
+      }
+      await loadPreview();
+      if (cancelled || salaryPromptDecided) return;
+      salaryPromptDecided = true;
+      setOpen(true);
+    };
+
+    void attempt();
+    const onVisible = () => {
+      if (document.visibilityState === "visible") void attempt();
+    };
+    document.addEventListener("visibilitychange", onVisible);
     return () => {
       cancelled = true;
+      if (timer) clearTimeout(timer);
+      document.removeEventListener("visibilitychange", onVisible);
     };
-  }, [pathname, loadPreview]);
+  }, [loadPreview]);
 
   async function handleNotYet() {
     await dismissSalaryCreditPromptForToday();
     setOpen(false);
   }
 
+  async function handleSkipCycle() {
+    await dismissSalaryCreditForCycle();
+    setOpen(false);
+  }
+
   async function handleConfirm() {
     setError(null);
-    const paise =
-      preview && preview.baseSalaryPaise > 0
-        ? preview.baseSalaryPaise
-        : parseRupeeInput(salaryInput);
+    const paise = parseRupeeInput(salaryInput);
 
     if (paise <= 0) {
       setError("Enter your monthly salary amount.");
@@ -86,11 +119,10 @@ export function SalaryCreditModal() {
     }
   }
 
-  const needsSalaryInput = preview != null && preview.baseSalaryPaise <= 0;
   const carryOver = preview?.carryOverPaise ?? 0;
-  const salaryPaise =
-    preview && preview.baseSalaryPaise > 0 ? preview.baseSalaryPaise : parseRupeeInput(salaryInput);
+  const salaryPaise = parseRupeeInput(salaryInput);
   const totalPreview = salaryPaise + carryOver;
+  const hasExpected = (preview?.baseSalaryPaise ?? 0) > 0;
 
   return (
     <Dialog open={open} onClose={handleNotYet} labelledBy="salary-credit-title" size="sm">
@@ -119,22 +151,20 @@ export function SalaryCreditModal() {
                 <span className="font-medium tabular-nums">{formatINR(carryOver)}</span>
               </div>
             )}
-            {preview.baseSalaryPaise > 0 ? (
-              <div className="flex items-center justify-between gap-2">
-                <span className="text-muted-foreground">This month&apos;s salary</span>
-                <span className="font-medium tabular-nums">{formatINR(preview.baseSalaryPaise)}</span>
-              </div>
-            ) : (
-              <Input
-                label="Monthly salary (INR)"
-                type="number"
-                inputMode="decimal"
-                required
-                value={salaryInput}
-                onChange={(e) => setSalaryInput(e.target.value)}
-                placeholder="e.g. 50000"
-              />
-            )}
+            <Input
+              label={
+                hasExpected
+                  ? `Expected salary ${formatINR(preview.baseSalaryPaise)} (from your salary settings)`
+                  : "Expected salary"
+              }
+              type="number"
+              inputMode="decimal"
+              required
+              value={salaryInput}
+              onChange={(e) => setSalaryInput(e.target.value)}
+              placeholder="Enter the amount you expect"
+              hint={hasExpected ? undefined : "No salary is saved yet. Enter what you expect this cycle."}
+            />
             <div className="flex items-center justify-between gap-2 border-t border-border pt-2 font-semibold">
               <span className="flex items-center gap-1.5">
                 <Wallet size={14} className="text-primary" />
@@ -152,10 +182,13 @@ export function SalaryCreditModal() {
         )}
 
         <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+          <Button type="button" variant="ghost" onClick={handleSkipCycle} disabled={saving}>
+            Don&apos;t ask this cycle
+          </Button>
           <Button type="button" variant="ghost" onClick={handleNotYet} disabled={saving}>
             Not yet
           </Button>
-          <Button type="button" onClick={handleConfirm} disabled={saving || (needsSalaryInput && salaryPaise <= 0)}>
+          <Button type="button" onClick={handleConfirm} disabled={saving || salaryPaise <= 0}>
             {saving ? "Saving…" : "Yes, credited"}
           </Button>
         </div>

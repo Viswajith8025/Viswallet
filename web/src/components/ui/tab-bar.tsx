@@ -44,7 +44,7 @@ export function TabBar<T extends string>({
             {opt.label}
             {active && (
               <span
-                className="absolute bottom-0 left-0 right-0 h-[2px] rounded-full bg-[var(--violet)] dark:bg-[var(--cream)]"
+                className="absolute bottom-0 left-0 right-0 h-[2px] rounded-full bg-lime"
                 aria-hidden
               />
             )}

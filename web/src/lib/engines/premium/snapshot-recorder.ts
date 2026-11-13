@@ -30,6 +30,10 @@ export async function recordMonthlySnapshot(): Promise<void> {
   }
 }
 
+export function shouldRenderNetWorthTrend(snapshotCount: number): boolean {
+  return snapshotCount >= 2;
+}
+
 export async function getNetWorthTrend(months = 12) {
   const snapshots = await db.monthlySnapshots.orderBy("monthKey").reverse().limit(months).toArray();
   return snapshots.reverse();

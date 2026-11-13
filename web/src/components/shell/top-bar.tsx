@@ -20,7 +20,7 @@ export function TopBar() {
         className="flex shrink-0 items-center lg:hidden"
         aria-label={`${BRAND_NAME} home`}
       >
-        <BrandLockup markSize={26} markOnly />
+        <BrandLockup markSize={28} />
       </Link>
 
       <button

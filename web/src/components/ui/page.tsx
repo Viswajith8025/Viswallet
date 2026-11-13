@@ -1,6 +1,6 @@
 "use client";
 
-import { motion } from "framer-motion";
+import { motion } from "motion/react";
 import { AlertCircle, Inbox } from "lucide-react";
 import { copy } from "@/lib/ux/copy";
 import type { LucideIcon } from "lucide-react";
@@ -135,14 +135,14 @@ export function StatGrid({
   return <div className={cn(spacing.statGrid, colClass, className)}>{children}</div>;
 }
 
-type EmptyVariant = "wallet" | "transactions" | "goals" | "inbox";
+type EmptyVariant = "receipt" | "coin" | "calendar" | "chart";
 
 export function EmptyState({
   title,
   description,
   action,
   icon: IconComponent = Inbox,
-  illustration = "wallet",
+  illustration = "receipt",
   minimal = false,
   compact = false,
 }: {
@@ -260,7 +260,7 @@ export function LoadingState({ label = copy.loading.default }: { label?: string 
         {[0, 1, 2].map((i) => (
           <motion.span
             key={i}
-            className="h-2 w-2 rounded-full bg-[var(--violet)] dark:bg-[var(--cream)]"
+            className="h-2 w-2 rounded-full bg-lime"
             animate={{ opacity: [0.35, 1, 0.35], scale: [0.9, 1.1, 0.9] }}
             transition={{ duration: 0.9, repeat: Infinity, delay: i * 0.12 }}
           />

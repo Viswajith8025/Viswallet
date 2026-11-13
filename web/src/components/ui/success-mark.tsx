@@ -3,7 +3,7 @@
 import { SuccessPop } from "@/components/ui/motion";
 import { Check } from "lucide-react";
 import { cn } from "@/lib/design/cn";
-import { motion } from "framer-motion";
+import { motion } from "motion/react";
 
 export function SuccessMark({
   size = "lg",

@@ -163,7 +163,7 @@ export default function CategoriesPage() {
                     Show in quick add
                   </Button>
                 ) : (
-                  <Button size="icon" variant="ghost" className="ml-auto" onClick={() => hideFromQuickAdd(c)} aria-label={`Hide ${c.name}`}>
+                  <Button size="icon" variant="ghost" className="ml-auto" onClick={() => hideFromQuickAdd(c)} aria-label={`Hide ${c.name} from quick add`}>
                     <EyeOff size={14} className="text-muted-foreground" />
                   </Button>
                 )}
@@ -194,7 +194,7 @@ export default function CategoriesPage() {
                       {c.countsTowardSpending ? "Expense" : "Income"}
                     </p>
                   </div>
-                  <Button size="icon" variant="ghost" onClick={() => remove(c)} aria-label={`Delete ${c.name}`}><Trash2 size={14} className="text-destructive" /></Button>
+                  <Button size="icon" variant="ghost" onClick={() => remove(c)} aria-label={`Delete category ${c.name}`}><Trash2 size={14} className="text-destructive" /></Button>
                 </li>
               ))}
             </ul>

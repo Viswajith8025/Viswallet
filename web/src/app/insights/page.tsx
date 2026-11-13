@@ -159,7 +159,7 @@ export default function InsightsPage() {
               <EmptyState
                 title={copy.insights.notEnoughTitle}
                 description={copy.insights.notEnoughDescription}
-                illustration="transactions"
+                illustration="chart"
                 action={
                   <Link href="/transactions?add=expense">
                     <Button size="sm">{copy.insights.addFirstExpense}</Button>

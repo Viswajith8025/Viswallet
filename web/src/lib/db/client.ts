@@ -51,6 +51,7 @@ import {
 } from "./repositories/transactions";
 import { getActiveCategories as repoGetActiveCategories } from "./repositories/categories";
 import { emitNotificationsChanged, emitDbDataChanged } from "@/lib/notifications/bus";
+import { mergeSalaryPromptDate } from "@/lib/salary/salary-prompt";
 import {
   clearSettingsCache,
   readSettingsCache,
@@ -221,7 +222,7 @@ class ViswalletDB extends Dexie {
             role: "primary",
             institution: "Bank",
             balancePaise: 0,
-            color: "#5f4a8b",
+            color: "#7DA3FF",
             iconName: "Wallet",
             isDefault: true,
             isActive: true,
@@ -359,6 +360,45 @@ class ViswalletDB extends Dexie {
           await tx.table("accounts").update(a.id, { role });
         }
       });
+
+    this.version(8)
+      .stores({
+        profiles: "id",
+        settings: "id",
+        categories: "++id, &slug, [isDeleted+sortOrder], sortOrder, isDeleted",
+        transactions:
+          "++id, monthKey, isDeleted, kind, [monthKey+isDeleted], [isDeleted+occurredAt], [isDeleted+kind], categoryId, accountId, occurredAt, *tags",
+        monthlySalaries: "++id, &monthKey",
+        budgetPlans: "++id, &monthKey",
+        budgetBuckets: "++id, planId, bucketKey, [planId+bucketKey]",
+        loans: "++id, [isDeleted+status], direction, isDeleted, status",
+        loanPayments: "++id, loanId, [loanId+paidAt]",
+        subscriptions: "++id, isActive, [isActive+nextRenewalAt]",
+        bills: "++id, status, [status+dueAt], dueAt",
+        emis: "++id, isActive, [isActive+nextDueAt]",
+        savingsGoals: "++id, isActive",
+        wishlistItems: "++id, isPurchased",
+        investments: "++id, type",
+        notifications: "++id, [read+createdAt], read, createdAt",
+        auditLogs: "++id, action, createdAt, [createdAt+success]",
+        accounts: "++id, isDefault, isActive",
+        accountTransfers: "++id, fromAccountId, toAccountId, transferredAt",
+        monthlySnapshots: "++id, &monthKey",
+        secureNotes: "++id, updatedAt",
+        transactionAttachments: "++id, transactionId",
+        achievements: "++id, &achievementKey, unlockedAt",
+      })
+      .upgrade(async (tx) => {
+        const settings = await tx.table("settings").get(1);
+        if (!settings || (settings.expectedSalaryPaise ?? 0) > 0) return;
+        const rows = await tx.table("monthlySalaries").toArray();
+        const latest = rows
+          .filter((row) => row.amountPaise > 0)
+          .sort((a, b) => (a.monthKey < b.monthKey ? 1 : -1))[0];
+        if (latest) {
+          await tx.table("settings").update(1, { expectedSalaryPaise: latest.amountPaise });
+        }
+      });
   }
 }
 
@@ -422,7 +462,7 @@ export async function ensureDbSeeded(): Promise<void> {
     if (!settings) {
       await db.settings.put({
         id: 1,
-        themeMode: "system",
+        themeMode: "dark",
         accentColor: "violet",
         salaryDay: 1,
         majorExpenseThresholdPaise: 50000,
@@ -433,6 +473,7 @@ export async function ensureDbSeeded(): Promise<void> {
         failedPinAttempts: 0,
         autoLockMinutes: 15,
         dashboardWidgets: DEFAULT_DASHBOARD_WIDGETS,
+        expectedSalaryPaise: 0,
         aiFeaturesEnabled: true,
         createdAt: now,
         updatedAt: now,
@@ -447,7 +488,7 @@ export async function ensureDbSeeded(): Promise<void> {
         role: "primary",
         institution: "Bank",
         balancePaise: 0,
-        color: "#5f4a8b",
+        color: "#7DA3FF",
         iconName: "Wallet",
         isDefault: true,
         isActive: true,
@@ -550,7 +591,7 @@ export async function completeOnboarding(
   const now = new Date();
   const monthKey = getCurrentCycleKey(salaryDay);
   await updateProfile({ displayName: sanitizeName(displayName) });
-  await updateSettings({ salaryDay, onboardingComplete: true });
+  await updateSettings({ salaryDay, onboardingComplete: true, expectedSalaryPaise: salaryPaise });
 
   const existingSalary = await db.monthlySalaries.where("monthKey").equals(monthKey).first();
   const salaryPayload = {
@@ -678,6 +719,7 @@ export async function exportAllData(): Promise<string> {
 
 export async function importAllData(json: string, options: { skipRateLimit?: boolean } = {}): Promise<void> {
   if (!options.skipRateLimit) assertImportRateLimit();
+  const localSettings = await db.settings.get(1);
   const validated = validateBackupPayload(json);
 
   const transactions =
@@ -709,6 +751,8 @@ export async function importAllData(json: string, options: { skipRateLimit?: boo
               accentColor: s.accentColor ?? "violet",
               biometricEnabled: s.biometricEnabled ?? false,
               dashboardWidgets: (s.dashboardWidgets ?? DEFAULT_DASHBOARD_WIDGETS) as AppSettings["dashboardWidgets"],
+              lastSalaryPromptDate: mergeSalaryPromptDate(localSettings?.lastSalaryPromptDate, s.lastSalaryPromptDate),
+              expectedSalaryPaise: s.expectedSalaryPaise ?? localSettings?.expectedSalaryPaise,
             })),
           ) as AppSettings[],
         );

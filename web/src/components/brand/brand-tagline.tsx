@@ -6,13 +6,13 @@ type BrandTaglineProps = {
   inverted?: boolean;
 };
 
-/** Secondary brand line — always lowercase, never emphasized over the logo. */
+/** Secondary brand line — lowercase mono, never louder than the lockup. */
 export function BrandTagline({ className, inverted = false }: BrandTaglineProps) {
   return (
     <p
       className={cn(
-        "text-[11px] font-normal leading-snug tracking-[0.01em]",
-        inverted ? "text-[var(--cream)]/55" : "text-muted-foreground/75",
+        "font-mono text-[11px] font-medium lowercase leading-none tracking-[0.04em]",
+        inverted ? "text-[#9A968A]" : "text-muted-foreground",
         className,
       )}
     >

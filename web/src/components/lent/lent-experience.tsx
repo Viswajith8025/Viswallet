@@ -247,8 +247,8 @@ export function LentExperience() {
                   >
                     Partial
                   </Button>
-                  <Button size="icon" variant="ghost" onClick={() => startEdit(loan)}><Pencil size={14} /></Button>
-                  <Button size="icon" variant="ghost" onClick={() => loan.id && remove(loan.id)}><Trash2 size={14} className="text-destructive" /></Button>
+                  <Button size="icon" variant="ghost" aria-label={`Edit loan to ${loan.personName}`} onClick={() => startEdit(loan)}><Pencil size={14} /></Button>
+                  <Button size="icon" variant="ghost" aria-label={`Delete loan to ${loan.personName}`} onClick={() => loan.id && remove(loan.id)}><Trash2 size={14} className="text-destructive" /></Button>
                 </div>
                 {partialLoanId === loan.id && (
                   <div className="mt-3 flex gap-2 animate-fade-in">

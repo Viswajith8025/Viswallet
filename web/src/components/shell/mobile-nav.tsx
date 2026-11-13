@@ -35,7 +35,7 @@ export function MobileNav() {
                 onClick={() => setMobileMenuOpen(true)}
                 className={cn(
                   "flex min-w-[4rem] flex-col items-center gap-0.5 py-1 text-[11px] font-medium transition-colors duration-[var(--duration-fast)]",
-                  moreActive ? "text-[var(--violet)] dark:text-[var(--cream)]" : "text-muted-foreground",
+                  moreActive ? "text-ink" : "text-muted-foreground",
                 )}
                 aria-label="More pages"
                 aria-expanded={mobileMenuOpen}
@@ -53,7 +53,7 @@ export function MobileNav() {
               href={tab.href}
               className={cn(
                 "flex min-w-[4rem] flex-col items-center gap-0.5 py-1 text-[11px] font-medium transition-colors duration-[var(--duration-fast)]",
-                active ? "text-[var(--violet)] dark:text-[var(--cream)]" : "text-muted-foreground",
+                active ? "text-ink" : "text-muted-foreground",
               )}
             >
               <tab.icon size={22} strokeWidth={active ? 2 : 1.75} />

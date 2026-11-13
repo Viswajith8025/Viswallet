@@ -8,15 +8,9 @@ import type { FinanceSnapshot } from "@/lib/engines/finance-snapshot";
 import { sumByCategory } from "@/lib/engines/finance-snapshot";
 
 export function AiCoachStrip({ data }: { data: FinanceSnapshot }) {
-  const { active, available, enabled } = useAiFeatures();
+  const { active, available, enabled, loaded } = useAiFeatures();
 
-  if (!available) {
-    return (
-      <div className="rounded-xl border border-border/60 bg-muted/30 px-4 py-3 text-sm text-muted-foreground">
-        AI coach needs <code className="text-xs">GROQ_API_KEY</code> on Vercel (server-only). Cloud sync uses Supabase separately.
-      </div>
-    );
-  }
+  if (!loaded || !available) return null;
 
   if (!enabled) {
     return (

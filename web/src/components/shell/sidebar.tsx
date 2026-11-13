@@ -73,7 +73,7 @@ export function Sidebar() {
               className={cn(
                 "flex items-center gap-2.5 rounded-lg px-3 py-2 text-[13px] transition-colors duration-[var(--duration-fast)]",
                 pathname === item.href
-                  ? "bg-primary-muted/70 font-medium text-[var(--violet)] dark:text-[var(--cream)]"
+                  ? "bg-primary-muted/70 font-medium text-ink"
                   : "text-muted-foreground hover:bg-foreground/[0.04] hover:text-foreground",
                 collapsed && "justify-center px-0",
               )}

@@ -47,7 +47,7 @@ export default function IncomePage() {
         <EmptyState
           title="No extra income logged"
           description="Your salary is included in the total. Add freelance, refunds, or other income here."
-          illustration="wallet"
+          illustration="receipt"
           action={<Button onClick={() => setQuickAddOpen(true, "income")}>Add income</Button>}
         />
       ) : (

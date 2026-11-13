@@ -8,16 +8,15 @@ import { AuthProvider } from "@/components/providers/auth-provider";
 import { PremiumBootstrap } from "@/components/providers/premium-bootstrap";
 import { kickstartDb } from "@/lib/db/boot";
 import { ensureDbSeeded, getSettings, peekBootCache } from "@/lib/db";
-import { applyAccentColor } from "@/lib/theme/accent";
+import { clearAccentOverrides } from "@/lib/theme/accent";
 import { applyThemeMode } from "@/lib/theme/resolve";
 import { createQueryClient } from "@/lib/react-query/create-query-client";
-import type { AccentColor } from "@/lib/db/types";
 
 function applyBootTheme() {
+  clearAccentOverrides();
   const boot = peekBootCache();
   if (!boot) return;
   applyThemeMode(boot.themeMode);
-  applyAccentColor(boot.accentColor);
 }
 
 export function AppProviders({ children }: { children: React.ReactNode }) {
@@ -26,12 +25,10 @@ export function AppProviders({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     kickstartDb();
     let mq: MediaQueryList | null = null;
-    let accent: AccentColor = peekBootCache()?.accentColor ?? "violet";
-    let themeMode: "system" | "light" | "dark" = peekBootCache()?.themeMode ?? "system";
+    let themeMode: "system" | "light" | "dark" = peekBootCache()?.themeMode ?? "dark";
 
     const onThemeChange = () => {
-      applyThemeMode(themeMode);
-      applyAccentColor(accent);
+      if (themeMode === "system") applyThemeMode("system");
     };
 
     applyBootTheme();
@@ -39,10 +36,9 @@ export function AppProviders({ children }: { children: React.ReactNode }) {
     ensureDbSeeded()
       .then(() => getSettings())
       .then((settings) => {
-        accent = (settings.accentColor ?? "violet") as AccentColor;
         themeMode = settings.themeMode;
         applyThemeMode(themeMode);
-        applyAccentColor(accent);
+        clearAccentOverrides();
         mq = window.matchMedia("(prefers-color-scheme: dark)");
         mq.addEventListener("change", onThemeChange);
       });

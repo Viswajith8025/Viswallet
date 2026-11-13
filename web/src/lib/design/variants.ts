@@ -4,7 +4,7 @@ export const interactiveTransition =
   "transition-[color,background-color,border-color,box-shadow,transform,opacity] duration-[var(--duration-normal)] ease-[var(--ease-out-expo)]";
 
 export const focusRing =
-  "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--violet)]/25 focus-visible:ring-offset-2 focus-visible:ring-offset-background";
+  "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-lime/40 focus-visible:ring-offset-2 focus-visible:ring-offset-background";
 
 export const buttonVariants = {
   base: cn(
@@ -16,20 +16,22 @@ export const buttonVariants = {
   ),
   variant: {
     primary:
-      "bg-[var(--violet)] text-[var(--cream-elevated)] shadow-[var(--shadow-xs)] hover:bg-[var(--violet-hover)] active:scale-[0.98] dark:bg-[var(--cream)] dark:text-[var(--violet-deep)] dark:hover:brightness-[1.04]",
+      "bg-lime text-[#0D0D0B] hover:brightness-105 active:scale-[0.97]",
     secondary:
-      "border border-border bg-card text-foreground shadow-[var(--shadow-xs)] hover:bg-surface-hover hover:border-border-strong active:scale-[0.98]",
-    ghost: "text-muted-foreground hover:bg-foreground/[0.05] hover:text-foreground active:scale-[0.98]",
+      "border border-hairline bg-surface text-ink hover:border-hairline-strong active:scale-[0.97]",
+    ghost: "bg-transparent text-ink-2 hover:bg-foreground/[0.05] hover:text-ink active:scale-[0.97]",
     outline:
-      "border border-border bg-transparent text-foreground hover:bg-foreground/[0.04] hover:border-border-strong active:scale-[0.98]",
+      "border border-hairline bg-transparent text-ink hover:bg-foreground/[0.04] active:scale-[0.97]",
     destructive:
-      "bg-destructive text-destructive-foreground shadow-[var(--shadow-xs)] hover:brightness-[1.04] active:scale-[0.98]",
+      "bg-transparent text-chili hover:bg-chili/10 active:scale-[0.97]",
+    destructiveSolid:
+      "bg-chili text-[#F4F1E8] hover:brightness-105 active:scale-[0.97]",
   },
   size: {
     sm: "h-8 px-3.5 text-xs rounded-lg",
     md: "h-9 px-4 text-sm rounded-lg",
     lg: "h-10 px-5 text-sm rounded-lg",
-    icon: "h-9 w-9 shrink-0 rounded-lg sm:h-9 sm:w-9 min-h-11 min-w-11 sm:min-h-0 sm:min-w-0",
+    icon: "h-11 w-11 min-h-11 min-w-11 shrink-0 rounded-lg",
   },
 } as const;
 
@@ -37,7 +39,7 @@ export const badgeVariants = {
   base: "inline-flex items-center rounded-md px-2 py-0.5 text-caption font-medium tracking-wide",
   variant: {
     default: "border border-border-light bg-surface-secondary/80 text-foreground/85",
-    primary: "bg-primary-muted text-[var(--violet)] dark:text-[var(--cream)]",
+    primary: "bg-primary-muted text-lime",
     success: "bg-success-muted text-success",
     warning: "bg-warning-muted text-warning",
     destructive: "bg-destructive-muted text-destructive",
@@ -55,7 +57,7 @@ export const fieldVariants = {
     interactiveTransition,
     "placeholder:text-muted-foreground/70",
     "hover:border-border-strong",
-    "focus-visible:border-[var(--violet)]/40 focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-[var(--violet)]/12",
+    "focus-visible:border-lime/50 focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-lime/20",
     "dark:bg-elevated/80",
   ),
   inputError:
@@ -76,7 +78,7 @@ export const selectVariants = {
     "hover:bg-elevated hover:text-foreground hover:border-border",
     "shadow-[var(--shadow-xs)]",
   ),
-  triggerOpen: "border-[var(--violet)]/35 ring-[3px] ring-[var(--violet)]/10",
+  triggerOpen: "border-lime/40 ring-[3px] ring-lime/15",
   menu: cn(
     "absolute left-0 top-[calc(100%+0.35rem)] z-50 max-h-60 min-w-full overflow-y-auto rounded-xl border border-border bg-elevated/98 p-1 shadow-lg backdrop-blur-md",
   ),
@@ -114,7 +116,7 @@ export const dialogVariants = {
 
 export const progressVariants = {
   track: "overflow-hidden rounded-full bg-primary-muted/60",
-  fill: "h-full rounded-full bg-[var(--violet)] transition-[width] duration-500 ease-[var(--ease-out-expo)] dark:bg-[var(--cream)]",
+  fill: "h-full rounded-full bg-lime transition-[width] duration-500 ease-[var(--ease-out)]",
   size: {
     sm: "h-1",
     md: "h-1.5",
@@ -127,7 +129,7 @@ export const segmentedControlVariants = {
   item: cn(
     "rounded-md px-3.5 py-2.5 min-h-11 text-sm font-medium capitalize transition-all duration-[var(--duration-fast)] sm:min-h-0 sm:py-1.5",
     "text-muted-foreground hover:text-foreground",
-    "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--violet)]/25",
+    "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-lime/40",
   ),
   itemActive:
     "bg-card text-foreground shadow-[var(--shadow-xs)] border border-border-light font-semibold",

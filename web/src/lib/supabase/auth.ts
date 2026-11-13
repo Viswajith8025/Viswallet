@@ -1,5 +1,7 @@
 import type { User, Session, AuthError } from "@supabase/supabase-js";
 import { getSupabase, isSupabaseConfigured } from "@/lib/supabase/client";
+import { isCloudUnreachable, isUnreachableAuthError, markCloudUnreachable } from "@/lib/supabase/reachability";
+import { copy } from "@/lib/ux/copy";
 
 export type { User, Session };
 
@@ -22,6 +24,7 @@ export type SignUpOutcome =
 let signUpInFlight: Promise<SignUpOutcome> | null = null;
 
 export async function getAuthSession(): Promise<Session | null> {
+  if (isCloudUnreachable()) return null;
   const sb = getSupabase();
   if (!sb) return null;
 
@@ -46,6 +49,11 @@ function normalizeAuthEmail(email: string): string {
 }
 
 function mapAuthError(error: AuthError): string {
+  if (isUnreachableAuthError(error)) {
+    markCloudUnreachable();
+    return copy.auth.cloudUnreachable;
+  }
+
   const msg = error.message.toLowerCase();
   const code = (error.code ?? "").toLowerCase();
 
@@ -108,6 +116,7 @@ export async function signInWithEmail(email: string, password: string): Promise<
   if (signInInFlight) return signInInFlight;
 
   signInInFlight = (async () => {
+    if (isCloudUnreachable()) throw new Error(copy.auth.cloudUnreachable);
     const sb = getSupabase();
     if (!sb) throw new Error("Cloud accounts are not configured.");
 
@@ -139,6 +148,7 @@ export async function signUpWithEmail(
   }
 
   signUpInFlight = (async (): Promise<SignUpOutcome> => {
+    if (isCloudUnreachable()) throw new Error(copy.auth.cloudUnreachable);
     const sb = getSupabase();
     if (!sb) throw new Error("Cloud accounts are not configured.");
 

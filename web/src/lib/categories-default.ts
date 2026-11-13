@@ -9,7 +9,7 @@ export interface CategorySeed {
 
 /** Curated palette — distinguishable yet on-brand */
 export const CATEGORY_COLOR_PALETTE = [
-  "#5f4a8b",
+  "#3F6E00",
   "#7560a0",
   "#8b78b4",
   "#6b5a96",

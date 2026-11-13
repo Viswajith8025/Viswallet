@@ -9,10 +9,11 @@ import { Button } from "@/components/ui/button";
 import { Input, PasswordInput } from "@/components/ui/input";
 import { useAuth } from "@/components/providers/auth-provider";
 import { getSettings } from "@/lib/db";
+import { copy } from "@/lib/ux/copy";
 
 export default function AuthPage() {
   const router = useRouter();
-  const { signIn, signUp, configured } = useAuth();
+  const { signIn, signUp, configured, cloudDown } = useAuth();
   const [mode, setMode] = useState<"signin" | "signup">("signin");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -53,6 +54,10 @@ export default function AuthPage() {
     setLoading(true);
     submittingRef.current = true;
     try {
+      if (cloudDown) {
+        setError(copy.auth.cloudUnreachable);
+        return;
+      }
       if (mode === "signin") {
         await signIn(trimmedEmail, password);
         const settings = await getSettings();
@@ -126,6 +131,23 @@ export default function AuthPage() {
           autoComplete={mode === "signin" ? "current-password" : "new-password"}
           required
         />
+        {cloudDown && (
+          <div className="space-y-3" role="status">
+            <p className="text-sm text-destructive">{copy.auth.cloudUnreachable}</p>
+            <Button
+              type="button"
+              variant="secondary"
+              className="w-full"
+              onClick={() => {
+                void getSettings().then((settings) => {
+                  router.replace(settings.onboardingComplete ? "/" : "/onboarding");
+                });
+              }}
+            >
+              {copy.auth.continueOnDevice}
+            </Button>
+          </div>
+        )}
         {notice && (
           <p className="text-sm text-success" role="status">
             {notice}

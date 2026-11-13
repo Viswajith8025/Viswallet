@@ -36,7 +36,7 @@ export function ConfirmDialog() {
             {cancelLabel ?? "Cancel"}
           </Button>
           <Button
-            variant={destructive ? "destructive" : "primary"}
+            variant={destructive ? "destructiveSolid" : "primary"}
             onClick={() => close(true)}
             className="min-h-11 w-full sm:w-auto"
           >

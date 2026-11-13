@@ -8,10 +8,12 @@ export function Button({
   size = "md",
   onClick,
   disabled,
+  ref,
   ...props
 }: React.ButtonHTMLAttributes<HTMLButtonElement> & {
   variant?: keyof typeof buttonVariants.variant;
   size?: keyof typeof buttonVariants.size;
+  ref?: React.Ref<HTMLButtonElement>;
 }) {
   return (
     <button
@@ -27,6 +29,7 @@ export function Button({
         onClick?.(e);
       }}
       {...props}
+      ref={ref}
     />
   );
 }

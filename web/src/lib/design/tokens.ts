@@ -1,6 +1,5 @@
 /**
- * Viswallet Design System v4 — Lemon Chiffon × Ultra Violet.
- * Source of truth for runtime values is globals.css (`:root` + `@theme inline`).
+ * Receipt Noir tokens. Runtime values live in globals.css.
  */
 
 export const radius = {

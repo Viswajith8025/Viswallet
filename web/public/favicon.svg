@@ -1,3 +1,5 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="visWallet">
-  <image href="/brand/logo.png" width="512" height="512" preserveAspectRatio="xMidYMid meet" />
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="VisWallet">
+  <rect width="512" height="512" rx="112" fill="#0D0D0B"/>
+  <path d="M152 96 H360 Q396 96 396 132 V404 L376 428 L356 404 L336 428 L316 404 L296 428 L276 404 L256 428 L236 404 L216 428 L196 404 L176 428 L156 404 L136 428 L116 404 V132 Q116 96 152 96 Z" fill="#C6F432"/>
+  <path d="M176 214 L246 340 L350 168" fill="none" stroke="#0D0D0B" stroke-width="44" stroke-linecap="round" stroke-linejoin="round"/>
 </svg>

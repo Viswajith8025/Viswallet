@@ -23,13 +23,13 @@ type LogoMarkContentProps = {
 export function LogoMarkContent({ variant = "default" }: LogoMarkContentProps) {
   const isInverse = variant === "inverse";
 
-  const tileBase = isInverse ? LOGO_COLORS.cream : LOGO_COLORS.violetDeep;
-  const tileGlow = isInverse ? LOGO_COLORS.creamDeep : LOGO_COLORS.violetGlow;
-  const ringStroke = isInverse ? LOGO_COLORS.violet : LOGO_COLORS.violetGlow;
-  const crownFill = isInverse ? LOGO_COLORS.violetDeep : LOGO_COLORS.creamDeep;
-  const vLeftFill = isInverse ? LOGO_COLORS.violet : LOGO_COLORS.cream;
-  const vRightFill = isInverse ? LOGO_COLORS.violetDeep : LOGO_COLORS.creamDeep;
-  const claspFill = isInverse ? LOGO_COLORS.cream : LOGO_COLORS.gold;
+  const tileBase = isInverse ? LOGO_COLORS.paper : LOGO_COLORS.carbon;
+  const tileGlow = isInverse ? LOGO_COLORS.paperDeep : LOGO_COLORS.lime;
+  const ringStroke = isInverse ? LOGO_COLORS.lime : LOGO_COLORS.limeDeep;
+  const crownFill = isInverse ? LOGO_COLORS.carbon : LOGO_COLORS.paperDeep;
+  const vLeftFill = isInverse ? LOGO_COLORS.lime : LOGO_COLORS.paper;
+  const vRightFill = isInverse ? LOGO_COLORS.carbon : LOGO_COLORS.paperDeep;
+  const claspFill = isInverse ? LOGO_COLORS.paper : LOGO_COLORS.gold;
 
   if (variant === "mark-only") {
     return (

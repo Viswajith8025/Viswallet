@@ -26,11 +26,10 @@ import {
 } from "@/lib/export/csv";
 import { categoryMap } from "@/lib/engines/finance-snapshot";
 import { getCurrentCycleKey } from "@/lib/salary-cycle";
-import { applyAccentColor } from "@/lib/theme/accent";
 import { useAuth } from "@/components/providers/auth-provider";
 import { useUIStore } from "@/lib/store/ui-store";
 import { applyThemeMode } from "@/lib/theme/resolve";
-import type { AccentColor, DashboardWidgetId } from "@/lib/db/types";
+import type { DashboardWidgetId } from "@/lib/db/types";
 import { DEFAULT_DASHBOARD_WIDGETS, DASHBOARD_WIDGET_LABELS } from "@/lib/db/types";
 import {
   toSecureMessage,
@@ -57,7 +56,6 @@ export default function SettingsPage() {
   const fileRef = useRef<HTMLInputElement>(null);
   const csvRef = useRef<HTMLInputElement>(null);
   const [theme, setTheme] = useState<"system" | "light" | "dark">("system");
-  const [accent, setAccent] = useState<AccentColor>("violet");
   const [biometricEnabled, setBiometricEnabled] = useState(false);
   const [widgets, setWidgets] = useState<DashboardWidgetId[]>(DEFAULT_DASHBOARD_WIDGETS);
   const [resetting, setResetting] = useState(false);
@@ -79,7 +77,6 @@ export default function SettingsPage() {
     Promise.all([getSettings()])
       .then(([s]) => {
         setTheme(s.themeMode);
-        setAccent(s.accentColor ?? "violet");
         setBiometricEnabled(s.biometricEnabled ?? false);
         setWidgets(s.dashboardWidgets ?? DEFAULT_DASHBOARD_WIDGETS);
         setAppLockEnabled(s.appLockEnabled);
@@ -101,17 +98,8 @@ export default function SettingsPage() {
     setTheme(mode);
     await updateSettings({ themeMode: mode });
     applyThemeMode(mode);
-    applyAccentColor(accent);
     await logAudit("settings.update", { success: true, detail: "theme" });
     refresh();
-  }
-
-  async function handleAccentChange(value: string) {
-    const color = value as AccentColor;
-    setAccent(color);
-    await updateSettings({ accentColor: color });
-    applyAccentColor(color);
-    flash("Accent color updated.");
   }
 
   async function handleBiometricToggle(enabled: boolean) {
@@ -392,7 +380,7 @@ export default function SettingsPage() {
                   onChange={(e) => setDisablePin(e.target.value.replace(/\D/g, ""))}
                   className="max-w-xs"
                 />
-                <Button type="submit" variant="destructive">
+                <Button type="submit" variant="destructiveSolid">
                   Disable app lock
                 </Button>
               </form>
@@ -406,21 +394,22 @@ export default function SettingsPage() {
           <CardTitle>Smart features</CardTitle>
         </CardHeader>
         <CardContent className="space-y-4 pt-0">
-          <Checkbox
-            label="AI features (natural-language add, smart categories, coach)"
-            checked={aiFeaturesEnabled}
-            onChange={(e) => void handleAiToggle(e.target.checked)}
-            disabled={!aiFeatures.available}
-          />
-          {aiFeatures.available ? (
+          {aiFeatures.loaded && aiFeatures.available ? (
+            <>
+              <Checkbox
+                label="AI features (natural-language add, smart categories, coach)"
+                checked={aiFeaturesEnabled}
+                onChange={(e) => void handleAiToggle(e.target.checked)}
+              />
+              <p className="text-sm text-muted-foreground">
+                Powered by Groq on our server — only cycle summaries and your typed phrases are sent, never your full vault.
+              </p>
+            </>
+          ) : aiFeatures.loaded ? (
             <p className="text-sm text-muted-foreground">
-              Powered by Groq on our server — only cycle summaries and your typed phrases are sent, never your full vault.
+              AI stays off until <code className="text-xs">GROQ_API_KEY</code> is set on the server.
             </p>
-          ) : (
-            <p className="text-sm text-muted-foreground">
-              Add <code className="text-xs">GROQ_API_KEY</code> in Vercel (Settings → Environment Variables, server-only) then redeploy.
-            </p>
-          )}
+          ) : null}
         </CardContent>
       </Card>
 
@@ -433,14 +422,6 @@ export default function SettingsPage() {
             <option value="system">System</option>
             <option value="light">Light</option>
             <option value="dark">Dark</option>
-          </Select>
-          <Select label="Accent color" value={accent} onChange={(e) => handleAccentChange(e.target.value)}>
-            <option value="violet">Violet</option>
-            <option value="ocean">Classic</option>
-            <option value="emerald">Emerald</option>
-            <option value="rose">Rose</option>
-            <option value="amber">Amber</option>
-            <option value="slate">Slate</option>
           </Select>
           <Checkbox
             label="Unlock with Face ID or fingerprint"
@@ -539,7 +520,7 @@ export default function SettingsPage() {
           <p className="text-sm text-muted-foreground">
             Permanently delete all {BRAND_NAME} data on this device.
           </p>
-          <Button variant="destructive" onClick={handleReset} disabled={resetting}>
+          <Button variant="destructiveSolid" onClick={handleReset} disabled={resetting}>
             {resetting ? "Resetting..." : "Reset all data"}
           </Button>
         </CardContent>

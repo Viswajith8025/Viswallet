@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import type { AppNotification } from "@/lib/db/types";
 import {
   useNotificationsList,
+  unreadNotificationCount,
   markNotificationRead,
   markAllNotificationsRead,
 } from "@/hooks/use-notifications";
@@ -30,7 +31,7 @@ export default function NotificationsPage() {
   const notifications = useNotificationsList();
   const isPending = notifications === undefined;
   const items = notifications ?? [];
-  const unread = items.filter((n) => !n.read).length;
+  const unread = unreadNotificationCount(items);
 
   async function openNotification(n: AppNotification) {
     if (!n.read && n.id != null) {

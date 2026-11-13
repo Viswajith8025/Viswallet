@@ -211,6 +211,12 @@ export const copy = {
     onboardingSubtitle: "Your salary cycle is set. Let's see where your money goes.",
   },
 
+  auth: {
+    cloudUnreachable:
+      "Cloud sign-in is unavailable. The account server can't be reached, so you can keep using Viswallet on this device.",
+    continueOnDevice: "Continue on this device",
+  },
+
   appLock: {
     title: "Enter your PIN",
     wrongPin: "That PIN didn't match.",
@@ -396,6 +402,9 @@ export const copy = {
     filterByType: "Filter by type",
     searchTransactions: "Search transactions",
     minAmountAria: "Minimum amount in rupees",
+    maxAmount: "Maximum amount (₹)",
+    maxAmountPlaceholder: "Max amount (₹)",
+    maxAmountAria: "Maximum amount in rupees",
     monthsPaid: (paid: number, total: number) => `${paid}/${total} months paid`,
     left: (amount: string) => `${amount} left`,
     perMonth: (amount: string) => `${amount}/mo`,

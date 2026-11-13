@@ -20,6 +20,7 @@ import {
 } from "@/lib/supabase/auth";
 import { syncCloudOnLogin, clearCloudSyncState, shouldAutoCloudSync } from "@/lib/supabase/cloud-sync";
 import { syncProfileFromAuthUser } from "@/lib/supabase/profile-sync";
+import { isCloudUnreachable, onCloudReachabilityChange } from "@/lib/supabase/reachability";
 import { resetLocalDatabase } from "@/lib/db";
 import { onCloudSyncActive } from "@/lib/notifications/bus";
 
@@ -28,6 +29,8 @@ type AuthContextValue = {
   required: boolean;
   user: User | null;
   loading: boolean;
+  /** True when the configured cloud host cannot be reached this session. */
+  cloudDown: boolean;
   /** False while login cloud restore is in progress (when vault is enabled). */
   cloudSyncReady: boolean;
   syncing: boolean;
@@ -45,16 +48,25 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const configured = cloudAuthEnabled();
   const required = cloudAuthRequired();
   const [user, setUser] = useState<User | null>(null);
-  const [sessionReady, setSessionReady] = useState(!configured);
-  const [cloudSyncReady, setCloudSyncReady] = useState(!configured || !shouldAutoCloudSync());
+  const [cloudDown, setCloudDown] = useState(isCloudUnreachable);
+  const [sessionReady, setSessionReady] = useState(!configured || isCloudUnreachable());
+  const [cloudSyncReady, setCloudSyncReady] = useState(!configured || isCloudUnreachable() || !shouldAutoCloudSync());
   const [loginSyncing, setLoginSyncing] = useState(false);
   const [autoSyncing, setAutoSyncing] = useState(false);
   const syncing = loginSyncing || autoSyncing;
 
-  const loading = configured && !sessionReady;
+  const loading = configured && !cloudDown && !sessionReady;
+
+  useEffect(() => {
+    return onCloudReachabilityChange(() => {
+      setCloudDown(true);
+      setSessionReady(true);
+      setCloudSyncReady(true);
+    });
+  }, []);
 
   const runCloudSync = useCallback(async () => {
-    if (!configured || !shouldAutoCloudSync()) {
+    if (!configured || cloudDown || !shouldAutoCloudSync()) {
       setCloudSyncReady(true);
       return;
     }
@@ -68,14 +80,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setLoginSyncing(false);
       setCloudSyncReady(true);
     }
-  }, [configured]);
+  }, [configured, cloudDown]);
 
   useEffect(() => {
     return onCloudSyncActive(setAutoSyncing);
   }, []);
 
   useEffect(() => {
-    if (!configured) return;
+    if (!configured || cloudDown) return;
 
     let mounted = true;
     let resolved = false;
@@ -114,7 +126,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       window.clearTimeout(authTimeout);
       unsubscribe();
     };
-  }, [configured, runCloudSync]);
+  }, [configured, cloudDown, runCloudSync]);
 
   const signIn = useCallback(async (email: string, password: string) => {
     const signedInUser = await signInWithEmail(email, password);
@@ -149,13 +161,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       required,
       user,
       loading,
+      cloudDown,
       cloudSyncReady,
       syncing,
       signIn,
       signUp,
       signOut,
     }),
-    [configured, required, user, loading, cloudSyncReady, syncing, signIn, signUp, signOut],
+    [configured, required, user, loading, cloudDown, cloudSyncReady, syncing, signIn, signUp, signOut],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

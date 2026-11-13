@@ -1,43 +1,89 @@
 "use client";
 
 import { Moon, Sun } from "lucide-react";
-import { useCallback, useState } from "react";
+import { useCallback, useSyncExternalStore } from "react";
 import { updateSettings, peekBootCache } from "@/lib/db";
-import { applyAccentColor } from "@/lib/theme/accent";
-import { applyThemeMode, type ResolvedTheme } from "@/lib/theme/resolve";
+import { applyThemeMode, type ResolvedTheme, type ThemeMode } from "@/lib/theme/resolve";
+import { cn } from "@/lib/design/cn";
 
-function readResolvedTheme(): ResolvedTheme {
+const CYCLE: ThemeMode[] = ["dark", "light", "system"];
+const listeners = new Set<() => void>();
+
+function readMode(): ThemeMode {
+  const attr = document.documentElement.getAttribute("data-theme-mode");
+  if (attr === "dark" || attr === "light" || attr === "system") return attr;
+  const boot = peekBootCache()?.themeMode;
+  if (boot === "dark" || boot === "light" || boot === "system") return boot;
+  return "dark";
+}
+
+function readResolved(): ResolvedTheme {
   const attr = document.documentElement.getAttribute("data-theme");
-  if (attr === "dark" || attr === "light") return attr;
-  return window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
+  return attr === "light" ? "light" : "dark";
+}
+
+function snapshot(): string {
+  return `${readMode()}:${readResolved()}`;
+}
+
+function subscribe(listener: () => void): () => void {
+  listeners.add(listener);
+  const media = window.matchMedia("(prefers-color-scheme: dark)");
+  const onMedia = () => {
+    if (readMode() === "system") applyThemeMode("system");
+    listener();
+  };
+  media.addEventListener("change", onMedia);
+  return () => {
+    listeners.delete(listener);
+    media.removeEventListener("change", onMedia);
+  };
+}
+
+function emit(): void {
+  listeners.forEach((listener) => listener());
 }
 
 export function ThemeToggle() {
-  const [resolved, setResolved] = useState<ResolvedTheme>(() => {
-    if (typeof document === "undefined") return "light";
-    return readResolvedTheme();
-  });
+  const value = useSyncExternalStore(subscribe, snapshot, () => "dark:dark");
+  const [mode, resolved] = value.split(":") as [ThemeMode, ResolvedTheme];
 
   const toggle = useCallback(async () => {
-    const next: ResolvedTheme = resolved === "dark" ? "light" : "dark";
+    const next = CYCLE[(CYCLE.indexOf(mode) + 1) % CYCLE.length] ?? "dark";
     applyThemeMode(next);
-    setResolved(next);
+    emit();
     await updateSettings({ themeMode: next });
-    const accent = peekBootCache()?.accentColor ?? "violet";
-    applyAccentColor(accent);
-  }, [resolved]);
+  }, [mode]);
 
-  const isDark = resolved === "dark";
+  const next = CYCLE[(CYCLE.indexOf(mode) + 1) % CYCLE.length];
+  const showingLight = resolved === "light";
 
   return (
     <button
       type="button"
       onClick={() => void toggle()}
-      className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-surface-hover hover:text-foreground"
-      aria-label={isDark ? "Switch to light mode" : "Switch to dark mode"}
-      title={isDark ? "Light mode" : "Dark mode"}
+      className="tap flex h-11 w-11 shrink-0 items-center justify-center rounded-lg text-ink-2 hover:text-ink"
+      aria-label={`Theme is ${mode}. Switch to ${next}.`}
+      title={`Theme: ${mode}`}
     >
-      {isDark ? <Sun size={16} strokeWidth={1.75} /> : <Moon size={16} strokeWidth={1.75} />}
+      <span className="relative h-4 w-4">
+        <Sun
+          size={16}
+          strokeWidth={1.75}
+          className={cn(
+            "absolute inset-0 transition-opacity duration-[160ms]",
+            showingLight ? "opacity-100" : "opacity-0",
+          )}
+        />
+        <Moon
+          size={16}
+          strokeWidth={1.75}
+          className={cn(
+            "absolute inset-0 transition-opacity duration-[160ms]",
+            showingLight ? "opacity-0" : "opacity-100",
+          )}
+        />
+      </span>
     </button>
   );
 }

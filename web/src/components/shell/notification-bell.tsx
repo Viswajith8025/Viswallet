@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 import type { AppNotification } from "@/lib/db/types";
 import {
   useNotificationsList,
-  useUnreadNotificationCount,
+  unreadNotificationCount,
   markNotificationRead,
   markAllNotificationsRead,
 } from "@/hooks/use-notifications";
@@ -29,8 +29,8 @@ const typeTone: Record<AppNotification["type"], string> = {
 
 export function NotificationBell() {
   const router = useRouter();
-  const unread = useUnreadNotificationCount();
   const notifications = useNotificationsList();
+  const unread = unreadNotificationCount(notifications ?? []);
   const [open, setOpen] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
 

@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { useDb } from "@/components/providers/db-provider";
 import { getSettings } from "@/lib/db";
-import { fetchAiStatus, type AiStatus } from "@/lib/ai/client";
+import { fetchAiStatus, shouldShowAiEntry, type AiStatus } from "@/lib/ai/client";
 
 export type AiFeaturesState = {
   /** Groq API key is configured on the server */
@@ -35,7 +35,7 @@ export function useAiFeatures(): AiFeaturesState {
     };
   }, [version]);
 
-  const available = Boolean(status?.groq);
+  const available = shouldShowAiEntry(status);
   return {
     available,
     enabled,

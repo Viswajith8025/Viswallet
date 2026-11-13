@@ -1,14 +1,14 @@
 {
   "id": "/",
-  "name": "visWallet",
-  "short_name": "visWallet",
-  "description": "personal financial homie — private, offline-first personal finance.",
+  "name": "visWALLET",
+  "short_name": "visWALLET",
+  "description": "money, settled. — private, offline-first personal finance.",
   "start_url": "/",
   "scope": "/",
   "display": "standalone",
   "display_override": ["standalone", "minimal-ui"],
-  "background_color": "#FEFACD",
-  "theme_color": "#5F4A8B",
+  "background_color": "#0D0D0B",
+  "theme_color": "#0D0D0B",
   "orientation": "portrait-primary",
   "icons": [
     {

@@ -28,7 +28,7 @@ export async function loadLoanDueReminders(): Promise<LoanDueReminder[]> {
       amountPaise: loan.balancePaise,
       dueAt: loan.expectedReturnAt ? new Date(loan.expectedReturnAt) : undefined,
       status: getLoanDueStatus(loan),
-      href: loan.direction === "borrowed_by_me" ? "/borrowed" : "/loans",
+      href: loan.direction === "borrowed_by_me" ? "/borrowed" : "/lent",
     }));
 
   const statusOrder = { overdue: 0, due_today: 1, due_soon: 2, upcoming: 3, none: 4 };

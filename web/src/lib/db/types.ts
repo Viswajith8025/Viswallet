@@ -59,6 +59,8 @@ export interface AppSettings {
   dashboardWidgets: DashboardWidgetId[];
   lastBackupAt?: Date;
   lastSalaryPromptDate?: string;
+  /** Salary the reminder and /salary share. Not the current cycle's received row. */
+  expectedSalaryPaise?: number;
   aiFeaturesEnabled?: boolean;
   createdAt: Date;
   updatedAt: Date;
@@ -336,9 +338,12 @@ export const DEFAULT_DASHBOARD_WIDGETS: DashboardWidgetId[] = [
   "obligations",
 ];
 
+const RECEIPT_ACCENT = { primary: "#C6F432", ring: "#0D0D0B" };
+
+/** Kept so older settings rows still type-check. The app ignores this and uses Ledger Lime. */
 export const ACCENT_PALETTES: Record<AccentColor, { primary: string; ring: string }> = {
-  ocean: { primary: "#5f4a8b", ring: "#7560a0" },
-  violet: { primary: "#5f4a8b", ring: "#7560a0" },
+  ocean: RECEIPT_ACCENT,
+  violet: RECEIPT_ACCENT,
   emerald: { primary: "#3d7a62", ring: "#4a8f75" },
   rose: { primary: "#8b5a6b", ring: "#a06b7d" },
   amber: { primary: "#9a7b2e", ring: "#b8943a" },

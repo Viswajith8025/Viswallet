@@ -58,6 +58,10 @@ async function postJson<T>(path: string, body: unknown): Promise<T> {
   return res.json() as Promise<T>;
 }
 
+export function shouldShowAiEntry(status: Pick<AiStatus, "groq"> | null): boolean {
+  return status?.groq === true;
+}
+
 export async function fetchAiStatus(): Promise<AiStatus> {
   const res = await fetch("/api/ai/status");
   if (!res.ok) {

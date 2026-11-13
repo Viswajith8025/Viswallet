@@ -49,7 +49,7 @@ export const APP_NAV: NavEntry[] = [
   { href: "/income", label: "Income", icon: IndianRupee },
   { href: "/salary", label: "Salary", icon: Wallet },
   { section: "Credit" },
-  { href: "/loans", label: "Lent", icon: HandCoins },
+  { href: "/lent", label: "Lent", icon: HandCoins },
   { href: "/borrowed", label: "Borrowed", icon: ArrowDownLeft },
   { href: "/emi", label: "EMI Tracker", icon: CreditCard },
   { href: "/debt-planner", label: "Debt Planner", icon: Calculator },

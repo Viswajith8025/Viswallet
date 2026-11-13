@@ -287,7 +287,7 @@ export function BorrowedExperience() {
                     {formatINR(loan.principalPaise)} · cleared
                   </p>
                 </div>
-                <Button size="icon" variant="ghost" onClick={() => loan.id && remove(loan.id)} aria-label="Delete">
+                <Button size="icon" variant="ghost" onClick={() => loan.id && remove(loan.id)} aria-label={`Delete loan from ${loan.personName}`}>
                   <Trash2 size={14} className="text-destructive" />
                 </Button>
               </CardContent>
@@ -372,10 +372,10 @@ function BorrowedCard({
           >
             Partial
           </Button>
-          <Button size="icon" variant="ghost" onClick={onEdit} aria-label="Edit">
+          <Button size="icon" variant="ghost" onClick={onEdit} aria-label={`Edit loan from ${loan.personName}`}>
             <Pencil size={14} />
           </Button>
-          <Button size="icon" variant="ghost" onClick={onDelete} aria-label="Delete">
+          <Button size="icon" variant="ghost" onClick={onDelete} aria-label={`Delete loan from ${loan.personName}`}>
             <Trash2 size={14} className="text-destructive" />
           </Button>
         </div>

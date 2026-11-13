@@ -17,6 +17,7 @@ function SalaryContent({ data }: { data: FinanceSnapshot }) {
   const invalidate = useInvalidateFinance();
   const [salary, setSalary] = useState<MonthlySalary | null>(null);
   const [amount, setAmount] = useState("");
+  const [expectedPaise, setExpectedPaise] = useState(0);
   const [salaryDay, setSalaryDay] = useState("1");
   const [saving, setSaving] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
@@ -29,8 +30,10 @@ function SalaryContent({ data }: { data: FinanceSnapshot }) {
         getSettings(),
       ]);
       if (cancelled) return;
+      const expected = settings.expectedSalaryPaise ?? 0;
       setSalary(s ?? null);
-      setAmount(s ? String(s.amountPaise / 100) : "");
+      setExpectedPaise(expected);
+      setAmount(expected > 0 ? String(expected / 100) : s && s.amountPaise > 0 ? String(s.amountPaise / 100) : "");
       setSalaryDay(String(settings.salaryDay));
     })();
     return () => {
@@ -50,7 +53,8 @@ function SalaryContent({ data }: { data: FinanceSnapshot }) {
     try {
     const day = Math.min(28, Math.max(1, parseInt(salaryDay, 10) || 1));
     const now = new Date();
-    await updateSettings({ salaryDay: day });
+    await updateSettings({ salaryDay: day, expectedSalaryPaise: paise });
+    setExpectedPaise(paise);
     if (salary?.id) {
       await db.monthlySalaries.update(salary.id, { amountPaise: paise, updatedAt: now });
     } else {
@@ -80,7 +84,7 @@ function SalaryContent({ data }: { data: FinanceSnapshot }) {
       />
 
       <div className="grid gap-4 md:grid-cols-3">
-        <StatCard label="Current salary" value={formatINR(data.salaryPaise)} tone="positive" />
+        <StatCard label="Expected salary" value={formatINR(expectedPaise)} hint="Same amount the salary reminder uses" tone="positive" />
         <StatCard
           label="Carry-over"
           value={formatINR(salary?.carryOverPaise ?? 0)}
@@ -93,7 +97,7 @@ function SalaryContent({ data }: { data: FinanceSnapshot }) {
         <CardContent className="p-5">
           <form onSubmit={handleSave} className="mx-auto max-w-md space-y-4">
             <Input
-              label="Monthly salary (INR)"
+              label="Expected salary (INR)"
               type="number"
               required
               min="1"

@@ -16,7 +16,7 @@ import { findDuplicateTransactions } from "@/lib/engines/premium/duplicate-detec
 import { getActiveTransactions } from "@/lib/db";
 import { useDexieTable, useDebounce, usePagination } from "@/hooks";
 import { TabBar } from "@/components/ui/tab-bar";
-import { selectCategoryId, selectAmountRange, useFilterStore } from "@/lib/store/filter-store";
+import { selectCategoryId, selectMaxAmount, selectMinAmount, transactionMatchesAmount, useFilterStore } from "@/lib/store/filter-store";
 import { copy } from "@/lib/ux/copy";
 import { formatINR, parseRupeeInput } from "@/lib/money";
 
@@ -27,7 +27,8 @@ export default function SearchPage() {
   const categories = useCategories();
   const cats = categoryMap(categories);
   const categoryId = useFilterStore(selectCategoryId);
-  const { min: minAmount, max: maxAmount } = useFilterStore(selectAmountRange);
+  const minAmount = useFilterStore(selectMinAmount);
+  const maxAmount = useFilterStore(selectMaxAmount);
 
   const { data: transactions = [], isPending, isError, refetch } = useDexieTable("transactions-search", () =>
     getActiveTransactions(5000),
@@ -46,8 +47,7 @@ export default function SearchPage() {
     let base = transactions;
     if (kindFilter !== "all") base = base.filter((t) => t.kind === kindFilter);
     if (categoryId) base = base.filter((t) => t.categoryId === categoryId);
-    if (minAmount != null) base = base.filter((t) => t.amountPaise >= minAmount);
-    if (maxAmount != null) base = base.filter((t) => t.amountPaise <= maxAmount);
+    base = base.filter((t) => transactionMatchesAmount(t.amountPaise, minAmount, maxAmount));
     if (!debouncedQuery.trim()) return base;
     const ids = new Set(base.map((t) => t.id));
     return fuse
@@ -80,7 +80,7 @@ export default function SearchPage() {
         aria-label={copy.forms.filterByType}
       />
 
-      <div className="grid gap-3 sm:grid-cols-3">
+      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
         <div className="relative sm:col-span-2">
           <Search size={18} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-muted-foreground" aria-hidden />
           <Input
@@ -101,6 +101,18 @@ export default function SearchPage() {
             const raw = e.target.value;
             const paise = raw.trim() ? parseRupeeInput(raw) : null;
             useFilterStore.getState().setAmountRange(paise && paise > 0 ? paise : null, maxAmount);
+            pagination.reset();
+          }}
+        />
+        <Input
+          type="number"
+          label={copy.forms.maxAmount}
+          placeholder={copy.forms.maxAmountPlaceholder}
+          aria-label={copy.forms.maxAmountAria}
+          onChange={(e) => {
+            const raw = e.target.value;
+            const paise = raw.trim() ? parseRupeeInput(raw) : null;
+            useFilterStore.getState().setAmountRange(minAmount, paise && paise > 0 ? paise : null);
             pagination.reset();
           }}
         />

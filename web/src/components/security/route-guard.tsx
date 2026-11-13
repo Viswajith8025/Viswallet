@@ -12,31 +12,26 @@ const ALWAYS_PUBLIC_ROUTES = ["/auth", "/privacy", "/terms", "/licenses", "/abou
 const ONBOARDING_ROUTE = "/onboarding";
 const SETTINGS_READY_TIMEOUT_MS = 6000;
 
-function canRenderImmediately(pathname: string, configured: boolean): boolean {
-  if (ALWAYS_PUBLIC_ROUTES.includes(pathname)) return true;
-  if (!configured && pathname === ONBOARDING_ROUTE) return true;
-  return Boolean(peekBootCache()?.onboardingComplete);
-}
-
 export function RouteGuard({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const router = useRouter();
-  const { configured, user, loading: authLoading, cloudSyncReady } = useAuth();
+  const { configured, user, loading: authLoading, cloudSyncReady, cloudDown } = useAuth();
+  const authRequired = configured && !cloudDown;
   const isOnboarding = pathname === ONBOARDING_ROUTE;
   const isPublic =
     ALWAYS_PUBLIC_ROUTES.includes(pathname) ||
     (!configured && isOnboarding);
-  const initiallyReady = isPublic || canRenderImmediately(pathname, configured);
-  const [appReady, setAppReady] = useState(initiallyReady);
+  // Boot cache lives in localStorage, so the first render must match the server.
+  const [appReady, setAppReady] = useState(isPublic);
 
   useEffect(() => {
     if (isPublic) return;
 
-    if (configured && authLoading) return;
+    if (authRequired && authLoading) return;
 
-    if (configured && user && shouldAutoCloudSync() && !cloudSyncReady) return;
+    if (authRequired && user && shouldAutoCloudSync() && !cloudSyncReady) return;
 
-    if (configured && !user) {
+    if (authRequired && !user) {
       router.replace("/auth");
       return;
     }
@@ -80,11 +75,11 @@ export function RouteGuard({ children }: { children: React.ReactNode }) {
       cancelled = true;
       window.clearTimeout(settingsTimeout);
     };
-  }, [pathname, router, isPublic, configured, user, authLoading, cloudSyncReady, isOnboarding]);
+  }, [pathname, router, isPublic, configured, authRequired, user, authLoading, cloudSyncReady, isOnboarding]);
 
   if (isPublic) return <>{children}</>;
-  const restoringCloud = configured && user && shouldAutoCloudSync() && !cloudSyncReady;
-  if (!appReady || (configured && (authLoading || !user)) || restoringCloud) {
+  const restoringCloud = authRequired && user && shouldAutoCloudSync() && !cloudSyncReady;
+  if (!appReady || (authRequired && (authLoading || !user)) || restoringCloud) {
     return (
       <BrandLoader
         fullScreen

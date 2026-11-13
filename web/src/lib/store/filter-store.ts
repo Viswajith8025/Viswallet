@@ -26,11 +26,20 @@ export type FilterState = GlobalFilters & Pick<FilterStore, "setCycleKey" | "set
 export const selectCycleKey = (s: FilterStore) => s.cycleKey;
 export const selectKind = (s: FilterStore) => s.kind;
 export const selectCategoryId = (s: FilterStore) => s.categoryId;
-export const selectAmountRange = (s: FilterStore) => ({
-  min: s.minAmountPaise,
-  max: s.maxAmountPaise,
-});
+/** Primitive selectors. Do not select `{ min, max }` — a new object each call loops in Zustand 5. */
+export const selectMinAmount = (s: FilterStore) => s.minAmountPaise;
+export const selectMaxAmount = (s: FilterStore) => s.maxAmountPaise;
 export const selectSearchQuery = (s: FilterStore) => s.searchQuery;
+
+export function transactionMatchesAmount(
+  amountPaise: number,
+  min: number | null,
+  max: number | null,
+): boolean {
+  if (min != null && amountPaise < min) return false;
+  if (max != null && amountPaise > max) return false;
+  return true;
+}
 
 const defaults: GlobalFilters = {
   cycleKey: null,

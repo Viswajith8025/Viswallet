@@ -22,7 +22,7 @@ const nextConfig: NextConfig = {
     root: turbopackRoot,
   },
   experimental: {
-    optimizePackageImports: ["lucide-react", "recharts", "date-fns", "framer-motion"],
+    optimizePackageImports: ["lucide-react", "recharts", "date-fns", "motion"],
   },
   webpack: (config, { dev }) => {
     if (dev) {
@@ -33,6 +33,9 @@ const nextConfig: NextConfig = {
       };
     }
     return config;
+  },
+  async redirects() {
+    return [{ source: "/loans", destination: "/lent", permanent: true }];
   },
   async headers() {
     return [

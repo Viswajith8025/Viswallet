@@ -36,7 +36,7 @@ export default function ForecastPage() {
               <EmptyState
                 title="Add transactions to forecast"
                 description="Record a few expenses and income entries to project your cash flow over the next three months."
-                illustration="transactions"
+                illustration="chart"
                 action={
                   <Link href="/transactions?add=expense" className="inline-flex">
                     <span className="inline-flex h-10 items-center justify-center rounded-xl bg-primary px-4 text-sm font-medium text-primary-foreground">

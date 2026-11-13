@@ -1,7 +1,7 @@
 "use client";
 
 import { Download, Share, X } from "lucide-react";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion, AnimatePresence } from "motion/react";
 import { usePathname } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { BrandLockup } from "@/components/brand/brand-lockup";

@@ -6,6 +6,12 @@ import {
   getCycleRange,
   getPreviousCycleKeys,
 } from "@/lib/salary-cycle";
+import {
+  expectedSalaryPaise,
+  isSalarySnoozed,
+  readSalarySnooze,
+  writeSalarySnooze,
+} from "@/lib/salary/salary-prompt";
 
 export type SalaryCreditPreview = {
   monthKey: string;
@@ -24,12 +30,6 @@ function getPreviousCycleKey(monthKey: string): string {
   return keys[0];
 }
 
-export async function getLastKnownSalaryPaise(): Promise<number> {
-  const rows = await db.monthlySalaries.orderBy("monthKey").reverse().toArray();
-  const latest = rows.find((r) => r.amountPaise > 0);
-  return latest?.amountPaise ?? 0;
-}
-
 export async function getPreviousCycleRemainingPaise(monthKey: string): Promise<number> {
   const prevKey = getPreviousCycleKey(monthKey);
   if (prevKey === monthKey) return 0;
@@ -40,7 +40,7 @@ export async function getPreviousCycleRemainingPaise(monthKey: string): Promise<
 export async function buildSalaryCreditPreview(): Promise<SalaryCreditPreview | null> {
   const settings = await getSettings();
   const monthKey = getCurrentCycleKey(settings.salaryDay);
-  const baseSalaryPaise = await getLastKnownSalaryPaise();
+  const baseSalaryPaise = expectedSalaryPaise(settings);
   const carryOverPaise = await getPreviousCycleRemainingPaise(monthKey);
 
   return {
@@ -70,13 +70,25 @@ export async function shouldPromptSalaryCredit(): Promise<boolean> {
   const existing = await db.monthlySalaries.where("monthKey").equals(monthKey).first();
   if (existing?.receivedAt) return false;
 
-  if (settings.lastSalaryPromptDate === todayKey()) return false;
+  const today = todayKey();
+  if (isSalarySnoozed(readSalarySnooze(), monthKey, today)) return false;
+  if (settings.lastSalaryPromptDate === today) return false;
 
   return true;
 }
 
 export async function dismissSalaryCreditPromptForToday(): Promise<void> {
-  await updateSettings({ lastSalaryPromptDate: todayKey() });
+  const settings = await getSettings();
+  const monthKey = getCurrentCycleKey(settings.salaryDay);
+  const date = todayKey();
+  writeSalarySnooze({ cycleKey: monthKey, date });
+  await updateSettings({ lastSalaryPromptDate: date });
+}
+
+export async function dismissSalaryCreditForCycle(): Promise<void> {
+  const settings = await getSettings();
+  const monthKey = getCurrentCycleKey(settings.salaryDay);
+  writeSalarySnooze({ cycleKey: monthKey, date: todayKey(), skipCycle: true });
 }
 
 export async function creditSalaryForCurrentCycle(baseSalaryPaise: number): Promise<SalaryCreditPreview> {
@@ -108,6 +120,7 @@ export async function creditSalaryForCurrentCycle(baseSalaryPaise: number): Prom
   }
 
   await createBudgetPlanForCycle(monthKey, totalPaise);
+  await updateSettings({ expectedSalaryPaise: baseSalaryPaise, lastSalaryPromptDate: todayKey() });
 
   return {
     monthKey,

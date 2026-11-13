@@ -7,12 +7,12 @@ export const LOGO_VIEWBOX = 48;
 export const LOGO_TILE_RX = 14;
 
 export const LOGO_COLORS = {
-  violetDeep: "#3d3058",
-  violet: "#5f4a8b",
-  violetGlow: "#6b5a95",
-  cream: "#fefacd",
-  creamDeep: "#e8dfb8",
-  gold: "#c9b87a",
+  carbon: "#0D0D0B",
+  lime: "#C6F432",
+  limeDeep: "#3F6E00",
+  paper: "#F4F0E6",
+  paperDeep: "#E7E1D4",
+  gold: "#FFB020",
 } as const;
 
 /** Base tile */

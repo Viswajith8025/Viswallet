@@ -13,5 +13,6 @@ export function resolveThemeMode(mode: ThemeMode): ResolvedTheme {
 export function applyThemeMode(mode: ThemeMode): ResolvedTheme {
   const resolved = resolveThemeMode(mode);
   document.documentElement.setAttribute("data-theme", resolved);
+  document.documentElement.setAttribute("data-theme-mode", mode);
   return resolved;
 }

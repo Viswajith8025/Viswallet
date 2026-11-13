@@ -192,7 +192,7 @@ export default function GoalsPage() {
       )}
 
       {goals.length === 0 ? (
-        <EmptyState title="No goals yet" description="Create a savings goal to stay motivated." illustration="goals" action={<Button onClick={() => setShowForm(true)}>Add goal</Button>} />
+        <EmptyState title="No goals yet" description="Create a savings goal to stay motivated." illustration="coin" action={<Button onClick={() => setShowForm(true)}>Add goal</Button>} />
       ) : (
         <div className="space-y-4">
           {goals.map((g) => {

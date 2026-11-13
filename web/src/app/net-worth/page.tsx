@@ -5,7 +5,7 @@ import { PageHeader, StatCard, PageContainer, EmptyState } from "@/components/ui
 import { FinanceGate } from "@/components/layout/finance-gate";
 import { GlobalFilterBar } from "@/components/filters/global-filter-bar";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { getNetWorthTrend } from "@/lib/engines/premium/snapshot-recorder";
+import { getNetWorthTrend, shouldRenderNetWorthTrend } from "@/lib/engines/premium/snapshot-recorder";
 import { formatINR } from "@/lib/money";
 import { formatCycleLabel } from "@/lib/salary-cycle";
 
@@ -51,7 +51,7 @@ export default function NetWorthPage() {
               <Card>
                 <CardContent className="p-8 text-center text-sm text-muted-foreground">Loading trend…</CardContent>
               </Card>
-            ) : trend.length > 0 ? (
+            ) : shouldRenderNetWorthTrend(trend.length) ? (
               <Card>
                 <CardHeader>
                   <CardTitle className="text-base">Net worth trend</CardTitle>
@@ -66,7 +66,7 @@ export default function NetWorthPage() {
                           title={formatINR(point.netWorthPaise)}
                         />
                         <span className="text-[9px] text-muted-foreground">
-                          {point.monthKey.slice(5)}
+                          {formatCycleLabel(point.monthKey)}
                         </span>
                       </div>
                     ))}
@@ -75,8 +75,12 @@ export default function NetWorthPage() {
               </Card>
             ) : (
               <EmptyState
-                title="No trend data yet"
-                description="Snapshots are recorded each salary cycle. Check back after your next cycle."
+                title="Your trend appears after 2 months of snapshots."
+                description={
+                  trend[0]
+                    ? `First snapshot: ${formatCycleLabel(trend[0].monthKey)}`
+                    : "Snapshots are recorded each salary cycle."
+                }
               />
             )}
 

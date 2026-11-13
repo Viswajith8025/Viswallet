@@ -1,24 +1,34 @@
 import type { Metadata, Viewport } from "next";
-import { Plus_Jakarta_Sans, Inter } from "next/font/google";
+import Script from "next/script";
+import { Bricolage_Grotesque, Instrument_Sans, JetBrains_Mono } from "next/font/google";
 import "./globals.css";
 import { AppProviders } from "@/components/providers/app-providers";
 import { AppShell } from "@/components/shell/app-shell";
 import { RegisterSW } from "@/components/pwa/register-sw";
 import { InstallPrompt } from "@/components/pwa/install-prompt";
+import { BRAND_NAME, BRAND_TAGLINE, BRAND_CARBON, BRAND_PAPER } from "@/lib/brand/constants";
+import { cn } from "@/lib/utils";
 
-const display = Plus_Jakarta_Sans({
+const display = Bricolage_Grotesque({
   variable: "--font-display",
   subsets: ["latin"],
   display: "swap",
+  axes: ["opsz"],
 });
 
-const body = Inter({
+const body = Instrument_Sans({
   variable: "--font-body",
   subsets: ["latin"],
   display: "swap",
+  weight: ["400", "500", "600"],
 });
 
-import { BRAND_NAME, BRAND_TAGLINE, BRAND_CREAM, BRAND_PURPLE_DEEP } from "@/lib/brand/constants";
+const mono = JetBrains_Mono({
+  variable: "--font-mono",
+  subsets: ["latin"],
+  display: "swap",
+  weight: ["400", "500"],
+});
 
 const APP_DESCRIPTION = `${BRAND_TAGLINE}. Track expenses, budgets, loans, and net worth — private, offline-first.`;
 
@@ -58,8 +68,8 @@ export const metadata: Metadata = {
 
 export const viewport: Viewport = {
   themeColor: [
-    { media: "(prefers-color-scheme: light)", color: BRAND_CREAM },
-    { media: "(prefers-color-scheme: dark)", color: BRAND_PURPLE_DEEP },
+    { media: "(prefers-color-scheme: light)", color: BRAND_PAPER },
+    { media: "(prefers-color-scheme: dark)", color: BRAND_CARBON },
   ],
   width: "device-width",
   initialScale: 1,
@@ -69,18 +79,15 @@ export const viewport: Viewport = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en" data-scroll-behavior="smooth" className={`${display.variable} ${body.variable} min-h-full`} suppressHydrationWarning>
-      <head>
-        <script
-          dangerouslySetInnerHTML={{
-            __html: `(function(){try{var d=document.documentElement;d.setAttribute('data-theme',window.matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light')}catch(e){}})();`,
-          }}
-        />
-      </head>
+    <html lang="en" data-scroll-behavior="smooth" className={cn("min-h-full", display.variable, body.variable, mono.variable)} suppressHydrationWarning>
       <body className="min-h-[100dvh] min-h-screen font-[family-name:var(--font-body)] antialiased">
+        <Script id="theme-boot" strategy="beforeInteractive">
+          {`(function(){try{var d=document.documentElement;var mode="dark";var raw=localStorage.getItem("vw_boot_cache");if(raw){var boot=JSON.parse(raw);if(boot.themeMode==="light"||boot.themeMode==="dark"||boot.themeMode==="system")mode=boot.themeMode}var resolved=mode==="system"?(matchMedia("(prefers-color-scheme: dark)").matches?"dark":"light"):mode;d.setAttribute("data-theme",resolved);d.setAttribute("data-theme-mode",mode)}catch(e){document.documentElement.setAttribute("data-theme","dark")}})();`}
+        </Script>
         <a
           href="#main-content"
           className="sr-only focus:not-sr-only focus:absolute focus:left-4 focus:top-4 focus:z-[300] focus:rounded-lg focus:bg-primary focus:px-4 focus:py-2 focus:text-primary-foreground"
+          suppressHydrationWarning
         >
           Skip to main content
         </a>

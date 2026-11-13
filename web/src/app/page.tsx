@@ -154,7 +154,7 @@ export default function DashboardPage() {
                           compact
                           title={copy.empty.noActivity.title}
                           description={copy.empty.noActivity.description}
-                          illustration="transactions"
+                          illustration="chart"
                           action={
                             <Button size="sm" onClick={() => setQuickAddOpen(true, "expense")}>
                               {copy.buttons.addTransaction}

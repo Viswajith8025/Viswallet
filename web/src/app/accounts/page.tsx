@@ -146,7 +146,7 @@ export default function AccountsPage() {
         role,
         institution: institution.trim() ? sanitizeName(institution) : undefined,
         balancePaise: parseRupeeInput(balance),
-        color: role === "pot" ? "#5f4a8b" : "#7560a0",
+        color: role === "pot" ? "#3F6E00" : "#7DA3FF",
         iconName: role === "pot" ? "PiggyBank" : "Wallet",
         isDefault: accounts.length === 0 && role === "primary",
         isActive: true,

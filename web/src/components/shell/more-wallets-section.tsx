@@ -51,7 +51,7 @@ export function MoreWalletsSection() {
         type: "wallet",
         role,
         balancePaise: 0,
-        color: role === "pot" ? "#5f4a8b" : "#7560a0",
+        color: role === "pot" ? "#3F6E00" : "#7DA3FF",
         iconName: "Wallet",
         isDefault: false,
         isActive: true,

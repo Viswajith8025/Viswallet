@@ -5,25 +5,28 @@ import { liveQuery } from "dexie";
 import { db } from "@/lib/db";
 import type { AppNotification } from "@/lib/db/types";
 import { emitNotificationsChanged } from "@/lib/notifications/bus";
+import { syncDynamicNotifications } from "@/lib/notifications/sync";
+
+let inboxSynced = false;
+
+export function unreadNotificationCount(items: Array<{ read?: boolean }>): number {
+  return items.filter((item) => item.read !== true).length;
+}
 
 export function useUnreadNotificationCount(): number {
-  const [count, setCount] = useState(0);
-
-  useEffect(() => {
-    const sub = liveQuery(() => db.notifications.filter((n) => n.read !== true).count()).subscribe({
-      next: setCount,
-      error: (err) => console.error("Unread notification count failed:", err),
-    });
-    return () => sub.unsubscribe();
-  }, []);
-
-  return count;
+  const items = useNotificationsList();
+  if (!items) return 0;
+  return unreadNotificationCount(items);
 }
 
 export function useNotificationsList(): AppNotification[] | undefined {
   const [items, setItems] = useState<AppNotification[] | undefined>(undefined);
 
   useEffect(() => {
+    if (!inboxSynced) {
+      inboxSynced = true;
+      void syncDynamicNotifications();
+    }
     const sub = liveQuery(() => db.notifications.orderBy("createdAt").reverse().toArray()).subscribe({
       next: setItems,
       error: (err) => console.error("Notifications list failed:", err),

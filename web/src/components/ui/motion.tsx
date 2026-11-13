@@ -1,6 +1,6 @@
 "use client";
 
-import { motion } from "framer-motion";
+import { motion } from "motion/react";
 
 export const EASE_OUT = [0.16, 1, 0.3, 1] as const;
 export const SPRING_SNAPPY = { type: "spring" as const, stiffness: 420, damping: 28 };
