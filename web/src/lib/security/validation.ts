@@ -44,7 +44,6 @@ const settingsSchema = z.object({
   lastBackupAt: dateField.optional(),
   lastSalaryPromptDate: z.string().max(10).optional(),
   expectedSalaryPaise: z.number().int().min(0).max(MAX_AMOUNT_PAISE).optional(),
-  aiFeaturesEnabled: z.boolean().optional(),
   createdAt: dateField,
   updatedAt: dateField,
 });
