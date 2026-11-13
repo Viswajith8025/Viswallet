@@ -40,9 +40,13 @@ export function readSettingsCache(): AppSettings | null {
 }
 
 export function rememberSettings(settings: AppSettings): AppSettings {
-  settingsMemoryCache = settings;
-  writeBootCache(settings);
-  return settings;
+  const normalized: AppSettings = {
+    ...settings,
+    aiFeaturesEnabled: settings.aiFeaturesEnabled ?? true,
+  };
+  settingsMemoryCache = normalized;
+  writeBootCache(normalized);
+  return normalized;
 }
 
 export function clearSettingsCache(): void {

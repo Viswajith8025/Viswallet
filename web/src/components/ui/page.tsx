@@ -110,8 +110,8 @@ export function MetricStrip({
   return (
     <div
       className={cn(
-        "surface-card flex gap-3 overflow-x-auto p-3 snap-x snap-mandatory sm:grid sm:grid-cols-2 sm:gap-5 sm:p-5 sm:overflow-visible lg:grid-cols-4 lg:divide-x lg:divide-border/50 lg:gap-0",
-        "[&>*]:min-w-[9.5rem] [&>*]:shrink-0 [&>*]:snap-start sm:[&>*]:min-w-0 sm:[&>*]:shrink",
+        "surface-card grid grid-cols-2 gap-3 p-3 sm:grid sm:grid-cols-2 sm:gap-5 sm:p-5 lg:grid-cols-4 lg:divide-x lg:divide-border/50 lg:gap-0",
+        "[&>*]:min-w-0",
         "[&>*]:lg:px-5 [&>*:first-child]:lg:pl-0 [&>*:last-child]:lg:pr-0",
         className,
       )}

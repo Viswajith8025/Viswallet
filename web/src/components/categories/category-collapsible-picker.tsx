@@ -13,12 +13,15 @@ export function CategoryCollapsiblePicker({
   onChange,
   kind = "expense",
   className,
+  compact = false,
 }: {
   categories: Category[];
   value: string;
   onChange: (categoryId: string) => void;
   kind?: "expense" | "income";
   className?: string;
+  /** Shorter category grid when nested in quick-add on mobile */
+  compact?: boolean;
 }) {
   const [open, setOpen] = useState(false);
   const resolvedValue = value || String(categories[0]?.id ?? "");
@@ -44,7 +47,12 @@ export function CategoryCollapsiblePicker({
       </button>
 
       {open && (
-        <div className="scroll-premium mt-2 max-h-[min(52vh,420px)] overflow-y-auto rounded-xl border border-border/60 bg-background">
+        <div
+          className={cn(
+            "scroll-premium mt-2 overflow-y-auto rounded-xl border border-border/60 bg-background",
+            compact ? "max-h-[min(28vh,240px)]" : "max-h-[min(52vh,420px)]",
+          )}
+        >
           <CategoryGrid
             categories={categories}
             value={resolvedValue}
