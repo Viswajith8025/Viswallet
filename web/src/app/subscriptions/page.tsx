@@ -2,8 +2,8 @@
 
 import { useState } from "react";
 import { format } from "date-fns";
-import { Pencil, Trash2 } from "lucide-react";
-import { PageHeader, StatCard, EmptyState, PageContainer } from "@/components/ui/page";
+import { Pencil, Repeat, Trash2 } from "lucide-react";
+import { PageHeader, StatCard, PageContainer } from "@/components/ui/page";
 import { DexiePageGate } from "@/components/layout/dexie-page-gate";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -23,6 +23,7 @@ import { confirmAction } from "@/lib/store/confirm-store";
 import { Hint } from "@/components/ui/hint";
 import { useInvalidateFinance, useAsyncAction, useDexieTable } from "@/hooks";
 import { showToast } from "@/lib/store/toast-store";
+import { MoneyTabs } from "@/components/money/money-tabs";
 
 export default function SubscriptionsPage() {
   const invalidate = useInvalidateFinance();
@@ -128,16 +129,28 @@ export default function SubscriptionsPage() {
           </Button>
         }
       />
+      <MoneyTabs />
 
       <DexiePageGate isPending={isPending} isError={isError} onRetry={() => refetch()} label={copy.loading.subscriptions}>
       <div className="space-y-8">
 
-      <div className="grid gap-4 md:grid-cols-2">
-        <StatCard label={copy.labels.activeSubscriptions} value={subs.length} />
-        <StatCard label={copy.labels.monthlyRunRate} value={formatINR(monthlyTotal)} hint={copy.subscriptionDetection.normalizedHint} />
-      </div>
+      {subs.length > 0 && (
+        <div className="grid gap-4 md:grid-cols-2">
+          <StatCard label={copy.labels.activeSubscriptions} value={subs.length} />
+          <StatCard label={copy.labels.monthlyRunRate} value={formatINR(monthlyTotal)} hint={copy.subscriptionDetection.normalizedHint} />
+        </div>
+      )}
+      {subs.length > 0 && (() => {
+        const least = [...subs].sort((a, b) => subscriptionMonthlyPaise(a) - subscriptionMonthlyPaise(b))[0];
+        if (!least) return null;
+        return (
+          <p className="font-body text-sm text-ink-2">
+            You&apos;d save {formatINR(subscriptionMonthlyPaise(least) * 12)}/yr by cancelling {least.name}.
+          </p>
+        );
+      })()}
 
-      <Hint>{copy.subscriptionDetection.hint}</Hint>
+      {subs.length > 0 && <Hint>{copy.subscriptionDetection.hint}</Hint>}
 
       {detected.length > 0 && (
         <Card>
@@ -194,7 +207,13 @@ export default function SubscriptionsPage() {
       )}
 
       {subs.length === 0 ? (
-        <EmptyState title={copy.empty.noSubscriptions.title} description={copy.empty.noSubscriptions.description} action={<Button onClick={() => setShowForm(true)}>{copy.buttons.addSubscription}</Button>} />
+        <div className="flex flex-col items-center gap-3 rounded-[14px] border border-hairline bg-surface px-6 py-12 text-center">
+          <Repeat size={22} className="text-ink-2" aria-hidden />
+          <p className="max-w-xs font-body text-sm text-ink">
+            Track streaming, apps, and anything that renews on its own.
+          </p>
+          <Button onClick={() => setShowForm(true)}>Add subscription</Button>
+        </div>
       ) : (
         <Card>
           <CardContent className="p-0">

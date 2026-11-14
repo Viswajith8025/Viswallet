@@ -70,21 +70,23 @@ export function HeroBalanceCard({
     writeMode(next);
   }
 
-  const needsSalary = data.expectedSalaryPaise <= 0 && data.salaryPaise <= 0 && data.transactions.length === 0;
+  const hasIncome = data.expectedSalaryPaise > 0 || data.salaryPaise > 0 || data.incomePaise > 0;
   const amountPaise =
     mode === "cycle" ? data.remainingPaise : mode === "worth" ? data.netWorthPaise : data.safeSpendDaily;
-  const rupees = Math.max(0, Math.round(paiseToRupee(amountPaise)));
+  const showWords = mode !== "worth" && (!hasIncome || amountPaise <= 0);
+  const rupees = Math.round(paiseToRupee(Math.abs(amountPaise)));
   const spent = Math.max(0, data.expensePaise);
   const committed = Math.max(0, data.billsDuePaise + data.emiMonthlyPaise + data.subscriptionMonthlyPaise);
   const free = Math.max(0, data.remainingPaise);
   const total = spent + committed + free;
+  const showBar = total > 0;
   const streak = streakDays(data);
   const salarySet = data.expectedSalaryPaise > 0 || data.salaryPaise > 0;
   const loggedExpense = data.transactions.some((row) => row.kind === "expense");
   const invited = data.lentBalance > 0 || data.borrowedBalance > 0;
 
   return (
-    <section className="rounded-[14px] border border-hairline bg-surface p-5 lg:p-6">
+    <section className="flex h-full w-full flex-col rounded-[14px] border border-hairline bg-surface p-5 lg:p-6">
       <div className="flex items-start justify-between gap-3">
         <p className="font-body text-sm text-ink-2">{greeting}</p>
         <div className="flex items-center gap-2">
@@ -121,10 +123,19 @@ export function HeroBalanceCard({
         <p className="font-mono text-[11px] uppercase tracking-[0.16em] text-ink-2">
           {MODES.find((item) => item.id === mode)?.label}
         </p>
-        {needsSalary ? (
-          <p className="mt-2 font-mono text-[40px] leading-none text-ink lg:text-[56px]">₹0</p>
+        {showWords ? (
+          !hasIncome ? (
+            <p className="mt-3 max-w-sm font-body text-lg leading-snug text-ink">
+              Set your monthly income to see what is safe to spend.
+            </p>
+          ) : amountPaise < 0 ? (
+            <p className="mt-3 font-body text-2xl text-chili lg:text-3xl">Over by {formatINR(Math.abs(amountPaise))}</p>
+          ) : (
+            <p className="mt-3 font-body text-2xl text-marigold lg:text-3xl">You&apos;re at your limit for this cycle</p>
+          )
         ) : (
           <p className="mt-2 font-mono text-[56px] leading-none text-ink lg:text-[72px]">
+            {amountPaise < 0 ? "−" : null}
             <span className="text-ink-2">₹</span>
             <NumberTicker
               value={rupees}
@@ -132,31 +143,33 @@ export function HeroBalanceCard({
             />
           </p>
         )}
-        <p className="mt-3 font-mono text-[13px] text-ink-2">
-          {needsSalary
-            ? "₹0 safe to spend · set your salary to start"
-            : `${formatINR(data.remainingPaise)} left this cycle · ${data.daysLeft} days`}
-        </p>
+        {hasIncome && (
+          <p className="mt-3 font-mono text-[13px] text-ink-2">
+            {formatINR(data.remainingPaise)} left this cycle · {data.daysLeft} days
+          </p>
+        )}
       </button>
 
-      <div className="mt-6 h-2 overflow-hidden rounded-full bg-sunken" aria-hidden>
-        {total > 0 && (
-          <div className="flex h-full motion-safe:transition-[width] motion-safe:duration-500">
+      {showBar ? (
+        <div className="mt-auto pt-6">
+          <div className="flex h-2 overflow-hidden rounded-full bg-sunken" aria-hidden>
             <span className="h-full bg-chili" style={{ width: `${(spent / total) * 100}%` }} />
             <span className="h-full bg-marigold" style={{ width: `${(committed / total) * 100}%` }} />
             <span className="h-full bg-lime" style={{ width: `${(free / total) * 100}%` }} />
           </div>
-        )}
-      </div>
-      <p className="mt-2 font-mono text-[11px] text-ink-2">spent · committed · free</p>
+          <p className="mt-2 font-mono text-[11px] text-ink-2">
+            spent {formatINR(spent)} · committed {formatINR(committed)} · free {formatINR(free)}
+          </p>
+        </div>
+      ) : null}
 
-      {needsSalary && (
+      {!hasIncome && (
         <div className="mt-6 space-y-3">
           <Link
             href="/salary"
             className="inline-flex h-11 items-center rounded-full bg-lime px-4 font-medium text-[#0D0D0B]"
           >
-            Set salary
+            Set your monthly income
           </Link>
           <ol className="space-y-2 font-body text-sm text-ink">
             {[

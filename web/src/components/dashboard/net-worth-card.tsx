@@ -2,14 +2,21 @@
 
 import { useRef } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { Area, AreaChart, ResponsiveContainer } from "recharts";
+import { Line, LineChart, ResponsiveContainer, YAxis } from "recharts";
 import { useInView, useReducedMotion } from "motion/react";
 import { BorderBeam } from "@/components/ui/border-beam";
+import { NumberTicker } from "@/components/ui/number-ticker";
 import { db } from "@/lib/db";
-import { formatINR } from "@/lib/money";
+import { formatINR, paiseToRupee } from "@/lib/money";
 import { cn } from "@/lib/design/cn";
 
-export function NetWorthCard({ netWorthPaise }: { netWorthPaise: number }) {
+export function NetWorthCard({
+  netWorthPaise,
+  className,
+}: {
+  netWorthPaise: number;
+  className?: string;
+}) {
   const ref = useRef<HTMLElement>(null);
   const inView = useInView(ref, { amount: 0.4 });
   const reduce = useReducedMotion();
@@ -28,12 +35,31 @@ export function NetWorthCard({ netWorthPaise }: { netWorthPaise: number }) {
       : [];
 
   return (
-    <section ref={ref} className="relative overflow-hidden rounded-[14px] border border-hairline bg-surface p-5">
+    <section
+      ref={ref}
+      className={cn(
+        "relative flex flex-col overflow-hidden rounded-[14px] border border-hairline bg-surface p-5",
+        className,
+      )}
+    >
       {inView && !reduce && (
-        <BorderBeam colorFrom="#C6F432" colorTo="transparent" duration={8} size={80} />
+        <BorderBeam
+          colorFrom="#C6F432"
+          colorTo="rgba(198, 244, 50, 0.05)"
+          duration={16}
+          size={72}
+          borderWidth={1}
+        />
       )}
       <p className="font-mono text-[11px] uppercase tracking-[0.16em] text-ink-2">Net worth</p>
-      <p className="mt-2 font-mono text-[28px] text-ink">{formatINR(netWorthPaise)}</p>
+      <p className="mt-2 font-mono text-[28px] text-ink">
+        {netWorthPaise < 0 ? "−" : null}
+        <span className="text-ink-2">₹</span>
+        <NumberTicker
+          value={Math.abs(Math.round(paiseToRupee(netWorthPaise)))}
+          className="font-mono text-[28px] text-ink"
+        />
+      </p>
       {delta != null && (
         <p className={cn("mt-1 font-mono text-[12px]", delta >= 0 ? "text-lime" : "text-chili")}>
           {delta >= 0 ? "+" : "−"}
@@ -41,25 +67,22 @@ export function NetWorthCard({ netWorthPaise }: { netWorthPaise: number }) {
         </p>
       )}
       {series.length >= 2 ? (
-        <div className="mt-3 h-16">
+        <div className="mt-3 min-h-16 flex-1">
           <ResponsiveContainer width="100%" height="100%">
-            <AreaChart data={series}>
-              <defs>
-                <linearGradient id="nw-fill" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%" stopColor="#C6F432" stopOpacity={0.18} />
-                  <stop offset="100%" stopColor="#C6F432" stopOpacity={0} />
-                </linearGradient>
-              </defs>
-              <Area
-                type="monotone"
+            <LineChart data={series} margin={{ top: 10, right: 16, bottom: 10, left: 16 }}>
+              <YAxis hide domain={["dataMin", "dataMax"]} padding={{ top: 6, bottom: 6 }} />
+              <Line
+                type="linear"
                 dataKey="value"
                 stroke="#C6F432"
                 strokeWidth={2}
-                fill="url(#nw-fill)"
+                strokeLinecap="round"
+                dot={false}
+                activeDot={false}
                 isAnimationActive={!reduce}
                 animationDuration={600}
               />
-            </AreaChart>
+            </LineChart>
           </ResponsiveContainer>
         </div>
       ) : (

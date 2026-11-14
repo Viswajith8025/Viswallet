@@ -13,6 +13,7 @@ export async function GET() {
   const cloudVault = process.env.NEXT_PUBLIC_CLOUD_VAULT === "true";
 
   return NextResponse.json({
+    enabled: groq,
     available: groq,
     groq,
     supabase,

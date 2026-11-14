@@ -1,7 +1,7 @@
 import { getGroqApiKey, isProduction } from "@/lib/security/env";
 
 const GROQ_CHAT_URL = "https://api.groq.com/openai/v1/chat/completions";
-const DEFAULT_MODEL = "llama-3.1-8b-instant";
+const DEFAULT_MODEL = "openai/gpt-oss-20b";
 
 type ChatMessage = { role: "system" | "user" | "assistant"; content: string };
 

@@ -7,6 +7,7 @@ export type ToastItem = {
   tone?: "default" | "success" | "warning" | "error" | "info";
   undo?: () => void | Promise<void>;
   action?: { label: string; onClick: () => void | Promise<void> };
+  durationMs?: number;
 };
 
 type ToastState = {
@@ -22,7 +23,8 @@ export const useToastStore = create<ToastState>((set, get) => ({
     if (toast.tone === "success") successFeedback();
     if (toast.tone === "error") errorFeedback();
     set({ toasts: [...get().toasts, { ...toast, id }] });
-    setTimeout(() => get().dismiss(id), toast.undo || toast.action ? 8000 : 4000);
+    const duration = toast.durationMs ?? (toast.undo || toast.action ? 8000 : 4000);
+    setTimeout(() => get().dismiss(id), duration);
   },
   dismiss: (id) => set({ toasts: get().toasts.filter((t) => t.id !== id) }),
 }));
@@ -33,6 +35,7 @@ export function showToast(
     undo?: () => void | Promise<void>;
     action?: { label: string; onClick: () => void | Promise<void> };
     tone?: ToastItem["tone"];
+    durationMs?: number;
   },
 ) {
   useToastStore.getState().push({ message, ...options });

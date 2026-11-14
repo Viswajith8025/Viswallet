@@ -1,4 +1,5 @@
 export type AiStatus = {
+  enabled: boolean;
   available: boolean;
   groq: boolean;
   supabase: boolean;
@@ -45,7 +46,42 @@ async function aiAuthHeaders(): Promise<Record<string, string>> {
   return headers;
 }
 
+const disabledStatus: AiStatus = {
+  enabled: false,
+  available: false,
+  groq: false,
+  supabase: false,
+  cloudVault: false,
+};
+
+let sessionStatus: Promise<AiStatus> | null = null;
+
+/** One status check per page load. Callers must not hit Groq routes when this is false. */
+export function loadAiSession(): Promise<AiStatus> {
+  if (!sessionStatus) {
+    sessionStatus = fetch("/api/ai/status")
+      .then(async (res) => {
+        if (!res.ok) return disabledStatus;
+        const body = (await res.json()) as Partial<AiStatus>;
+        const enabled = body.enabled === true;
+        return {
+          enabled,
+          available: enabled,
+          groq: enabled,
+          supabase: body.supabase === true,
+          cloudVault: body.cloudVault === true,
+        };
+      })
+      .catch(() => disabledStatus);
+  }
+  return sessionStatus;
+}
+
 async function postJson<T>(path: string, body: unknown): Promise<T> {
+  const session = await loadAiSession();
+  if (!session.enabled) {
+    throw new Error("AI features are off.");
+  }
   const res = await fetch(path, {
     method: "POST",
     headers: await aiAuthHeaders(),
@@ -58,16 +94,16 @@ async function postJson<T>(path: string, body: unknown): Promise<T> {
   return res.json() as Promise<T>;
 }
 
-export function shouldShowAiEntry(status: Pick<AiStatus, "groq"> | null): boolean {
-  return status?.groq === true;
+export function shouldShowAiEntry(
+  status: { enabled?: boolean; groq?: boolean } | null,
+): boolean {
+  if (!status) return false;
+  if (typeof status.enabled === "boolean") return status.enabled;
+  return status.groq === true;
 }
 
 export async function fetchAiStatus(): Promise<AiStatus> {
-  const res = await fetch("/api/ai/status");
-  if (!res.ok) {
-    return { available: false, groq: false, supabase: false, cloudVault: false };
-  }
-  return res.json() as Promise<AiStatus>;
+  return loadAiSession();
 }
 
 export async function parseTransactionWithAi(

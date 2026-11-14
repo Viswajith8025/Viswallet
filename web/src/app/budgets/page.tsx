@@ -1,17 +1,18 @@
 "use client";
 
 import Link from "next/link";
+import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { PageHeader, StatCard, EmptyState, PageContainer, LoadingState } from "@/components/ui/page";
+import { PageHeader, StatCard, PageContainer, LoadingState } from "@/components/ui/page";
 import { FinanceGate } from "@/components/layout/finance-gate";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Progress } from "@/components/ui/progress";
 import { Hint } from "@/components/ui/hint";
+import { MoneyKeypad, applyKeypadKey } from "@/components/ui/money-keypad";
 import { useInvalidateFinance } from "@/hooks/use-invalidate-finance";
 import { createBudgetPlanForCycle, db } from "@/lib/db";
 import type { FinanceSnapshot } from "@/lib/engines/finance-snapshot";
-import { formatINR } from "@/lib/money";
+import { formatINR, parseRupeeInput } from "@/lib/money";
 import { formatCycleLabel } from "@/lib/salary-cycle";
 import { categoryMap } from "@/lib/engines/finance-snapshot";
 import { expectedSalaryPaise } from "@/lib/salary/salary-prompt";
@@ -19,9 +20,13 @@ import { expectedSalaryPaise } from "@/lib/salary/salary-prompt";
 function BudgetsContent({ data }: { data: FinanceSnapshot }) {
   const invalidate = useInvalidateFinance();
   const salaryPaise = data.salaryPaise > 0 ? data.salaryPaise : expectedSalaryPaise(data);
+  const [manual, setManual] = useState("");
+  const [planTick, setPlanTick] = useState(0);
+  const [editingId, setEditingId] = useState<number | null>(null);
+  const [draft, setDraft] = useState("");
 
   const { data: buckets = [], isPending: bucketsLoading } = useQuery({
-    queryKey: ["budget-buckets", data.monthKey, salaryPaise],
+    queryKey: ["budget-buckets", data.monthKey, salaryPaise, planTick],
     queryFn: async () => {
       let plan = await db.budgetPlans.where("monthKey").equals(data.monthKey).first();
       if (!plan && salaryPaise > 0) {
@@ -32,24 +37,24 @@ function BudgetsContent({ data }: { data: FinanceSnapshot }) {
       if (!plan?.id) return [];
       return db.budgetBuckets.where("planId").equals(plan.id).sortBy("sortOrder");
     },
-    enabled: salaryPaise > 0,
   });
 
-  if (salaryPaise <= 0) {
-    return (
-      <PageContainer className="max-w-5xl">
-        <PageHeader title="Budgets" description="Allocate your salary across spending buckets." />
-        <EmptyState
-          title="Set your salary first"
-          description="A budget plan is created automatically once your monthly salary is configured."
-          action={
-            <Link href="/salary">
-              <Button>Go to salary</Button>
-            </Link>
-          }
-        />
-      </PageContainer>
-    );
+  async function saveManual(event: React.FormEvent) {
+    event.preventDefault();
+    const paise = parseRupeeInput(manual);
+    if (paise <= 0) return;
+    await createBudgetPlanForCycle(data.monthKey, paise);
+    setPlanTick((tick) => tick + 1);
+    await invalidate();
+  }
+
+  async function saveBucket(id: number) {
+    const paise = parseRupeeInput(draft);
+    if (paise <= 0) return;
+    await db.budgetBuckets.update(id, { allocatedPaise: paise });
+    setEditingId(null);
+    setPlanTick((tick) => tick + 1);
+    await invalidate();
   }
 
   const cats = categoryMap(data.categories);
@@ -92,7 +97,20 @@ function BudgetsContent({ data }: { data: FinanceSnapshot }) {
       {bucketsLoading ? (
         <LoadingState label="Generating budget plan…" />
       ) : buckets.length === 0 ? (
-        <EmptyState title="No budget plan" description="Set your salary to generate a budget plan for this cycle." />
+        <form onSubmit={saveManual} className="max-w-md space-y-3">
+          <h2 className="font-body text-lg text-ink">Set a monthly budget manually</h2>
+          <input
+            value={manual}
+            onChange={(event) => setManual(event.target.value)}
+            inputMode="decimal"
+            aria-label="Monthly budget"
+            placeholder="0"
+            className="h-12 w-full rounded-[14px] border border-hairline bg-transparent px-4 font-mono text-lg text-ink outline-none focus:border-lime"
+          />
+          <button type="submit" className="h-12 rounded-full bg-lime px-5 font-medium text-[#0D0D0B] disabled:opacity-40" disabled={parseRupeeInput(manual) <= 0}>
+            Create budget
+          </button>
+        </form>
       ) : (
         <div className="space-y-4">
           {buckets.map((b) => {
@@ -112,7 +130,32 @@ function BudgetsContent({ data }: { data: FinanceSnapshot }) {
                       <span className="text-muted-foreground"> / {formatINR(allocated)}</span>
                     </p>
                   </div>
-                  <Progress value={spent} max={allocated} overColor="var(--destructive)" />
+                  <button
+                    type="button"
+                    className="relative h-14 w-full overflow-hidden rounded-full bg-sunken text-left"
+                    onClick={() => {
+                      setEditingId(b.id ?? null);
+                      setDraft(String(allocated / 100));
+                    }}
+                    aria-label={`Adjust ${b.displayName}`}
+                  >
+                    <span
+                      className={over ? "absolute inset-y-0 left-0 bg-chili/80" : "absolute inset-y-0 left-0 bg-lime"}
+                      style={{ width: `${Math.min(100, allocated > 0 ? (spent / allocated) * 100 : 0)}%` }}
+                    />
+                    <span className="relative flex h-full items-center px-4 font-mono text-xs text-ink">
+                      {b.displayName} · {formatINR(spent)} / {formatINR(allocated)}
+                    </span>
+                  </button>
+                  {editingId === b.id && (
+                    <div className="mt-3 space-y-3">
+                      <p className="font-mono text-2xl text-ink">₹{draft || "0"}</p>
+                      <MoneyKeypad onKey={(key) => setDraft((current) => applyKeypadKey(current, key))} />
+                      <button type="button" className="h-11 rounded-full bg-lime px-4 font-medium text-[#0D0D0B]" onClick={() => b.id && void saveBucket(b.id)}>
+                        Save bucket
+                      </button>
+                    </div>
+                  )}
                   <p className="mt-2 text-xs text-muted-foreground">
                     {over ? `${formatINR(spent - allocated)} over budget` : `${formatINR(allocated - spent)} remaining`}
                   </p>

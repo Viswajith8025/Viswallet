@@ -28,7 +28,7 @@ function ReceiptCard({
 
   return (
     <motion.li
-      className="w-[240px] shrink-0 snap-start"
+      className="w-[calc(100%-56px)] shrink-0 snap-start lg:w-full"
       drag={reduce ? false : "y"}
       dragConstraints={{ top: 0, bottom: 0 }}
       dragElastic={0.2}
@@ -126,7 +126,7 @@ export function ActionCenter() {
   return (
     <section aria-label="Up next">
       <h2 className="mb-3 font-mono text-[11px] uppercase tracking-[0.16em] text-ink-2">Up next</h2>
-      <ul className="flex snap-x gap-3 overflow-x-auto pb-2">
+      <ul className="flex snap-x snap-mandatory gap-3 overflow-x-auto pb-2 lg:snap-none lg:flex-col lg:overflow-visible">
         {visibleItems.map((item) => (
           <ReceiptCard
             key={item.id}

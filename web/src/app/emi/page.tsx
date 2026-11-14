@@ -4,6 +4,7 @@ import { useState } from "react";
 import { format } from "date-fns";
 import { Pencil, Trash2 } from "lucide-react";
 import { PageHeader, StatCard, EmptyState, PageContainer } from "@/components/ui/page";
+import { MoneyTabs } from "@/components/money/money-tabs";
 import { DexiePageGate } from "@/components/layout/dexie-page-gate";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -11,7 +12,6 @@ import { Input } from "@/components/ui/input";
 import { db } from "@/lib/db";
 import type { Emi } from "@/lib/db/types";
 import { formatINR, parseRupeeInput, parseInterestRate } from "@/lib/money";
-import { Progress } from "@/components/ui/progress";
 import { useInvalidateFinance, useDexieTable } from "@/hooks";
 import { confirmAction } from "@/lib/store/confirm-store";
 import { notifyDataMutation } from "@/lib/db/notify-mutation";
@@ -143,6 +143,7 @@ export default function EmiPage() {
           </Button>
         }
       />
+      <MoneyTabs />
 
       <DexiePageGate isPending={isPending} isError={isError} onRetry={() => refetch()} label={copy.loading.emis}>
       <div className="space-y-8">
@@ -205,7 +206,25 @@ export default function EmiPage() {
                         </div>
                       </div>
                     </div>
-                    <Progress value={progress} max={100} size="lg" className="mt-3" />
+                    <div className="mt-3 flex items-center gap-3">
+                      <svg viewBox="0 0 36 36" className="h-12 w-12" aria-hidden>
+                        <circle cx="18" cy="18" r="14" fill="none" stroke="currentColor" className="text-sunken" strokeWidth="4" />
+                        <circle
+                          cx="18"
+                          cy="18"
+                          r="14"
+                          fill="none"
+                          stroke="#C6F432"
+                          strokeWidth="4"
+                          strokeDasharray={`${Math.max(0, Math.min(100, progress)) * 0.88} 88`}
+                          strokeLinecap="round"
+                          transform="rotate(-90 18 18)"
+                        />
+                      </svg>
+                      <p className="font-mono text-xs uppercase tracking-[0.08em] text-ink-2">
+                        {Math.round(progress)}% of principal repaid
+                      </p>
+                    </div>
                     <p className="mt-1 text-xs text-muted-foreground">{e.paidMonths}/{e.tenureMonths} months paid</p>
                   </li>
                 );

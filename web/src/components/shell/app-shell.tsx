@@ -73,7 +73,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             <main
               id="main-content"
               ref={mainRef}
-              className="scroll-premium min-h-0 flex-1 overflow-y-auto overscroll-contain px-4 py-4 pb-[calc(64px+env(safe-area-inset-bottom))] lg:px-8 lg:py-8 lg:pb-8"
+              className="scroll-premium min-h-0 flex-1 overflow-y-auto overscroll-contain px-4 py-4 pb-[calc(64px+env(safe-area-inset-bottom)+16px)] lg:px-8 lg:py-8 lg:pb-8"
               tabIndex={-1}
             >
               <div ref={sentinelRef} className="h-px w-full" aria-hidden />

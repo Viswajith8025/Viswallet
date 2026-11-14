@@ -18,6 +18,7 @@ import { showToast } from "@/lib/store/toast-store";
 import { useInvalidateFinance, useAsyncAction, useDexieTable } from "@/hooks";
 import { confirmAction } from "@/lib/store/confirm-store";
 import { notifyDataMutation } from "@/lib/db/notify-mutation";
+import { MoneyTabs } from "@/components/money/money-tabs";
 
 export default function BillsPage() {
   const invalidate = useInvalidateFinance();
@@ -38,6 +39,8 @@ export default function BillsPage() {
   const unpaid = bills.filter((b) => computeBillStatus(b) !== "paid");
   const dueTotal = unpaid.reduce((s, b) => s + b.amountPaise, 0);
   const overdueCount = unpaid.filter((b) => computeBillStatus(b) === "overdue").length;
+  const paidTotal = bills.filter((b) => computeBillStatus(b) === "paid").reduce((sum, bill) => sum + bill.amountPaise, 0);
+  const cycleTotal = dueTotal + paidTotal;
 
   function resetForm() {
     setEdit(null);
@@ -142,6 +145,18 @@ export default function BillsPage() {
           </Button>
         }
       />
+      <MoneyTabs />
+      {cycleTotal > 0 && (
+        <div className="space-y-2">
+          <p className="font-mono text-sm text-ink">
+            {formatINR(dueTotal)} due this cycle · {formatINR(paidTotal)} paid
+          </p>
+          <div className="flex h-2 overflow-hidden rounded-full bg-sunken">
+            <span className="bg-lime" style={{ width: `${(paidTotal / cycleTotal) * 100}%` }} />
+            <span className="bg-marigold" style={{ width: `${(dueTotal / cycleTotal) * 100}%` }} />
+          </div>
+        </div>
+      )}
 
       <DexiePageGate isPending={isPending} isError={isError} onRetry={() => refetch()} label={copy.loading.bills}>
       <div className="space-y-8">

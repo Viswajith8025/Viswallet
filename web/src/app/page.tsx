@@ -28,12 +28,12 @@ export default function DashboardPage() {
     <FinanceGate skeleton="dashboard">
       {(data) => (
         <div className="mx-auto flex max-w-6xl flex-col gap-6">
-          <div className="grid items-start gap-4 lg:grid-cols-12">
-            <div className="lg:col-span-8">
+          <div className="grid items-stretch gap-4 lg:grid-cols-12">
+            <div className="flex h-full lg:col-span-8">
               <HeroBalanceCard data={data} greeting={greeting} />
             </div>
-            <div className="flex flex-col gap-4 lg:col-span-4">
-              <NetWorthCard netWorthPaise={data.netWorthPaise} />
+            <div className="flex h-full flex-col gap-4 lg:col-span-4">
+              <NetWorthCard netWorthPaise={data.netWorthPaise} className="min-h-0 flex-1" />
               <ActionCenter />
             </div>
           </div>

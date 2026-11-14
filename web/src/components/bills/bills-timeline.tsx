@@ -1,6 +1,6 @@
 "use client";
 
-import { format, isPast, startOfDay } from "date-fns";
+import { differenceInCalendarDays, format, isPast, startOfDay } from "date-fns";
 import { Check, Pencil, Trash2 } from "lucide-react";
 import type { Bill } from "@/lib/db/types";
 import { formatINR } from "@/lib/money";
@@ -99,6 +99,14 @@ export function BillsTimeline({ bills, onMarkPaid, onEdit, onDelete, payingId }:
   );
 }
 
+function BillStamp({ due, status }: { due: Date; status: string }) {
+  const days = differenceInCalendarDays(startOfDay(due), startOfDay(new Date()));
+  const paid = status === "paid";
+  const label = paid ? "PAID" : days < 0 ? "OVERDUE" : days === 0 ? "DUE TODAY" : `DUE IN ${days}D`;
+  const tone = paid ? "text-lime" : days < 0 ? "text-chili" : "text-marigold";
+  return <p className={`font-mono text-[11px] uppercase tracking-[0.12em] ${tone}`}>{label}</p>;
+}
+
 function BillTimelineCard({
   bill,
   status,
@@ -131,7 +139,10 @@ function BillTimelineCard({
             {bill.isRecurring && " · Recurring"}
           </p>
         </div>
-        <p className="text-lg font-bold tabular-nums shrink-0">{formatINR(bill.amountPaise)}</p>
+        <div className="text-right">
+          <p className="font-mono text-lg">{formatINR(bill.amountPaise)}</p>
+          <BillStamp due={new Date(bill.dueAt)} status={status} />
+        </div>
       </div>
       <div className="mt-3 flex flex-wrap gap-2">
         <Button size="sm" disabled={paying} onClick={onMarkPaid}>

@@ -11,6 +11,8 @@ import { formatCycleLabel } from "@/lib/salary-cycle";
 import { useUIStore } from "@/lib/store/ui-store";
 import { DataList } from "@/components/ui/list";
 import { TransactionRow } from "@/components/shared/transaction-row";
+import { MoneyTabs } from "@/components/money/money-tabs";
+import { SalarySection } from "@/components/money/salary-section";
 
 export default function IncomePage() {
   const setQuickAddOpen = useUIStore((s) => s.setQuickAddOpen);
@@ -36,7 +38,10 @@ export default function IncomePage() {
           </Button>
         }
       />
+      <MoneyTabs />
+      <SalarySection data={data} />
 
+      <h2 className="font-body text-lg text-ink">Other income</h2>
       <div className="grid gap-4 md:grid-cols-3">
         <StatCard label="Total income" value={formatINR(data.incomePaise)} tone="positive" />
         <StatCard label="Salary" value={formatINR(salaryOnly)} />

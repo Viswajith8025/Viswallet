@@ -1,6 +1,7 @@
 "use client";
 
 import { formatDistanceToNow } from "date-fns";
+import { Receipt } from "lucide-react";
 import { motion, useMotionValue, useReducedMotion } from "motion/react";
 import Link from "next/link";
 import { AnimatedList } from "@/components/ui/animated-list";
@@ -11,6 +12,7 @@ import { formatINR } from "@/lib/money";
 import { useInvalidateFinance } from "@/hooks";
 import { cn } from "@/lib/design/cn";
 import { showToast } from "@/lib/store/toast-store";
+import { useUIStore } from "@/lib/store/ui-store";
 
 function ActivityRow({
   title,
@@ -89,7 +91,17 @@ export function RecentActivity({ data }: { data: FinanceSnapshot }) {
     return (
       <section>
         <h2 className="mb-3 font-mono text-[11px] uppercase tracking-[0.16em] text-ink-2">Recent</h2>
-        <p className="font-body text-sm text-ink-2">Nothing logged this cycle.</p>
+        <div className="flex flex-col items-start gap-3 rounded-[14px] border border-hairline bg-surface px-4 py-6">
+          <Receipt size={20} className="text-ink-2" aria-hidden />
+          <p className="font-body text-sm text-ink">Nothing logged yet this cycle</p>
+          <button
+            type="button"
+            className="inline-flex h-11 items-center rounded-full bg-lime px-4 font-medium text-[#0D0D0B]"
+            onClick={() => useUIStore.getState().setQuickAddOpen(true, "expense")}
+          >
+            Add expense
+          </button>
+        </div>
       </section>
     );
   }

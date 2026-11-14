@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { useDb } from "@/components/providers/db-provider";
 import { getSettings } from "@/lib/db";
-import { fetchAiStatus, shouldShowAiEntry, type AiStatus } from "@/lib/ai/client";
+import { loadAiSession, shouldShowAiEntry, type AiStatus } from "@/lib/ai/client";
 
 export type AiFeaturesState = {
   /** Groq API key is configured on the server */
@@ -24,9 +24,18 @@ export function useAiFeatures(): AiFeaturesState {
 
   useEffect(() => {
     let cancelled = false;
-    void Promise.all([fetchAiStatus(), getSettings()]).then(([ai, settings]) => {
+    void loadAiSession().then((ai) => {
+      if (!cancelled) setStatus(ai);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  useEffect(() => {
+    let cancelled = false;
+    void getSettings().then((settings) => {
       if (cancelled) return;
-      setStatus(ai);
       setEnabled(settings.aiFeaturesEnabled ?? true);
       setLoaded(true);
     });

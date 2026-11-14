@@ -1,7 +1,10 @@
 "use client";
 
 import { Suspense, useEffect, useMemo, useState } from "react";
-import { useSearchParams } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
+import { format } from "date-fns";
+import Fuse from "fuse.js";
+import { Search } from "lucide-react";
 import { PageHeader, EmptyState, PageContainer } from "@/components/ui/page";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -9,14 +12,11 @@ import { Input, Select } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { FinanceGate } from "@/components/layout/finance-gate";
 import { FadeIn } from "@/components/ui/motion";
-import { TransactionRow } from "@/components/shared/transaction-row";
 import { CategoryPicker } from "@/components/categories/category-picker";
-import { PaginationControls } from "@/components/shared/pagination-controls";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Hint } from "@/components/ui/hint";
 import { SegmentedControl } from "@/components/ui/segmented-control";
 import { TabBar } from "@/components/ui/tab-bar";
-import { DataList } from "@/components/ui/list";
 import { useCategories } from "@/lib/queries/use-finance";
 import { useInvalidateFinance, usePagination } from "@/hooks";
 import { categoryMap } from "@/lib/engines/finance-snapshot";
@@ -40,6 +40,8 @@ import { copy, toastCopy } from "@/lib/ux/copy";
 import { showToast } from "@/lib/store/toast-store";
 import { useUIStore } from "@/lib/store/ui-store";
 import { SharedBalance } from "@/components/dashboard/shared-balance";
+import { MoneyTabs } from "@/components/money/money-tabs";
+import { SwipeTransactionRow } from "@/components/money/swipe-transaction-row";
 
 function TransactionsContent({
   data,
@@ -74,6 +76,12 @@ function TransactionsContent({
   const [formError, setFormError] = useState("");
   const [forceDuplicate, setForceDuplicate] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [showSearch, setShowSearch] = useState(false);
+  const [query, setQuery] = useState("");
+  const [categoryFilter, setCategoryFilter] = useState("");
+  const [minRupee, setMinRupee] = useState("");
+  const [maxRupee, setMaxRupee] = useState("");
+  const [windowSize, setWindowSize] = useState(80);
 
   const cats = categoryMap(data.categories);
   const list = useMemo(
@@ -81,6 +89,35 @@ function TransactionsContent({
     [data.transactions, filter],
   );
   const pagination = usePagination(list, 50);
+  const fuse = useMemo(
+    () => new Fuse(list, { keys: ["title", "notes", "paymentMethod"], threshold: 0.35 }),
+    [list],
+  );
+  const searched = useMemo(() => {
+    let rows = query.trim() ? fuse.search(query).map((result) => result.item) : list;
+    if (categoryFilter) rows = rows.filter((row) => String(row.categoryId) === categoryFilter);
+    const min = parseRupeeInput(minRupee);
+    const max = parseRupeeInput(maxRupee);
+    if (min > 0) rows = rows.filter((row) => row.amountPaise >= min);
+    if (max > 0) rows = rows.filter((row) => row.amountPaise <= max);
+    return rows;
+  }, [categoryFilter, fuse, list, maxRupee, minRupee, query]);
+  const visible = searched.length > 200 ? searched.slice(0, windowSize) : searched;
+  const dayGroups = useMemo(() => {
+    const groups = new Map<string, { label: string; total: number; rows: Transaction[] }>();
+    for (const row of visible) {
+      const day = format(new Date(row.occurredAt), "yyyy-MM-dd");
+      const group = groups.get(day) ?? {
+        label: format(new Date(row.occurredAt), "EEE d MMM").toUpperCase(),
+        total: 0,
+        rows: [],
+      };
+      group.rows.push(row);
+      group.total += row.kind === "income" ? row.amountPaise : -row.amountPaise;
+      groups.set(day, group);
+    }
+    return [...groups.entries()];
+  }, [visible]);
   const previewPaise = parseRupeeInput(amount);
   const activeCats = kind === "income" ? incomeCats : expenseCats;
   const resolvedCategoryId =
@@ -280,6 +317,58 @@ function TransactionsContent({
         <SharedBalance paise={data.remainingPaise} className="mt-3 text-[28px] font-semibold" />
       </FadeIn>
 
+      <MoneyTabs />
+      <div className="flex items-center gap-2">
+        <button
+          type="button"
+          className="inline-flex h-11 w-11 items-center justify-center rounded-full border border-hairline"
+          aria-label="Search transactions"
+          onClick={() => setShowSearch((open) => !open)}
+        >
+          <Search size={16} />
+        </button>
+        {showSearch && (
+          <input
+            value={query}
+            onChange={(event) => setQuery(event.target.value)}
+            aria-label="Search transactions"
+            placeholder="Search"
+            className="h-11 min-w-0 flex-1 rounded-full border border-hairline bg-transparent px-4 text-sm text-ink outline-none focus:border-lime"
+          />
+        )}
+      </div>
+      <div className="flex flex-wrap gap-2">
+        <select
+          aria-label="Category"
+          value={categoryFilter}
+          onChange={(event) => setCategoryFilter(event.target.value)}
+          className="h-11 rounded-full border border-hairline bg-transparent px-3 text-sm text-ink"
+        >
+          <option value="">Category</option>
+          {categories.map((category) => (
+            <option key={category.id} value={String(category.id)}>
+              {category.name}
+            </option>
+          ))}
+        </select>
+        <input
+          value={minRupee}
+          onChange={(event) => setMinRupee(event.target.value)}
+          inputMode="decimal"
+          aria-label="Minimum amount"
+          placeholder="Min ₹"
+          className="h-11 w-24 rounded-full border border-hairline bg-transparent px-3 font-mono text-sm text-ink"
+        />
+        <input
+          value={maxRupee}
+          onChange={(event) => setMaxRupee(event.target.value)}
+          inputMode="decimal"
+          aria-label="Maximum amount"
+          placeholder="Max ₹"
+          className="h-11 w-24 rounded-full border border-hairline bg-transparent px-3 font-mono text-sm text-ink"
+        />
+      </div>
+
       <TabBar
         className="md:hidden"
         options={[
@@ -390,7 +479,7 @@ function TransactionsContent({
         </Card>
       )}
 
-      {list.length === 0 ? (
+      {searched.length === 0 ? (
         <EmptyState
           minimal
           title={copy.empty.noTransactions.title}
@@ -404,30 +493,36 @@ function TransactionsContent({
       ) : (
         <Card className="border-border/60 shadow-none">
           <CardContent className="p-0">
-            <DataList inset>
-              {pagination.items.map((t) => (
-                <TransactionRow
-                  key={t.id}
-                  transaction={t}
-                  categoryName={cats.get(t.categoryId)?.name}
-                  categoryColor={cats.get(t.categoryId)?.color}
-                  categoryIconName={cats.get(t.categoryId)?.iconName}
-                  showActions
-                  onEdit={startEdit}
-                  onDelete={remove}
-                />
+            <div>
+              {dayGroups.map(([day, group]) => (
+                <section key={day}>
+                  <h2 className="sticky top-14 z-10 bg-bg px-4 py-2 font-mono text-[11px] uppercase tracking-[0.12em] text-ink-2">
+                    {group.label} · {group.total < 0 ? "−" : "+"}
+                    {formatINR(Math.abs(group.total))}
+                  </h2>
+                  <div>
+                    {group.rows.map((t) => (
+                      <SwipeTransactionRow
+                        key={t.id}
+                        transaction={t}
+                        categoryName={cats.get(t.categoryId)?.name}
+                        onEdit={startEdit}
+                        onDelete={remove}
+                      />
+                    ))}
+                  </div>
+                </section>
               ))}
-            </DataList>
-            <PaginationControls
-              page={pagination.page}
-              totalPages={pagination.totalPages}
-              totalItems={pagination.totalItems}
-              pageSize={pagination.pageSize}
-              hasPrev={pagination.hasPrev}
-              hasNext={pagination.hasNext}
-              onPrev={pagination.prev}
-              onNext={pagination.next}
-            />
+            </div>
+            {searched.length > visible.length && (
+              <button
+                type="button"
+                className="h-11 w-full text-sm text-ink-2"
+                onClick={() => setWindowSize((size) => size + 80)}
+              >
+                Show more
+              </button>
+            )}
           </CardContent>
         </Card>
       )}
@@ -437,6 +532,14 @@ function TransactionsContent({
 
 function TransactionsPage() {
   const searchParams = useSearchParams();
+  const router = useRouter();
+  const tab = searchParams.get("tab");
+  useEffect(() => {
+    if (tab === "bills") router.replace("/bills");
+    else if (tab === "subscriptions") router.replace("/subscriptions");
+    else if (tab === "emi") router.replace("/emi");
+    else if (tab === "income") router.replace("/income");
+  }, [router, tab]);
   const addParam = searchParams.get("add");
   const editId = searchParams.get("edit");
   const openAdd = addParam != null;

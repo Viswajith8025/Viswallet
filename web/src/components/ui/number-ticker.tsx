@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useRef, type ComponentPropsWithoutRef } from "react"
+import { useEffect, useRef, useSyncExternalStore, type ComponentPropsWithoutRef } from "react"
 import { useInView, useMotionValue, useSpring } from "motion/react"
 
 import { cn } from "@/lib/utils"
@@ -13,6 +13,23 @@ interface NumberTickerProps extends ComponentPropsWithoutRef<"span"> {
   decimalPlaces?: number
 }
 
+function subscribeReducedMotion(onStoreChange: () => void) {
+  const media = window.matchMedia("(prefers-reduced-motion: reduce)")
+  media.addEventListener("change", onStoreChange)
+  return () => media.removeEventListener("change", onStoreChange)
+}
+
+function reducedMotionSnapshot() {
+  return window.matchMedia("(prefers-reduced-motion: reduce)").matches
+}
+
+function formatTicker(value: number, decimalPlaces: number) {
+  return Intl.NumberFormat("en-IN", {
+    minimumFractionDigits: decimalPlaces,
+    maximumFractionDigits: decimalPlaces,
+  }).format(value)
+}
+
 export function NumberTicker({
   value,
   startValue = 0,
@@ -22,6 +39,7 @@ export function NumberTicker({
   decimalPlaces = 0,
   ...props
 }: NumberTickerProps) {
+  const reduce = useSyncExternalStore(subscribeReducedMotion, reducedMotionSnapshot, () => false)
   const ref = useRef<HTMLSpanElement>(null)
   const motionValue = useMotionValue(direction === "down" ? value : startValue)
   const springValue = useSpring(motionValue, {
@@ -31,6 +49,7 @@ export function NumberTicker({
   const isInView = useInView(ref, { once: true, margin: "0px" })
 
   useEffect(() => {
+    if (reduce) return
     let timer: ReturnType<typeof setTimeout> | null = null
 
     if (isInView) {
@@ -44,31 +63,24 @@ export function NumberTicker({
         clearTimeout(timer)
       }
     }
-  }, [motionValue, isInView, delay, value, direction, startValue])
+  }, [motionValue, isInView, delay, value, direction, startValue, reduce])
 
-  useEffect(
-    () =>
-      springValue.on("change", (latest) => {
-        if (ref.current) {
-          ref.current.textContent = Intl.NumberFormat("en-US", {
-            minimumFractionDigits: decimalPlaces,
-            maximumFractionDigits: decimalPlaces,
-          }).format(Number(latest.toFixed(decimalPlaces)))
-        }
-      }),
-    [springValue, decimalPlaces]
-  )
+  useEffect(() => {
+    if (reduce) return
+    return springValue.on("change", (latest) => {
+      if (ref.current) {
+        ref.current.textContent = formatTicker(Number(latest.toFixed(decimalPlaces)), decimalPlaces)
+      }
+    })
+  }, [springValue, decimalPlaces, reduce])
 
   return (
     <span
       ref={ref}
-      className={cn(
-        "inline-block tracking-wider text-black tabular-nums dark:text-white",
-        className
-      )}
+      className={cn("inline-block tabular-nums text-inherit", className)}
       {...props}
     >
-      {startValue}
+      {formatTicker(reduce ? value : startValue, decimalPlaces)}
     </span>
   )
 }

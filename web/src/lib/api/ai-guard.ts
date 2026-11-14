@@ -50,7 +50,12 @@ export async function enforceAiAccess(request: Request): Promise<NextResponse | 
     return NextResponse.json({ error: "Forbidden." }, { status: 403 });
   }
 
-  const cfg = getSupabaseConfig();
+  let cfg: ReturnType<typeof getSupabaseConfig> = null;
+  try {
+    cfg = getSupabaseConfig();
+  } catch {
+    cfg = null;
+  }
   if (cfg) {
     const authed = await verifySupabaseSession(request);
     if (!authed) {
